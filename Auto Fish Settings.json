@@ -1,0 +1,41 @@
+{
+    "hotkeys": {
+        "start_stop": "f1",
+        "change_area": "f2",
+        "exit": "f3"
+    },
+    "area_box": {
+        "x1": 1343,
+        "y1": 420,
+        "x2": 1753,
+        "y2": 1138
+    },
+    "always_on_top": true,
+    "show_debug_overlay": true,
+    "water_point": {
+        "x": 1195,
+        "y": 361
+    },
+    "kp": 1.4,
+    "kd": 0.6,
+    "pd_clamp": 1.0,
+    "cast_hold_duration": 0.1,
+    "recast_timeout": 25.0,
+    "fish_end_delay": 0.5,
+    "rod_hotkey": "4",
+    "anything_else_hotkey": "1",
+    "auto_buy_common_bait": true,
+    "auto_store_devil_fruit": false,
+    "auto_select_top_bait": false,
+    "left_point": null,
+    "middle_point": null,
+    "right_point": null,
+    "loops_per_purchase": 100,
+    "store_fruit_point": null,
+    "devil_fruit_hotkey": "6",
+    "bait_point": null,
+    "pd_approaching_damping": 2.0,
+    "pd_chasing_damping": 0.5,
+    "gap_tolerance_multiplier": 2.0,
+    "state_resend_interval": 0.5
+}

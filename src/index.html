@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GPO Fishing Macro</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0e17;
+      color: #e8eaf0;
+      overflow: hidden;
+      height: 100vh;
+    }
+
+    .container {
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: linear-gradient(135deg, #0f1419 0%, #0a0e17 50%, #1a1f2e 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 300px;
+      background: radial-gradient(ellipse at top, rgba(0, 212, 255, 0.15) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .header {
+      background: linear-gradient(135deg, rgba(26, 31, 46, 0.9) 0%, rgba(15, 20, 25, 0.95) 100%);
+      padding: 20px 28px;
+      border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(10px);
+      position: relative;
+      z-index: 10;
+    }
+
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.5) 50%, transparent);
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #00d4ff 0%, #0099ff 50%, #00d4ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 10px;
+      letter-spacing: 0.5px;
+      text-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #8b92a8;
+    }
+
+    .status-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ef4444;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.6), 0 0 24px rgba(239, 68, 68, 0.3);
+      animation: pulse 2s infinite;
+      position: relative;
+    }
+
+    .status-indicator::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(239, 68, 68, 0.4), transparent 70%);
+      animation: ripple 2s infinite;
+    }
+
+    .status-indicator.running {
+      background: #10b981;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.6), 0 0 24px rgba(16, 185, 129, 0.3);
+    }
+
+    .status-indicator.running::before {
+      background: radial-gradient(circle, rgba(16, 185, 129, 0.4), transparent 70%);
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      50% {
+        opacity: 0.7;
+        transform: scale(0.95);
+      }
+    }
+
+    @keyframes ripple {
+      0% {
+        transform: scale(1);
+        opacity: 0.6;
+      }
+
+      100% {
+        transform: scale(2);
+        opacity: 0;
+      }
+    }
+
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .content::-webkit-scrollbar {
+      width: 10px;
+    }
+
+    .content::-webkit-scrollbar-track {
+      background: rgba(26, 31, 46, 0.3);
+      border-radius: 5px;
+    }
+
+    .content::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, #00d4ff 0%, #0099ff 100%);
+      border-radius: 5px;
+      border: 2px solid transparent;
+      background-clip: padding-box;
+    }
+
+    .content::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #00e4ff 0%, #00a9ff 100%);
+      background-clip: padding-box;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 24px;
+      background: rgba(26, 31, 46, 0.6);
+      padding: 8px;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      backdrop-filter: blur(10px);
+    }
+
+    .tab {
+      padding: 10px 20px;
+      background: transparent;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      color: #6b7280;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tab::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 153, 255, 0.1));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .tab:hover {
+      color: #9ca3af;
+    }
+
+    .tab:hover::before {
+      opacity: 1;
+    }
+
+    .tab.active {
+      background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
+      color: #0a0e17;
+      box-shadow: 0 4px 16px rgba(0, 212, 255, 0.4), 0 0 24px rgba(0, 212, 255, 0.2);
+      font-weight: 700;
+    }
+
+    .tab.active::before {
+      opacity: 0;
+    }
+
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .section {
+      margin-bottom: 24px;
+      background: linear-gradient(135deg, rgba(26, 31, 46, 0.5) 0%, rgba(20, 25, 38, 0.5) 100%);
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      border-radius: 12px;
+      padding: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s;
+    }
+
+    .section:hover {
+      border-color: rgba(0, 212, 255, 0.3);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 24px rgba(0, 212, 255, 0.1);
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #00d4ff 0%, #00a9ff 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 16px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 12px;
+      padding: 12px 14px;
+      background: rgba(15, 20, 25, 0.6);
+      border-radius: 8px;
+      border: 1px solid rgba(139, 146, 168, 0.1);
+      transition: all 0.3s;
+    }
+
+    .row:hover {
+      background: rgba(20, 25, 38, 0.8);
+      border-color: rgba(0, 212, 255, 0.2);
+      transform: translateX(2px);
+    }
+
+    .label {
+      min-width: 140px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #b4b9c8;
+    }
+
+    .hotkey-display {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(0, 153, 255, 0.15) 100%);
+      border: 2px solid rgba(0, 212, 255, 0.4);
+      border-radius: 6px;
+      font-weight: 800;
+      color: #00d4ff;
+      min-width: 50px;
+      text-align: center;
+      text-transform: uppercase;
+      font-size: 13px;
+      box-shadow: 0 0 16px rgba(0, 212, 255, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    }
+
+    .btn {
+      padding: 8px 18px;
+      background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
+      color: #0a0e17;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 12px;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0, 212, 255, 0.5);
+    }
+
+    .btn:hover::before {
+      opacity: 1;
+    }
+
+    .btn:active {
+      transform: translateY(0);
+    }
+
+    .btn.secondary {
+      background: linear-gradient(135deg, rgba(75, 85, 99, 0.6), rgba(55, 65, 81, 0.6));
+      color: #d1d5db;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .btn.secondary:hover {
+      background: linear-gradient(135deg, rgba(85, 95, 109, 0.7), rgba(65, 75, 91, 0.7));
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .btn.small {
+      padding: 6px 14px;
+      font-size: 11px;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      background: rgba(15, 20, 25, 0.6);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-bottom: 12px;
+      border: 1px solid rgba(139, 146, 168, 0.1);
+    }
+
+    .checkbox-row:hover {
+      background: rgba(20, 25, 38, 0.8);
+      border-color: rgba(0, 212, 255, 0.2);
+      transform: translateX(2px);
+    }
+
+    .checkbox {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: #00d4ff;
+      filter: brightness(1.2);
+    }
+
+    .checkbox-label {
+      font-size: 13px;
+      color: #d1d5db;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .point-status {
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .point-status.set {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+    }
+
+    .point-status.unset {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
+    }
+
+    .input-field {
+      padding: 8px 12px;
+      background: rgba(10, 14, 23, 0.8);
+      border: 1px solid rgba(139, 146, 168, 0.2);
+      border-radius: 6px;
+      font-size: 12px;
+      width: 80px;
+      color: #e8eaf0;
+      transition: all 0.3s;
+      font-weight: 600;
+    }
+
+    .input-field:focus {
+      outline: none;
+      border-color: #00d4ff;
+      box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15), 0 0 16px rgba(0, 212, 255, 0.2);
+      background: rgba(10, 14, 23, 0.95);
+    }
+
+    .dropdown {
+      padding: 8px 12px;
+      background: rgba(10, 14, 23, 0.8);
+      border: 1px solid rgba(139, 146, 168, 0.2);
+      border-radius: 6px;
+      font-size: 12px;
+      color: #e8eaf0;
+      cursor: pointer;
+      transition: all 0.3s;
+      min-width: 60px;
+      font-weight: 600;
+    }
+
+    .dropdown:focus {
+      outline: none;
+      border-color: #00d4ff;
+      box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
+    }
+
+    .collapsible {
+      margin-top: 16px;
+      padding-left: 20px;
+      border-left: 3px solid rgba(0, 212, 255, 0.4);
+      position: relative;
+    }
+
+    .collapsible::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, #00d4ff, transparent);
+      box-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+    }
+
+    .help-text {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 8px;
+      font-style: italic;
+      padding-left: 2px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .value-display {
+      color: #00d4ff;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.3) 50%, transparent);
+      margin: 20px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title">GPO FISHING MACRO</div>
+      <div class="status">
+        <div class="status-indicator" id="statusIndicator"></div>
+        <span id="statusText">Status: Stopped</span>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="tabs">
+        <button class="tab active" data-tab="general">General</button>
+        <button class="tab" data-tab="casting">Casting</button>
+        <button class="tab" data-tab="fishing">Fishing</button>
+        <button class="tab" data-tab="precast">Preformed</button>
+        <button class="tab" data-tab="advanced">Advanced</button>
+      </div>
+
+      <div class="tab-content active" id="general">
+        <div class="section">
+          <div class="section-title">Hotkeys</div>
+          <div class="row">
+            <span class="label">Switch:</span>
+            <div class="hotkey-display" id="hotkey-start">F1</div>
+            <button class="btn small" onclick="sendToPython('rebind_hotkey', 'start_stop')">Rebind</button>
+          </div>
+          <div class="row">
+            <span class="label">Change Focus:</span>
+            <div class="hotkey-display" id="hotkey-area">F2</div>
+            <button class="btn small" onclick="sendToPython('rebind_hotkey', 'change_area')">Rebind</button>
+          </div>
+          <div class="row">
+            <span class="label">Exit:</span>
+            <div class="hotkey-display" id="hotkey-exit">F3</div>
+            <button class="btn small" onclick="sendToPython('rebind_hotkey', 'exit')">Rebind</button>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Item Hotkeys</div>
+          <div class="row">
+            <span class="label">Rod Hotkey:</span>
+            <select class="dropdown" id="rodHotkey" onchange="sendToPython('set_rod_hotkey', this.value)">
+              <option selected>1</option>
+              <option>2</option>
+              <option>3</option>
+              <option>4</option>
+              <option>5</option>
+              <option>6</option>
+              <option>7</option>
+              <option>8</option>
+              <option>9</option>
+              <option>0</option>
+            </select>
+          </div>
+          <div class="row">
+            <span class="label">Anything Else Hotkey:</span>
+            <select class="dropdown" id="anythingElseHotkey"
+              onchange="sendToPython('set_anything_else_hotkey', this.value)">
+              <option>1</option>
+              <option selected>2</option>
+              <option>3</option>
+              <option>4</option>
+              <option>5</option>
+              <option>6</option>
+              <option>7</option>
+              <option>8</option>
+              <option>9</option>
+              <option>0</option>
+            </select>
+          </div>
+          <div class="row">
+            <span class="label">Devil Fruit Hotkey:</span>
+            <select class="dropdown" id="devilFruitHotkey"
+              onchange="sendToPython('set_devil_fruit_hotkey', this.value)">
+              <option>1</option>
+              <option>2</option>
+              <option selected>3</option>
+              <option>4</option>
+              <option>5</option>
+              <option>6</option>
+              <option>7</option>
+              <option>8</option>
+              <option>9</option>
+              <option>0</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Options</div>
+          <label class="checkbox-row">
+            <input type="checkbox" class="checkbox" id="alwaysOnTop"
+              onchange="sendToPython('toggle_always_on_top', this.checked.toString())">
+            <span class="checkbox-label">Always on Top</span>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" class="checkbox" id="debugOverlay"
+              onchange="sendToPython('toggle_debug_overlay', this.checked.toString())">
+            <span class="checkbox-label">Show Stats</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="tab-content" id="casting">
+        <div class="section">
+          <div class="section-title">Water Point</div>
+          <div class="row">
+            <span class="label">Water Point:</span>
+            <span class="point-status unset" id="waterPointStatus">Not Set</span>
+            <button class="btn small" onclick="sendToPython('set_water_point', '')">Set Point</button>
+          </div>
+          <div class="help-text">Click where you want to cast your fishing line in the water</div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Cast Timing</div>
+          <div class="row">
+            <span class="label">Cast Hold Duration:</span>
+            <input type="number" class="input-field" id="castHold" value="1.0" step="0.1"
+              onchange="sendToPython('set_cast_hold', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">seconds</span>
+          </div>
+          <div class="row">
+            <span class="label">Recast Timeout:</span>
+            <input type="number" class="input-field" id="recastTimeout" value="30.0" step="1.0"
+              onchange="sendToPython('set_recast_timeout', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">seconds</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="fishing">
+        <div class="section">
+          <div class="section-title">PD Control Parameters</div>
+          <div class="row">
+            <span class="label">Follow Strength:</span>
+            <input type="number" class="input-field" id="kp" value="0.9" step="0.1"
+              onchange="sendToPython('set_kp', this.value)">
+          </div>
+          <div class="row">
+            <span class="label">Damping:</span>
+            <input type="number" class="input-field" id="kd" value="0.3" step="0.1"
+              onchange="sendToPython('set_kd', this.value)">
+          </div>
+          <div class="row">
+            <span class="label">Max Correction:</span>
+            <input type="number" class="input-field" id="pdClamp" value="1.0" step="0.1"
+              onchange="sendToPython('set_pd_clamp', this.value)">
+          </div>
+          <div class="help-text">PD control keeps the fishing bar aligned with the target</div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Advanced PD Tuning</div>
+          <div class="row">
+            <span class="label">Approaching Damping:</span>
+            <input type="number" class="input-field" id="pdApproaching" value="2.0" step="0.1"
+              onchange="sendToPython('set_pd_approaching', this.value)">
+          </div>
+          <div class="row">
+            <span class="label">Chasing Damping:</span>
+            <input type="number" class="input-field" id="pdChasing" value="0.5" step="0.1"
+              onchange="sendToPython('set_pd_chasing', this.value)">
+          </div>
+          <div class="row">
+            <span class="label">Gap Tolerance Mult:</span>
+            <input type="number" class="input-field" id="gapTolerance" value="2.0" step="0.1"
+              onchange="sendToPython('set_gap_tolerance', this.value)">
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Timing</div>
+          <div class="row">
+            <span class="label">Fish End Delay:</span>
+            <input type="number" class="input-field" id="fishEndDelay" value="2.0" step="0.1"
+              onchange="sendToPython('set_fish_end_delay', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">seconds</span>
+          </div>
+          <div class="row">
+            <span class="label">State Resend Interval:</span>
+            <input type="number" class="input-field" id="stateResend" value="0.5" step="0.05"
+              onchange="sendToPython('set_state_resend', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">seconds</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="precast">
+        <div class="section">
+          <label class="checkbox-row">
+            <input type="checkbox" class="checkbox" id="autoBuyBait"
+              onchange="toggleSection('autoBuySection', 'autoBuyBait'); sendToPython('toggle_auto_buy', this.checked.toString())">
+            <span class="checkbox-label">Auto Buy Common Bait</span>
+          </label>
+
+          <div class="collapsible" id="autoBuySection" style="display: none;">
+            <div class="row">
+              <span class="label">Left Point:</span>
+              <span class="point-status unset" id="leftPointStatus">Not Set</span>
+              <button class="btn small" onclick="sendToPython('set_left_point', '')">Set</button>
+            </div>
+            <div class="row">
+              <span class="label">Middle Point:</span>
+              <span class="point-status unset" id="middlePointStatus">Not Set</span>
+              <button class="btn small" onclick="sendToPython('set_middle_point', '')">Set</button>
+            </div>
+            <div class="row">
+              <span class="label">Right Point:</span>
+              <span class="point-status unset" id="rightPointStatus">Not Set</span>
+              <button class="btn small" onclick="sendToPython('set_right_point', '')">Set</button>
+            </div>
+            <div class="row">
+              <span class="label">Loops Per Purchase:</span>
+              <input type="number" class="input-field" id="loopsPerPurchase" value="100" step="1"
+                onchange="sendToPython('set_loops_per_purchase', this.value)">
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <label class="checkbox-row">
+            <input type="checkbox" class="checkbox" id="autoStoreFruit"
+              onchange="toggleSection('autoStoreSection', 'autoStoreFruit'); sendToPython('toggle_auto_store', this.checked.toString())">
+            <span class="checkbox-label">Auto Store Devil Fruit</span>
+          </label>
+
+          <div class="collapsible" id="autoStoreSection" style="display: none;">
+            <div class="row">
+              <span class="label">Store Fruit Point:</span>
+              <span class="point-status unset" id="storeFruitPointStatus">Not Set</span>
+              <button class="btn small" onclick="sendToPython('set_store_fruit_point', '')">Set</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section">
+          <label class="checkbox-row">
+            <input type="checkbox" class="checkbox" id="autoSelectBait"
+              onchange="toggleSection('autoBaitSection', 'autoSelectBait'); sendToPython('toggle_auto_select_bait', this.checked.toString())">
+            <span class="checkbox-label">Auto Select Top Bait</span>
+          </label>
+
+          <div class="collapsible" id="autoBaitSection" style="display: none;">
+            <div class="row">
+              <span class="label">Bait Point:</span>
+              <span class="point-status unset" id="baitPointStatus">Not Set</span>
+              <button class="btn small" onclick="sendToPython('set_bait_point', '')">Set</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="advanced">
+        <div class="section">
+          <div class="section-title">Roblox Window</div>
+          <div class="row">
+            <span class="label">Focus Delay:</span>
+            <input type="number" class="input-field" id="focusDelay" value="0.2" step="0.1"
+              onchange="sendToPython('set_focus_delay', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">s</span>
+          </div>
+          <div class="row">
+            <span class="label">Post-Focus Delay:</span>
+            <input type="number" class="input-field" id="postFocusDelay" value="1.0" step="0.1"
+              onchange="sendToPython('set_post_focus_delay', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">s</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Auto Buy Timing</div>
+
+          <div class="row">
+            <span class="label">Interact Delay:</span>
+            <input type="number" class="input-field" id="preCastE" value="3.0" step="0.1"
+              onchange="sendToPython('set_precast_e_delay', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">s</span>
+          </div>
+
+          <div class="row">
+            <span class="label">Confirm Delay:</span>
+            <input type="number" class="input-field" id="preCastClick" value="3.0" step="0.1"
+              onchange="sendToPython('set_precast_click_delay', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">s</span>
+          </div>
+
+          <div class="row">
+            <span class="label">Typing Delay:</span>
+            <input type="number" class="input-field" id="preCastType" value="3.0" step="0.1"
+              onchange="sendToPython('set_precast_type_delay', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">s</span>
+          </div>
+
+          <div class="row">
+            <span class="label">Humanization Delay:</span>
+            <input type="number" class="input-field" id="antiDetect" value="0.05" step="0.01"
+              onchange="sendToPython('set_anti_detect_delay', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">s</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Auto Store Devil Fruit</div>
+          <div class="row">
+            <span class="label">Hotkey Press Delay:</span>
+            <input type="number" class="input-field" id="fruitHotkey" value="1.0" step="0.1"
+              onchange="sendToPython('set_fruit_hotkey_delay', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">s</span>
+          </div>
+          <div class="row">
+            <span class="label">Click Delay:</span>
+            <input type="number" class="input-field" id="fruitClick" value="2.0" step="0.1"
+              onchange="sendToPython('set_fruit_click_delay', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">s</span>
+          </div>
+          <div class="row">
+            <span class="label">Shift Delay:</span>
+            <input type="number" class="input-field" id="fruitShift" value="0.5" step="0.1"
+              onchange="sendToPython('set_fruit_shift_delay', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">s</span>
+          </div>
+          <div class="row">
+            <span class="label">Backspace Delay:</span>
+            <input type="number" class="input-field" id="fruitBackspace" value="1.5" step="0.1"
+              onchange="sendToPython('set_fruit_backspace_delay', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">s</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Fishing Timing</div>
+          <div class="row">
+            <span class="label">Rod Select Delay:</span>
+            <input type="number" class="input-field" id="rodDelay" value="0.5" step="0.1"
+              onchange="sendToPython('set_rod_delay', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">s</span>
+          </div>
+          <div class="row">
+            <span class="label">Bait Select Delay:</span>
+            <input type="number" class="input-field" id="baitDelay" value="0.5" step="0.1"
+              onchange="sendToPython('set_bait_delay', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">s</span>
+          </div>
+          <div class="row">
+            <span class="label">Cursor Humanization:</span>
+            <input type="number" class="input-field" id="cursorDelay" value="0.05" step="0.01"
+              onchange="sendToPython('set_cursor_delay', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">s</span>
+          </div>
+          <div class="row">
+            <span class="label">Scan Loop Delay:</span>
+            <input type="number" class="input-field" id="scanDelay" value="0.1" step="0.01"
+              onchange="sendToPython('set_scan_delay', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">s</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Anti-Macro Detection</div>
+          <div class="row">
+            <span class="label">Black Screen Threshold:</span>
+            <input type="number" class="input-field" id="blackThreshold" value="0.5" step="0.05"
+              onchange="sendToPython('set_black_threshold', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">%</span>
+          </div>
+          <div class="row">
+            <span class="label">Key Spam Delay:</span>
+            <input type="number" class="input-field" id="spamDelay" value="0.25" step="0.05"
+              onchange="sendToPython('set_spam_delay', this.value)">
+            <span style="color: #6b7280; font-size: 12px;">s</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+        tab.classList.add('active');
+        document.getElementById(tab.dataset.tab).classList.add('active');
+      });
+    });
+
+    // Toggle collapsible sections
+    function toggleSection(sectionId, checkboxId) {
+      const section = document.getElementById(sectionId);
+      const checkbox = document.getElementById(checkboxId);
+
+      setTimeout(() => {
+        section.style.display = checkbox.checked ? 'block' : 'none';
+      }, 10);
+    }
+
+    // Send commands to Python backend
+    async function sendToPython(action, payload) {
+      try {
+        console.log('Sending to Python:', action, payload);
+
+        await fetch('http://localhost:8765/command', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, payload })
+        });
+      } catch (error) {
+        console.error('Failed to send to Python:', error);
+      }
+    }
+
+    // Update UI from Python events
+    function updateStatus(isRunning) {
+      const indicator = document.getElementById('statusIndicator');
+      const text = document.getElementById('statusText');
+
+      if (isRunning) {
+        indicator.classList.add('running');
+        text.textContent = 'Status: Running';
+      } else {
+        indicator.classList.remove('running');
+        text.textContent = 'Status: Stopped';
+      }
+    }
+
+    function updateHotkey(key, value) {
+      document.getElementById(`hotkey-${key}`).textContent = value.toUpperCase();
+    }
+
+    function updatePointStatus(pointName, x, y) {
+      const status = document.getElementById(`${pointName}Status`);
+      if (x !== null && y !== null) {
+        status.textContent = `X: ${x}, Y: ${y}`;
+        status.classList.remove('unset');
+        status.classList.add('set');
+      } else {
+        status.textContent = 'Not Set';
+        status.classList.remove('set');
+        status.classList.add('unset');
+      }
+    }
+
+    function updateStats(fishCaught, timeElapsed, fishPerHour) {
+      // Stats display removed from this version, but keeping function for compatibility
+    }
+
+    function updateSetting(settingName, value) {
+      const element = document.getElementById(settingName);
+      if (element) {
+        if (element.type === 'checkbox') {
+          element.checked = value;
+
+          // Update collapsible sections
+          if (settingName === 'autoBuyBait') {
+            document.getElementById('autoBuySection').style.display = value ? 'block' : 'none';
+          }
+          if (settingName === 'autoStoreFruit') {
+            document.getElementById('autoStoreSection').style.display = value ? 'block' : 'none';
+          }
+          if (settingName === 'autoSelectBait') {
+            document.getElementById('autoBaitSection').style.display = value ? 'block' : 'none';
+          }
+        } else {
+          element.value = value;
+        }
+      }
+    }
+
+    // Load all settings from backend state
+    function loadAllSettings(state) {
+      // Hotkeys
+      if (state.hotkeys) {
+        updateHotkey('start', state.hotkeys.start_stop || 'f1');
+        updateHotkey('area', state.hotkeys.change_area || 'f2');
+        updateHotkey('exit', state.hotkeys.exit || 'f3');
+      }
+
+      // Number hotkeys
+      updateSetting('rodHotkey', state.rodHotkey || '1');
+      updateSetting('anythingElseHotkey', state.anythingElseHotkey || '2');
+      updateSetting('devilFruitHotkey', state.devilFruitHotkey || '3');
+
+      // Checkboxes
+      updateSetting('alwaysOnTop', state.alwaysOnTop || false);
+      updateSetting('debugOverlay', state.showDebugOverlay || false);
+      updateSetting('autoBuyBait', state.autoBuyCommonBait || false);
+      updateSetting('autoStoreFruit', state.autoStoreDevilFruit || false);
+      updateSetting('autoSelectBait', state.autoSelectTopBait || false);
+
+      // PD Parameters
+      updateSetting('kp', state.kp || 0.9);
+      updateSetting('kd', state.kd || 0.3);
+      updateSetting('pdClamp', state.pdClamp || 1.0);
+      updateSetting('pdApproaching', state.pdApproachingDamping || 2.0);
+      updateSetting('pdChasing', state.pdChasingDamping || 0.5);
+      updateSetting('gapTolerance', state.gapToleranceMultiplier || 2.0);
+
+      // Timing
+      updateSetting('castHold', state.castHoldDuration || 1.0);
+      updateSetting('recastTimeout', state.recastTimeout || 30.0);
+      updateSetting('fishEndDelay', state.fishEndDelay || 2.0);
+      updateSetting('stateResend', state.stateResendInterval || 0.5);
+      updateSetting('loopsPerPurchase', state.loopsPerPurchase || 100);
+
+      // Advanced timing
+      updateSetting('focusDelay', state.robloxFocusDelay || 0.2);
+      updateSetting('postFocusDelay', state.robloxPostFocusDelay || 1.0);
+      updateSetting('preCastE', state.preCastEDelay || 3.0);
+      updateSetting('preCastClick', state.preCastClickDelay || 3.0);
+      updateSetting('preCastType', state.preCastTypeDelay || 3.0);
+      updateSetting('antiDetect', state.preCastAntiDetectDelay || 0.05);
+      updateSetting('fruitHotkey', state.storeFruitHotkeyDelay || 1.0);
+      updateSetting('fruitClick', state.storeFruitClickDelay || 2.0);
+      updateSetting('fruitShift', state.storeFruitShiftDelay || 0.5);
+      updateSetting('fruitBackspace', state.storeFruitBackspaceDelay || 1.5);
+      updateSetting('rodDelay', state.rodSelectDelay || 0.5);
+      updateSetting('baitDelay', state.autoSelectBaitDelay || 0.5);
+      updateSetting('cursorDelay', state.cursorAntiDetectDelay || 0.05);
+      updateSetting('scanDelay', state.scanLoopDelay || 0.1);
+      updateSetting('blackThreshold', state.blackScreenThreshold || 0.5);
+      updateSetting('spamDelay', state.antiMacroSpamDelay || 0.25);
+
+      // Points
+      if (state.waterPoint) {
+        updatePointStatus('waterPoint', state.waterPoint.x, state.waterPoint.y);
+      }
+      if (state.leftPoint) {
+        updatePointStatus('leftPoint', state.leftPoint.x, state.leftPoint.y);
+      }
+      if (state.middlePoint) {
+        updatePointStatus('middlePoint', state.middlePoint.x, state.middlePoint.y);
+      }
+      if (state.rightPoint) {
+        updatePointStatus('rightPoint', state.rightPoint.x, state.rightPoint.y);
+      }
+      if (state.storeFruitPoint) {
+        updatePointStatus('storeFruitPoint', state.storeFruitPoint.x, state.storeFruitPoint.y);
+      }
+      if (state.baitPoint) {
+        updatePointStatus('baitPoint', state.baitPoint.x, state.baitPoint.y);
+      }
+    }
+
+    // Poll Python for state updates
+    async function pollPythonState() {
+      try {
+        const response = await fetch('http://localhost:8765/state');
+        const state = await response.json();
+
+        // Update running status
+        updateStatus(state.isRunning);
+
+        // Update points
+        if (state.waterPoint) {
+          updatePointStatus('waterPoint', state.waterPoint.x, state.waterPoint.y);
+        }
+        if (state.leftPoint) {
+          updatePointStatus('leftPoint', state.leftPoint.x, state.leftPoint.y);
+        }
+        if (state.middlePoint) {
+          updatePointStatus('middlePoint', state.middlePoint.x, state.middlePoint.y);
+        }
+        if (state.rightPoint) {
+          updatePointStatus('rightPoint', state.rightPoint.x, state.rightPoint.y);
+        }
+        if (state.storeFruitPoint) {
+          updatePointStatus('storeFruitPoint', state.storeFruitPoint.x, state.storeFruitPoint.y);
+        }
+        if (state.baitPoint) {
+          updatePointStatus('baitPoint', state.baitPoint.x, state.baitPoint.y);
+        }
+
+      } catch (error) {
+        console.error('Failed to poll state:', error);
+      }
+    }
+
+    // Initial load - fetch settings once on startup
+    async function loadInitialSettings() {
+      try {
+        const response = await fetch('http://localhost:8765/state');
+        const state = await response.json();
+        loadAllSettings(state);
+        console.log('✓ Settings loaded successfully');
+      } catch (error) {
+        console.error('Failed to load initial settings:', error);
+      }
+    }
+
+    // Start polling for stats every 500ms
+    let pollInterval;
+    function startPolling() {
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(pollPythonState, 500);
+    }
+
+    // Load settings on page load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadInitialSettings();
+      startPolling();
+    });
+
+    // Expose functions globally
+    window.updateStatus = updateStatus;
+    window.updateHotkey = updateHotkey;
+    window.updatePointStatus = updatePointStatus;
+    window.updateStats = updateStats;
+    window.updateSetting = updateSetting;
+  </script>
+</body>
+
+</html>

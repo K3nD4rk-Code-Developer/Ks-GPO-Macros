@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stats Overlay</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: transparent;
+            overflow: hidden;
+            -webkit-app-region: drag;
+        }
+
+        .stats-container {
+            background: rgba(10, 10, 10, 0.9);
+            color: #10b981;
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            min-width: 200px;
+        }
+
+        .stat-line {
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .stat-label {
+            color: #666;
+        }
+
+        .stat-value {
+            color: #00d4ff;
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="stats-container">
+        <div class="stat-line">
+            <span class="stat-label">Fish Caught</span>
+            <span class="stat-value" id="fishCount">0</span>
+        </div>
+        <div class="stat-line">
+            <span class="stat-label">Time</span>
+            <span class="stat-value" id="timeElapsed">0:00:00</span>
+        </div>
+        <div class="stat-line">
+            <span class="stat-label">Fish/Hour</span>
+            <span class="stat-value" id="fishPerHour">0.0</span>
+        </div>
+    </div>
+
+    <script>
+        const { appWindow } = window.__TAURI__.window;
+
+        async function pollStats() {
+            try {
+                const response = await fetch('http://localhost:8765/state');
+                const state = await response.json();
+
+                document.getElementById('fishCount').textContent = state.fishCaught || 0;
+                document.getElementById('timeElapsed').textContent = state.timeElapsed || '0:00:00';
+                document.getElementById('fishPerHour').textContent = (state.fishPerHour || 0).toFixed(1);
+
+                if (state.isRunning && state.showDebugOverlay) {
+                    await appWindow.show();
+                } else {
+                    await appWindow.hide();
+                }
+            } catch (error) {
+                console.error('Failed to poll stats:', error);
+            }
+        }
+
+        setInterval(pollStats, 500);
+        pollStats();
+    </script>
+</body>
+
+</html>
