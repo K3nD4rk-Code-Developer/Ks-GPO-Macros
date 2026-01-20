@@ -1,4 +1,4 @@
-markdown# GPO Fishing Macro
+# GPO Fishing Macro
 
 Automated fishing bot for Grand Piece Online with a clean web UI and PD control.
 
