@@ -21,6 +21,7 @@ Automated fishing bot for Grand Piece Online with a clean web UI and PD control.
 git clone https://github.com/K3nD4rk-Code-Developer/Grand-Piece-Online-Fishing.git
 cd gpo-fishing-macro
 pip install -r requirements.txt
+python -m PyInstaller backend.py
 ```
 
 ## Usage
