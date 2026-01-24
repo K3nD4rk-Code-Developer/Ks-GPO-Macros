@@ -13,18 +13,18 @@
     "always_on_top": false,
     "show_debug_overlay": true,
     "water_point": {
-        "x": 1110,
-        "y": 348
+        "x": 971,
+        "y": 236
     },
     "kp": 1.4,
     "kd": 0.6,
     "pd_clamp": 1.0,
     "cast_hold_duration": 0.1,
-    "recast_timeout": 25.0,
+    "recast_timeout": 40.0,
     "fish_end_delay": 0.5,
     "rod_hotkey": "0",
     "anything_else_hotkey": "1",
-    "auto_buy_common_bait": true,
+    "auto_buy_common_bait": false,
     "auto_store_devil_fruit": false,
     "auto_select_top_bait": false,
     "left_point": {
@@ -39,12 +39,12 @@
         "x": 1512,
         "y": 1303
     },
-    "loops_per_purchase": 100,
+    "loops_per_purchase": 125,
     "store_fruit_point": {
         "x": 1284,
         "y": 1154
     },
-    "devil_fruit_hotkey": "6",
+    "devil_fruit_hotkey": "2",
     "bait_point": {
         "x": 1281,
         "y": 1066
@@ -56,13 +56,24 @@
     "auto_craft_bait": false,
     "craft_left_point": null,
     "craft_middle_point": null,
-    "craft_right_point": null,
     "bait_recipe_point": null,
     "add_recipe_point": null,
     "top_recipe_point": null,
-    "craft_button_point": null,
-    "close_menu_point": null,
+    "craft_button_point": {
+        "x": 1622,
+        "y": 362
+    },
+    "close_menu_point": {
+        "x": 1305,
+        "y": 376
+    },
     "crafts_per_cycle": 80,
     "loops_per_craft": 40,
-    "move_duration": 4.25
+    "move_duration": 4.25,
+    "store_to_backpack": false,
+    "devil_fruit_location_point": {
+        "x": 913,
+        "y": 1367
+    },
+    "loops_per_store": 1
 }

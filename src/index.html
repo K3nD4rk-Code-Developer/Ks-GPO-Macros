@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GPO Fishing Macro</title>
+  <title>GPO Fishing Macro V2</title>
   <style>
     * {
       margin: 0;
@@ -13,98 +13,117 @@
     }
 
     body {
-      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #0a0e17;
-      color: #e8eaf0;
+      font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0d0d0f;
+      color: #e5e7eb;
       overflow: hidden;
       height: 100vh;
     }
 
     .container {
       height: 100vh;
-      display: flex;
-      flex-direction: column;
-      background: linear-gradient(135deg, #0f1419 0%, #0a0e17 50%, #1a1f2e 100%);
+      display: grid;
+      grid-template-rows: auto 1fr;
+      background: radial-gradient(ellipse at top left, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom right, rgba(0, 153, 255, 0.06) 0%, transparent 50%),
+        #0d0d0f;
       position: relative;
-      overflow: hidden;
     }
 
     .container::before {
       content: '';
       position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 300px;
-      background: radial-gradient(ellipse at top, rgba(0, 212, 255, 0.15) 0%, transparent 70%);
+      inset: 0;
+      background:
+        linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
       pointer-events: none;
+      opacity: 0.3;
     }
 
     .header {
-      background: linear-gradient(135deg, rgba(26, 31, 46, 0.9) 0%, rgba(15, 20, 25, 0.95) 100%);
-      padding: 20px 28px;
-      border-bottom: 1px solid rgba(0, 212, 255, 0.2);
-      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-      backdrop-filter: blur(10px);
+      background: linear-gradient(135deg, rgba(17, 24, 39, 0.7) 0%, rgba(31, 41, 55, 0.5) 100%);
+      padding: 24px 32px;
+      border-bottom: 1px solid rgba(0, 212, 255, 0.15);
+      backdrop-filter: blur(20px);
       position: relative;
-      z-index: 10;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .header::after {
       content: '';
       position: absolute;
-      bottom: -1px;
+      bottom: 0;
       left: 0;
       right: 0;
       height: 1px;
       background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.5) 50%, transparent);
     }
 
-    .title {
-      font-size: 24px;
-      font-weight: 800;
-      background: linear-gradient(135deg, #00d4ff 0%, #0099ff 50%, #00d4ff 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 10px;
-      letter-spacing: 0.5px;
-      text-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 16px;
     }
 
-    .status {
+    .logo {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #0099ff 0%, rgba(20, 32, 48, 0.5) 100%);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      font-size: 20px;
+      color: white;
+      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+    }
+
+    .title-group h1 {
+      font-size: 20px;
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 0%, #d1d5db 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      letter-spacing: -0.5px;
+    }
+
+    .version {
+      font-size: 11px;
+      font-weight: 600;
+      color: #00d4ff;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 2px;
+    }
+
+    .status-badge {
       display: flex;
       align-items: center;
       gap: 10px;
-      font-size: 14px;
-      color: #8b92a8;
+      padding: 8px 16px;
+      background: rgba(17, 24, 39, 0.6);
+      border-radius: 20px;
+      border: 1px solid rgba(0, 212, 255, 0.2);
     }
 
-    .status-indicator {
-      width: 12px;
-      height: 12px;
+    .status-dot {
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       background: #ef4444;
-      box-shadow: 0 0 12px rgba(239, 68, 68, 0.6), 0 0 24px rgba(239, 68, 68, 0.3);
-      animation: pulse 2s infinite;
-      position: relative;
+      box-shadow: 0 0 12px rgba(239, 68, 68, 0.8);
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
     }
 
-    .status-indicator::before {
-      content: '';
-      position: absolute;
-      inset: -4px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(239, 68, 68, 0.4), transparent 70%);
-      animation: ripple 2s infinite;
-    }
-
-    .status-indicator.running {
+    .status-dot.active {
       background: #10b981;
-      box-shadow: 0 0 12px rgba(16, 185, 129, 0.6), 0 0 24px rgba(16, 185, 129, 0.3);
-    }
-
-    .status-indicator.running::before {
-      background: radial-gradient(circle, rgba(16, 185, 129, 0.4), transparent 70%);
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.8);
     }
 
     @keyframes pulse {
@@ -112,123 +131,134 @@
       0%,
       100% {
         opacity: 1;
-        transform: scale(1);
       }
 
       50% {
-        opacity: 0.7;
-        transform: scale(0.95);
+        opacity: 0.5;
       }
     }
 
-    @keyframes ripple {
-      0% {
-        transform: scale(1);
-        opacity: 0.6;
-      }
-
-      100% {
-        transform: scale(2);
-        opacity: 0;
-      }
+    .status-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: #9ca3af;
     }
 
-    .content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 24px;
+    .main-content {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
       position: relative;
       z-index: 1;
     }
 
-    .content::-webkit-scrollbar {
-      width: 10px;
-    }
-
-    .content::-webkit-scrollbar-track {
-      background: rgba(26, 31, 46, 0.3);
-      border-radius: 5px;
-    }
-
-    .content::-webkit-scrollbar-thumb {
-      background: linear-gradient(180deg, #00d4ff 0%, #0099ff 100%);
-      border-radius: 5px;
-      border: 2px solid transparent;
-      background-clip: padding-box;
-    }
-
-    .content::-webkit-scrollbar-thumb:hover {
-      background: linear-gradient(180deg, #00e4ff 0%, #00a9ff 100%);
-      background-clip: padding-box;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 6px;
-      margin-bottom: 24px;
-      background: rgba(26, 31, 46, 0.6);
-      padding: 8px;
-      border-radius: 12px;
-      border: 1px solid rgba(0, 212, 255, 0.15);
+    .sidebar {
+      background: linear-gradient(180deg, rgba(17, 24, 39, 0.4) 0%, rgba(31, 41, 55, 0.3) 100%);
+      border-right: 1px solid rgba(0, 212, 255, 0.1);
+      padding: 24px 0;
+      overflow-y: auto;
+      overflow-x: hidden;
       backdrop-filter: blur(10px);
+      min-height: 0;
     }
 
-    .tab {
-      padding: 10px 20px;
+    .sidebar::-webkit-scrollbar {
+      width: 4px;
+    }
+
+    .sidebar::-webkit-scrollbar-track {
       background: transparent;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      color: #6b7280;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-      flex: 1;
-      position: relative;
-      overflow: hidden;
     }
 
-    .tab::before {
+    .sidebar::-webkit-scrollbar-thumb {
+      background: rgba(0, 212, 255, 0.3);
+      border-radius: 2px;
+    }
+
+    .sidebar::-webkit-scrollbar-thumb:hover {
+      background: rgba(0, 212, 255, 0.5);
+    }
+
+    .nav-item {
+      padding: 12px 24px;
+      margin: 0 12px 6px 12px;
+      cursor: pointer;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #9ca3af;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      border: 1px solid transparent;
+      position: relative;
+    }
+
+    .nav-item::before {
       content: '';
       position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 153, 255, 0.1));
-      opacity: 0;
-      transition: opacity 0.3s;
+      left: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 3px;
+      height: 0;
+      background: linear-gradient(180deg, #00d4ff, #0099ff);
+      border-radius: 0 2px 2px 0;
+      transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .tab:hover {
-      color: #9ca3af;
+    .nav-item:hover {
+      color: #e5e7eb;
+      background: rgba(0, 212, 255, 0.05);
     }
 
-    .tab:hover::before {
-      opacity: 1;
+    .nav-item.active {
+      color: #fff;
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.15), rgba(0, 153, 255, 0.1));
+      border-color: rgba(0, 212, 255, 0.3);
     }
 
-    .tab.active {
-      background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
-      color: #0a0e17;
-      box-shadow: 0 4px 16px rgba(0, 212, 255, 0.4), 0 0 24px rgba(0, 212, 255, 0.2);
-      font-weight: 700;
+    .nav-item.active::before {
+      height: 20px;
     }
 
-    .tab.active::before {
-      opacity: 0;
+    .content-area {
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding: 32px;
+      min-height: 0;
     }
 
-    .tab-content {
+    .content-area::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .content-area::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .content-area::-webkit-scrollbar-thumb {
+      background: linear-gradient(180deg, rgba(0, 212, 255, 0.4), rgba(0, 153, 255, 0.4));
+      border-radius: 3px;
+    }
+
+    .content-area::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, rgba(0, 212, 255, 0.6), rgba(0, 153, 255, 0.6));
+    }
+
+    .view {
       display: none;
-      animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      animation: fadeIn 0.4s ease-out;
     }
 
-    .tab-content.active {
+    .view.active {
       display: block;
     }
 
     @keyframes fadeIn {
       from {
         opacity: 0;
-        transform: translateY(8px);
+        transform: translateY(10px);
       }
 
       to {
@@ -237,266 +267,241 @@
       }
     }
 
-    .section {
-      margin-bottom: 24px;
-      background: linear-gradient(135deg, rgba(26, 31, 46, 0.5) 0%, rgba(20, 25, 38, 0.5) 100%);
+    .card {
+      background: linear-gradient(135deg, rgba(31, 41, 55, 0.4) 0%, rgba(17, 24, 39, 0.5) 100%);
       border: 1px solid rgba(0, 212, 255, 0.15);
-      border-radius: 12px;
-      padding: 20px;
+      border-radius: 16px;
+      padding: 24px;
+      margin-bottom: 20px;
       backdrop-filter: blur(10px);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-      transition: all 0.3s;
+      transition: all 0.3s ease;
     }
 
-    .section:hover {
+    .card:hover {
       border-color: rgba(0, 212, 255, 0.3);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 24px rgba(0, 212, 255, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     }
 
-    .section-title {
-      font-size: 13px;
-      font-weight: 800;
-      background: linear-gradient(135deg, #00d4ff 0%, #00a9ff 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 16px;
-      padding-bottom: 10px;
-      border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+    .card-header {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f9fafb;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(0, 212, 255, 0.1);
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 0.5px;
     }
 
-    .row {
+    .control-group {
       display: flex;
       align-items: center;
-      gap: 14px;
-      margin-bottom: 12px;
-      padding: 12px 14px;
-      background: rgba(15, 20, 25, 0.6);
+      justify-content: space-between;
+      padding: 14px 0;
+      border-bottom: 1px solid rgba(75, 85, 99, 0.1);
+    }
+
+    .control-group:last-child {
+      border-bottom: none;
+    }
+
+    .control-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: #d1d5db;
+      flex: 1;
+    }
+
+    .control-input {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .input {
+      padding: 8px 14px;
+      background: rgba(17, 24, 39, 0.8);
+      border: 1px solid rgba(0, 212, 255, 0.2);
       border-radius: 8px;
-      border: 1px solid rgba(139, 146, 168, 0.1);
+      font-size: 13px;
+      color: #e5e7eb;
+      width: 90px;
       transition: all 0.3s;
+      font-weight: 500;
     }
 
-    .row:hover {
-      background: rgba(20, 25, 38, 0.8);
-      border-color: rgba(0, 212, 255, 0.2);
-      transform: translateX(2px);
+    .input:focus {
+      outline: none;
+      border-color: #00d4ff;
+      box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+      background: rgba(17, 24, 39, 0.95);
     }
 
-    .label {
-      min-width: 140px;
+    .select {
+      padding: 8px 14px;
+      background: rgba(17, 24, 39, 0.8);
+      border: 1px solid rgba(0, 212, 255, 0.2);
+      border-radius: 8px;
       font-size: 13px;
-      font-weight: 600;
-      color: #b4b9c8;
+      color: #e5e7eb;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-weight: 500;
     }
 
-    .hotkey-display {
-      padding: 8px 16px;
-      background: linear-gradient(135deg, rgba(0, 212, 255, 0.15) 0%, rgba(0, 153, 255, 0.15) 100%);
-      border: 2px solid rgba(0, 212, 255, 0.4);
-      border-radius: 6px;
-      font-weight: 800;
-      color: #00d4ff;
-      min-width: 50px;
-      text-align: center;
+    .select:focus {
+      outline: none;
+      border-color: #00d4ff;
+      box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.1);
+    }
+
+    .hotkey-badge {
+      padding: 8px 18px;
+      background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(0, 153, 255, 0.15));
+      border: 1px solid rgba(0, 212, 255, 0.4);
+      border-radius: 8px;
+      font-weight: 700;
+      color: #c7d2fe;
       text-transform: uppercase;
-      font-size: 13px;
-      box-shadow: 0 0 16px rgba(0, 212, 255, 0.2), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      font-size: 12px;
+      letter-spacing: 1px;
+      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.15);
     }
 
     .btn {
-      padding: 8px 18px;
-      background: linear-gradient(135deg, #00d4ff 0%, #0099ff 100%);
-      color: #0a0e17;
+      padding: 8px 20px;
+      background: linear-gradient(135deg, #00d4ff66 0%, #0099ff 100%);
+      color: white;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
-      font-weight: 700;
+      font-weight: 600;
       font-size: 12px;
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      box-shadow: 0 4px 12px rgba(0, 212, 255, 0.3);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .btn::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent);
-      opacity: 0;
-      transition: opacity 0.3s;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     }
 
     .btn:hover {
       transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(0, 212, 255, 0.5);
-    }
-
-    .btn:hover::before {
-      opacity: 1;
+      box-shadow: 0 6px 20px #00d4ff66;
     }
 
     .btn:active {
       transform: translateY(0);
     }
 
-    .btn.secondary {
-      background: linear-gradient(135deg, rgba(75, 85, 99, 0.6), rgba(55, 65, 81, 0.6));
-      color: #d1d5db;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    .btn-secondary {
+      background: linear-gradient(135deg, rgba(75, 85, 99, 0.5), rgba(55, 65, 81, 0.6));
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
 
-    .btn.secondary:hover {
-      background: linear-gradient(135deg, rgba(85, 95, 109, 0.7), rgba(65, 75, 91, 0.7));
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    .btn-secondary:hover {
+      background: linear-gradient(135deg, rgba(85, 95, 109, 0.6), rgba(65, 75, 91, 0.7));
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
     }
 
-    .btn.small {
-      padding: 6px 14px;
+    .btn-sm {
+      padding: 6px 16px;
       font-size: 11px;
     }
 
-    .checkbox-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 14px;
-      background: rgba(15, 20, 25, 0.6);
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s;
-      margin-bottom: 12px;
-      border: 1px solid rgba(139, 146, 168, 0.1);
-    }
-
-    .checkbox-row:hover {
-      background: rgba(20, 25, 38, 0.8);
-      border-color: rgba(0, 212, 255, 0.2);
-      transform: translateX(2px);
-    }
-
-    .checkbox {
-      width: 20px;
-      height: 20px;
-      cursor: pointer;
-      accent-color: #00d4ff;
-      filter: brightness(1.2);
-    }
-
-    .checkbox-label {
-      font-size: 13px;
-      color: #d1d5db;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .point-status {
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .point-status.set {
-      background: rgba(16, 185, 129, 0.15);
-      color: #34d399;
-      border: 1px solid rgba(16, 185, 129, 0.4);
-      box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
-    }
-
-    .point-status.unset {
-      background: rgba(239, 68, 68, 0.15);
-      color: #f87171;
-      border: 1px solid rgba(239, 68, 68, 0.4);
-      box-shadow: 0 0 12px rgba(239, 68, 68, 0.2);
-    }
-
-    .input-field {
-      padding: 8px 12px;
-      background: rgba(10, 14, 23, 0.8);
-      border: 1px solid rgba(139, 146, 168, 0.2);
-      border-radius: 6px;
-      font-size: 12px;
-      width: 80px;
-      color: #e8eaf0;
-      transition: all 0.3s;
-      font-weight: 600;
-    }
-
-    .input-field:focus {
-      outline: none;
-      border-color: #00d4ff;
-      box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15), 0 0 16px rgba(0, 212, 255, 0.2);
-      background: rgba(10, 14, 23, 0.95);
-    }
-
-    .dropdown {
-      padding: 8px 12px;
-      background: rgba(10, 14, 23, 0.8);
-      border: 1px solid rgba(139, 146, 168, 0.2);
-      border-radius: 6px;
-      font-size: 12px;
-      color: #e8eaf0;
-      cursor: pointer;
-      transition: all 0.3s;
-      min-width: 60px;
-      font-weight: 600;
-    }
-
-    .dropdown:focus {
-      outline: none;
-      border-color: #00d4ff;
-      box-shadow: 0 0 0 3px rgba(0, 212, 255, 0.15);
-    }
-
-    .collapsible {
-      margin-top: 16px;
-      padding-left: 20px;
-      border-left: 3px solid rgba(0, 212, 255, 0.4);
+    .toggle-switch {
       position: relative;
+      width: 48px;
+      height: 24px;
+      background: rgba(75, 85, 99, 0.5);
+      border-radius: 12px;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 1px solid rgba(99, 102, 241, 0.2);
     }
 
-    .collapsible::before {
+    .toggle-switch.active {
+      background: linear-gradient(135deg, #00d4ff, #0099ff);
+    }
+
+    .toggle-switch::after {
       content: '';
       position: absolute;
-      left: 0;
-      top: 0;
-      bottom: 0;
-      width: 3px;
-      background: linear-gradient(180deg, #00d4ff, transparent);
-      box-shadow: 0 0 8px rgba(0, 212, 255, 0.5);
+      top: 2px;
+      left: 2px;
+      width: 18px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
-    .help-text {
+    .toggle-switch.active::after {
+      transform: translateX(24px);
+    }
+
+    .point-indicator {
+      padding: 6px 14px;
+      border-radius: 8px;
       font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+
+    .point-indicator.set {
+      background: rgba(16, 185, 129, 0.1);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .point-indicator.unset {
+      background: rgba(239, 68, 68, 0.1);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    .expandable-section {
+      margin-top: 16px;
+      padding-left: 16px;
+      border-left: 2px solid rgba(0, 212, 255, 0.3);
+      display: none;
+    }
+
+    .expandable-section.expanded {
+      display: block;
+      animation: slideDown 0.3s ease-out;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        max-height: 0;
+      }
+
+      to {
+        opacity: 1;
+        max-height: 1000px;
+      }
+    }
+
+    .unit {
+      font-size: 12px;
       color: #6b7280;
-      margin-top: 8px;
-      font-style: italic;
-      padding-left: 2px;
+      font-weight: 500;
     }
 
     .grid-2 {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 12px;
+      gap: 20px;
     }
 
-    .value-display {
-      color: #00d4ff;
-      font-weight: 700;
-      font-size: 12px;
-    }
-
-    .divider {
-      height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.3) 50%, transparent);
-      margin: 20px 0;
+    .help-hint {
+      font-size: 11px;
+      color: #6b7280;
+      margin-top: 8px;
+      font-style: italic;
     }
   </style>
 </head>
@@ -504,438 +509,582 @@
 <body>
   <div class="container">
     <div class="header">
-      <div class="title">GPO FISHING MACRO</div>
-      <div class="status">
-        <div class="status-indicator" id="statusIndicator"></div>
-        <span id="statusText">Status: Stopped</span>
+      <div class="brand">
+        <div class="logo">K</div>
+        <div class="title-group">
+          <h1>GPO Fishing Macro</h1>
+          <div class="version">Version 2.0</div>
+        </div>
+      </div>
+      <div class="status-badge">
+        <div class="status-dot" id="statusDot"></div>
+        <span class="status-text" id="statusText">Inactive</span>
       </div>
     </div>
 
-    <div class="content">
-      <div class="tabs">
-        <button class="tab active" data-tab="general">General</button>
-        <button class="tab" data-tab="casting">Casting</button>
-        <button class="tab" data-tab="fishing">Fishing</button>
-        <button class="tab" data-tab="precast">Preformed</button>
-        <button class="tab" data-tab="advanced">Advanced</button>
+    <div class="main-content">
+      <div class="sidebar">
+        <div class="nav-item active" data-view="controls">Control Center</div>
+        <div class="nav-item" data-view="locations">Locations</div>
+        <div class="nav-item" data-view="automation">Automation</div>
+        <div class="nav-item" data-view="tuning">Tuning</div>
+        <div class="nav-item" data-view="timing">Timing</div>
       </div>
 
-      <div class="tab-content active" id="general">
-        <div class="section">
-          <div class="section-title">Hotkeys</div>
-          <div class="row">
-            <span class="label">Switch:</span>
-            <div class="hotkey-display" id="hotkey-start">F1</div>
-            <button class="btn small" onclick="sendToPython('rebind_hotkey', 'start_stop')">Rebind</button>
-          </div>
-          <div class="row">
-            <span class="label">Change Focus:</span>
-            <div class="hotkey-display" id="hotkey-area">F2</div>
-            <button class="btn small" onclick="sendToPython('rebind_hotkey', 'change_area')">Rebind</button>
-          </div>
-          <div class="row">
-            <span class="label">Exit:</span>
-            <div class="hotkey-display" id="hotkey-exit">F3</div>
-            <button class="btn small" onclick="sendToPython('rebind_hotkey', 'exit')">Rebind</button>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Item Hotkeys</div>
-          <div class="row">
-            <span class="label">Rod Hotkey:</span>
-            <select class="dropdown" id="rodHotkey" onchange="sendToPython('set_rod_hotkey', this.value)">
-              <option selected>1</option>
-              <option>2</option>
-              <option>3</option>
-              <option>4</option>
-              <option>5</option>
-              <option>6</option>
-              <option>7</option>
-              <option>8</option>
-              <option>9</option>
-              <option>0</option>
-            </select>
-          </div>
-          <div class="row">
-            <span class="label">Anything Else Hotkey:</span>
-            <select class="dropdown" id="anythingElseHotkey"
-              onchange="sendToPython('set_anything_else_hotkey', this.value)">
-              <option>1</option>
-              <option selected>2</option>
-              <option>3</option>
-              <option>4</option>
-              <option>5</option>
-              <option>6</option>
-              <option>7</option>
-              <option>8</option>
-              <option>9</option>
-              <option>0</option>
-            </select>
-          </div>
-          <div class="row">
-            <span class="label">Devil Fruit Hotkey:</span>
-            <select class="dropdown" id="devilFruitHotkey"
-              onchange="sendToPython('set_devil_fruit_hotkey', this.value)">
-              <option>1</option>
-              <option>2</option>
-              <option selected>3</option>
-              <option>4</option>
-              <option>5</option>
-              <option>6</option>
-              <option>7</option>
-              <option>8</option>
-              <option>9</option>
-              <option>0</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Options</div>
-          <label class="checkbox-row">
-            <input type="checkbox" class="checkbox" id="alwaysOnTop"
-              onchange="sendToPython('toggle_always_on_top', this.checked.toString())">
-            <span class="checkbox-label">Always on Top</span>
-          </label>
-          <label class="checkbox-row">
-            <input type="checkbox" class="checkbox" id="debugOverlay"
-              onchange="sendToPython('toggle_debug_overlay', this.checked.toString())">
-            <span class="checkbox-label">Show Stats</span>
-          </label>
-        </div>
-      </div>
-
-      <div class="tab-content" id="casting">
-        <div class="section">
-          <div class="section-title">Water Point</div>
-          <div class="row">
-            <span class="label">Water Point:</span>
-            <span class="point-status unset" id="waterPointStatus">Not Set</span>
-            <button class="btn small" onclick="sendToPython('set_water_point', '')">Set Point</button>
-          </div>
-          <div class="help-text">Click where you want to cast your fishing line in the water</div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Cast Timing</div>
-          <div class="row">
-            <span class="label">Cast Hold Duration:</span>
-            <input type="number" class="input-field" id="castHold" value="1.0" step="0.1"
-              onchange="sendToPython('set_cast_hold', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">seconds</span>
-          </div>
-          <div class="row">
-            <span class="label">Recast Timeout:</span>
-            <input type="number" class="input-field" id="recastTimeout" value="30.0" step="1.0"
-              onchange="sendToPython('set_recast_timeout', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">seconds</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="tab-content" id="fishing">
-        <div class="section">
-          <div class="section-title">PD Control Parameters</div>
-          <div class="row">
-            <span class="label">Follow Strength:</span>
-            <input type="number" class="input-field" id="kp" value="0.9" step="0.1"
-              onchange="sendToPython('set_kp', this.value)">
-          </div>
-          <div class="row">
-            <span class="label">Damping:</span>
-            <input type="number" class="input-field" id="kd" value="0.3" step="0.1"
-              onchange="sendToPython('set_kd', this.value)">
-          </div>
-          <div class="row">
-            <span class="label">Max Correction:</span>
-            <input type="number" class="input-field" id="pdClamp" value="1.0" step="0.1"
-              onchange="sendToPython('set_pd_clamp', this.value)">
-          </div>
-          <div class="help-text">PD control keeps the fishing bar aligned with the target</div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Advanced PD Tuning</div>
-          <div class="row">
-            <span class="label">Approaching Damping:</span>
-            <input type="number" class="input-field" id="pdApproaching" value="2.0" step="0.1"
-              onchange="sendToPython('set_pd_approaching', this.value)">
-          </div>
-          <div class="row">
-            <span class="label">Chasing Damping:</span>
-            <input type="number" class="input-field" id="pdChasing" value="0.5" step="0.1"
-              onchange="sendToPython('set_pd_chasing', this.value)">
-          </div>
-          <div class="row">
-            <span class="label">Gap Tolerance Mult:</span>
-            <input type="number" class="input-field" id="gapTolerance" value="2.0" step="0.1"
-              onchange="sendToPython('set_gap_tolerance', this.value)">
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Timing</div>
-          <div class="row">
-            <span class="label">Fish End Delay:</span>
-            <input type="number" class="input-field" id="fishEndDelay" value="2.0" step="0.1"
-              onchange="sendToPython('set_fish_end_delay', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">seconds</span>
-          </div>
-          <div class="row">
-            <span class="label">State Resend Interval:</span>
-            <input type="number" class="input-field" id="stateResend" value="0.5" step="0.05"
-              onchange="sendToPython('set_state_resend', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">seconds</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="tab-content" id="precast">
-        <div class="section">
-          <label class="checkbox-row">
-            <input type="checkbox" class="checkbox" id="autoBuyBait"
-              onchange="toggleSection('autoBuySection', 'autoBuyBait'); sendToPython('toggle_auto_buy', this.checked.toString())">
-            <span class="checkbox-label">Auto Buy Common Bait</span>
-          </label>
-
-          <div class="collapsible" id="autoBuySection" style="display: none;">
-            <div class="row">
-              <span class="label">Left Point:</span>
-              <span class="point-status unset" id="leftPointStatus">Not Set</span>
-              <button class="btn small" onclick="sendToPython('set_left_point', '')">Set</button>
+      <div class="content-area">
+        <div class="view active" id="controls">
+          <div class="card">
+            <div class="card-header">Keybinds</div>
+            <div class="control-group">
+              <span class="control-label">Start/Stop Macro</span>
+              <div class="control-input">
+                <div class="hotkey-badge" id="hotkey-start">F1</div>
+                <button class="btn btn-sm" onclick="sendToPython('rebind_hotkey', 'start_stop')">Rebind</button>
+              </div>
             </div>
-            <div class="row">
-              <span class="label">Middle Point:</span>
-              <span class="point-status unset" id="middlePointStatus">Not Set</span>
-              <button class="btn small" onclick="sendToPython('set_middle_point', '')">Set</button>
+            <div class="control-group">
+              <span class="control-label">Change Focus</span>
+              <div class="control-input">
+                <div class="hotkey-badge" id="hotkey-area">F2</div>
+                <button class="btn btn-sm" onclick="sendToPython('rebind_hotkey', 'change_area')">Rebind</button>
+              </div>
             </div>
-            <div class="row">
-              <span class="label">Right Point:</span>
-              <span class="point-status unset" id="rightPointStatus">Not Set</span>
-              <button class="btn small" onclick="sendToPython('set_right_point', '')">Set</button>
+            <div class="control-group">
+              <span class="control-label">Exit Application</span>
+              <div class="control-input">
+                <div class="hotkey-badge" id="hotkey-exit">F3</div>
+                <button class="btn btn-sm" onclick="sendToPython('rebind_hotkey', 'exit')">Rebind</button>
+              </div>
             </div>
-            <div class="row">
-              <span class="label">Loops Per Purchase:</span>
-              <input type="number" class="input-field" id="loopsPerPurchase" value="100" step="1"
-                onchange="sendToPython('set_loops_per_purchase', this.value)">
+          </div>
+
+          <div class="card">
+            <div class="card-header">Inventory Slots</div>
+            <div class="control-group">
+              <span class="control-label">Fishing Rod Slot</span>
+              <div class="control-input">
+                <select class="select" id="rodHotkey" onchange="sendToPython('set_rod_hotkey', this.value)">
+                  <option selected>1</option>
+                  <option>2</option>
+                  <option>3</option>
+                  <option>4</option>
+                  <option>5</option>
+                  <option>6</option>
+                  <option>7</option>
+                  <option>8</option>
+                  <option>9</option>
+                  <option>0</option>
+                </select>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Secondary Item Slot</span>
+              <div class="control-input">
+                <select class="select" id="anythingElseHotkey"
+                  onchange="sendToPython('set_anything_else_hotkey', this.value)">
+                  <option>1</option>
+                  <option selected>2</option>
+                  <option>3</option>
+                  <option>4</option>
+                  <option>5</option>
+                  <option>6</option>
+                  <option>7</option>
+                  <option>8</option>
+                  <option>9</option>
+                  <option>0</option>
+                </select>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Devil Fruit Slot</span>
+              <div class="control-input">
+                <select class="select" id="devilFruitHotkey"
+                  onchange="sendToPython('set_devil_fruit_hotkey', this.value)">
+                  <option>1</option>
+                  <option>2</option>
+                  <option selected>3</option>
+                  <option>4</option>
+                  <option>5</option>
+                  <option>6</option>
+                  <option>7</option>
+                  <option>8</option>
+                  <option>9</option>
+                  <option>0</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Application Settings</div>
+            <div class="control-group">
+              <span class="control-label">Keep Window on Top</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="alwaysOnTopToggle" onclick="toggleSetting('alwaysOnTop')"></div>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Display Statistics Overlay</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="debugOverlayToggle" onclick="toggleSetting('debugOverlay')"></div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="section">
-          <label class="checkbox-row">
-            <input type="checkbox" class="checkbox" id="autoCraftBait"
-              onchange="toggleSection('autoCraftSection', 'autoCraftBait'); sendToPython('toggle_auto_craft', this.checked.toString())">
-            <span class="checkbox-label">Auto Craft Bait</span>
-          </label>
-        
-          <div class="collapsible" id="autoCraftSection" style="display: none;">
-            <div class="row">
-              <span class="label">Craft Left Point:</span>
-              <span class="point-status unset" id="craftLeftPointStatus">Not Set</span>
-              <button class="btn small" onclick="sendToPython('set_craft_left_point', '')">Set</button>
+        <div class="view" id="locations">
+          <div class="card">
+            <div class="card-header">Primary Fishing Location</div>
+            <div class="control-group">
+              <span class="control-label">Water Target Point</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="waterPointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_water_point', '')">Configure</button>
+              </div>
             </div>
-            <div class="row">
-              <span class="label">Craft Middle Point:</span>
-              <span class="point-status unset" id="craftMiddlePointStatus">Not Set</span>
-              <button class="btn small" onclick="sendToPython('set_craft_middle_point', '')">Set</button>
+            <div class="help-hint">Click the location in water where you want to cast your fishing line</div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Bait Shop Interaction Points</div>
+            <div class="control-group">
+              <span class="control-label">Left Dialog Option</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="leftPointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_left_point', '')">Configure</button>
+              </div>
             </div>
-            <div class="row">
-              <span class="label">Bait Recipe Point:</span>
-              <span class="point-status unset" id="baitRecipePointStatus">Not Set</span>
-              <button class="btn small" onclick="sendToPython('set_bait_recipe_point', '')">Set</button>
+            <div class="control-group">
+              <span class="control-label">Middle Dialog Option</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="middlePointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_middle_point', '')">Configure</button>
+              </div>
             </div>
-            <div class="row">
-              <span class="label">Add Recipe Point:</span>
-              <span class="point-status unset" id="addRecipePointStatus">Not Set</span>
-              <button class="btn small" onclick="sendToPython('set_add_recipe_point', '')">Set</button>
+            <div class="control-group">
+              <span class="control-label">Right Dialog Option</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="rightPointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_right_point', '')">Configure</button>
+              </div>
             </div>
-            <div class="row">
-              <span class="label">Top Recipe Point:</span>
-              <span class="point-status unset" id="topRecipePointStatus">Not Set</span>
-              <button class="btn small" onclick="sendToPython('set_top_recipe_point', '')">Set</button>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Crafting Interface Points</div>
+            <div class="control-group">
+              <span class="control-label">Left UI</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="craftLeftPointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_craft_left_point', '')">Configure</button>
+              </div>
             </div>
-            <div class="row">
-              <span class="label">Craft Button Point:</span>
-              <span class="point-status unset" id="craftButtonPointStatus">Not Set</span>
-              <button class="btn small" onclick="sendToPython('set_craft_button_point', '')">Set</button>
+            <div class="control-group">
+              <span class="control-label">Middle UI</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="craftMiddlePointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_craft_middle_point', '')">Configure</button>
+              </div>
             </div>
-            <div class="row">
-              <span class="label">Close Menu Point:</span>
-              <span class="point-status unset" id="closeMenuPointStatus">Not Set</span>
-              <button class="btn small" onclick="sendToPython('set_close_menu_point', '')">Set</button>
+            <div class="control-group">
+              <span class="control-label">Bait Recipe Selection</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="baitRecipePointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_bait_recipe_point', '')">Configure</button>
+              </div>
             </div>
-            <div class="row">
-              <span class="label">Crafts Per Cycle:</span>
-              <input type="number" class="input-field" id="craftsPerCycle" value="80" step="1"
-                onchange="sendToPython('set_crafts_per_cycle', this.value)">
+            <div class="control-group">
+              <span class="control-label">Add Recipe</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="addRecipePointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_add_recipe_point', '')">Configure</button>
+              </div>
             </div>
-            <div class="row">
-              <span class="label">Loops Per Craft:</span>
-              <input type="number" class="input-field" id="loopsPerCraft" value="40" step="1"
-                onchange="sendToPython('set_loops_per_craft', this.value)">
+            <div class="control-group">
+              <span class="control-label">Top Recipe Slot</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="topRecipePointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_top_recipe_point', '')">Configure</button>
+              </div>
             </div>
-            <div class="row">
-              <span class="label">Move Duration:</span>
-              <input type="number" class="input-field" id="moveDuration" value="4.25" step="0.25"
-                onchange="sendToPython('set_move_duration', this.value)">
-              <span style="color: #6b7280; font-size: 12px;">s</span>
+            <div class="control-group">
+              <span class="control-label">Craft Confirmation</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="craftButtonPointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_craft_button_point', '')">Configure</button>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Menu Close</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="closeMenuPointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_close_menu_point', '')">Configure</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Additional Locations</div>
+            <div class="control-group">
+              <span class="control-label">Devil Fruit Storage</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="storeFruitPointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_store_fruit_point', '')">Configure</button>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Devil Fruit Location</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="devilFruitLocationPointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_devil_fruit_location_point', '')">Configure</button>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Bait Selection Point</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="baitPointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_bait_point', '')">Configure</button>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="section">
-          <label class="checkbox-row">
-            <input type="checkbox" class="checkbox" id="autoStoreFruit"
-              onchange="toggleSection('autoStoreSection', 'autoStoreFruit'); sendToPython('toggle_auto_store', this.checked.toString())">
-            <span class="checkbox-label">Auto Store Devil Fruit</span>
-          </label>
+        <div class="view" id="automation">
+          <div class="card">
+            <div class="card-header">Auto Purchase Bait</div>
+            <div class="control-group">
+              <span class="control-label">Enable Auto Buy Common Bait</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="autoBuyBaitToggle"
+                  onclick="toggleExpandable('autoBuyBait', 'autoBuyExpand')"></div>
+              </div>
+            </div>
+            <div class="expandable-section" id="autoBuyExpand">
+              <div class="control-group">
+                <span class="control-label">Purchase Frequency</span>
+                <div class="control-input">
+                  <input type="number" class="input" id="loopsPerPurchase" value="100" step="1"
+                    onchange="sendToPython('set_loops_per_purchase', this.value)">
+                  <span class="unit">loops</span>
+                </div>
+              </div>
+            </div>
+          </div>
 
-          <div class="collapsible" id="autoStoreSection" style="display: none;">
-            <div class="row">
-              <span class="label">Store Fruit Point:</span>
-              <span class="point-status unset" id="storeFruitPointStatus">Not Set</span>
-              <button class="btn small" onclick="sendToPython('set_store_fruit_point', '')">Set</button>
+          <div class="card">
+            <div class="card-header">Auto Craft Bait</div>
+            <div class="control-group">
+              <span class="control-label">Enable Auto Craft</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="autoCraftBaitToggle"
+                  onclick="toggleExpandable('autoCraftBait', 'autoCraftExpand')"></div>
+              </div>
+            </div>
+            <div class="expandable-section" id="autoCraftExpand">
+              <div class="control-group">
+                <span class="control-label">Crafts Per Cycle</span>
+                <div class="control-input">
+                  <input type="number" class="input" id="craftsPerCycle" value="80" step="1"
+                    onchange="sendToPython('set_crafts_per_cycle', this.value)">
+                </div>
+              </div>
+              <div class="control-group">
+                <span class="control-label">Loops Per Craft</span>
+                <div class="control-input">
+                  <input type="number" class="input" id="loopsPerCraft" value="40" step="1"
+                    onchange="sendToPython('set_loops_per_craft', this.value)">
+                </div>
+              </div>
+              <div class="control-group">
+                <span class="control-label">Movement Duration</span>
+                <div class="control-input">
+                  <input type="number" class="input" id="moveDuration" value="4.25" step="0.25"
+                    onchange="sendToPython('set_move_duration', this.value)">
+                  <span class="unit">seconds</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Auto Store Devil Fruit</div>
+            <div class="control-group">
+              <span class="control-label">Enable Auto Storage</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="autoStoreFruitToggle"
+                  onclick="toggleExpandable('autoStoreFruit', 'autoStoreExpand')"></div>
+              </div>
+            </div>
+            <div class="expandable-section" id="autoStoreExpand">
+              <div class="control-group">
+                <span class="control-label">Store to Backpack (vs Drop)</span>
+                <div class="control-input">
+                  <div class="toggle-switch" id="storeToBackpackToggle" onclick="toggleSetting('storeToBackpack')"></div>
+                </div>
+              </div>
+              <div class="control-group">
+                <span class="control-label">Storage Frequency</span>
+                <div class="control-input">
+                  <input type="number" class="input" id="loopsPerStore" value="1" step="1" min="1"
+                    onchange="sendToPython('set_loops_per_store', this.value)">
+                  <span class="unit">loops</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Auto Select Bait</div>
+            <div class="control-group">
+              <span class="control-label">Enable Auto Select Top Bait</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="autoSelectBaitToggle"
+                  onclick="toggleExpandable('autoSelectBait', 'autoSelectExpand')"></div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div class="section">
-          <label class="checkbox-row">
-            <input type="checkbox" class="checkbox" id="autoSelectBait"
-              onchange="toggleSection('autoBaitSection', 'autoSelectBait'); sendToPython('toggle_auto_select_bait', this.checked.toString())">
-            <span class="checkbox-label">Auto Select Top Bait</span>
-          </label>
+        <div class="view" id="tuning">
+          <div class="card">
+            <div class="card-header">PD Controller Settings</div>
+            <div class="control-group">
+              <span class="control-label">Proportional Gain (Follow Strength)</span>
+              <div class="control-input">
+                <input type="number" class="input" id="kp" value="0.9" step="0.1"
+                  onchange="sendToPython('set_kp', this.value)">
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Derivative Gain (Damping)</span>
+              <div class="control-input">
+                <input type="number" class="input" id="kd" value="0.3" step="0.1"
+                  onchange="sendToPython('set_kd', this.value)">
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Maximum Correction Clamp</span>
+              <div class="control-input">
+                <input type="number" class="input" id="pdClamp" value="1.0" step="0.1"
+                  onchange="sendToPython('set_pd_clamp', this.value)">
+              </div>
+            </div>
+            <div class="help-hint">PD control maintains alignment between the fishing bar and target</div>
+          </div>
 
-          <div class="collapsible" id="autoBaitSection" style="display: none;">
-            <div class="row">
-              <span class="label">Bait Point:</span>
-              <span class="point-status unset" id="baitPointStatus">Not Set</span>
-              <button class="btn small" onclick="sendToPython('set_bait_point', '')">Set</button>
+          <div class="card">
+            <div class="card-header">Advanced PD Parameters</div>
+            <div class="control-group">
+              <span class="control-label">Approaching Damping Factor</span>
+              <div class="control-input">
+                <input type="number" class="input" id="pdApproaching" value="2.0" step="0.1"
+                  onchange="sendToPython('set_pd_approaching', this.value)">
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Chasing Damping Factor</span>
+              <div class="control-input">
+                <input type="number" class="input" id="pdChasing" value="0.5" step="0.1"
+                  onchange="sendToPython('set_pd_chasing', this.value)">
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Gap Tolerance Multiplier</span>
+              <div class="control-input">
+                <input type="number" class="input" id="gapTolerance" value="2.0" step="0.1"
+                  onchange="sendToPython('set_gap_tolerance', this.value)">
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Casting Configuration</div>
+            <div class="control-group">
+              <span class="control-label">Cast Hold Duration</span>
+              <div class="control-input">
+                <input type="number" class="input" id="castHold" value="1.0" step="0.1"
+                  onchange="sendToPython('set_cast_hold', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Recast Timeout</span>
+              <div class="control-input">
+                <input type="number" class="input" id="recastTimeout" value="30.0" step="1.0"
+                  onchange="sendToPython('set_recast_timeout', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Anti-Detection Thresholds</div>
+            <div class="control-group">
+              <span class="control-label">Black Screen Detection</span>
+              <div class="control-input">
+                <input type="number" class="input" id="blackThreshold" value="0.5" step="0.05"
+                  onchange="sendToPython('set_black_threshold', this.value)">
+                <span class="unit">%</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Key Spam Prevention Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="spamDelay" value="0.25" step="0.05"
+                  onchange="sendToPython('set_spam_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="tab-content" id="advanced">
-        <div class="section">
-          <div class="section-title">Roblox Window</div>
-          <div class="row">
-            <span class="label">Focus Delay:</span>
-            <input type="number" class="input-field" id="focusDelay" value="0.2" step="0.1"
-              onchange="sendToPython('set_focus_delay', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">s</span>
-          </div>
-          <div class="row">
-            <span class="label">Post-Focus Delay:</span>
-            <input type="number" class="input-field" id="postFocusDelay" value="1.0" step="0.1"
-              onchange="sendToPython('set_post_focus_delay', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">s</span>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Auto Buy Timing</div>
-
-          <div class="row">
-            <span class="label">Interact Delay:</span>
-            <input type="number" class="input-field" id="preCastE" value="3.0" step="0.1"
-              onchange="sendToPython('set_precast_e_delay', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">s</span>
-          </div>
-
-          <div class="row">
-            <span class="label">Confirm Delay:</span>
-            <input type="number" class="input-field" id="preCastClick" value="3.0" step="0.1"
-              onchange="sendToPython('set_precast_click_delay', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">s</span>
+        <div class="view" id="timing">
+          <div class="card">
+            <div class="card-header">Core Timing Settings</div>
+            <div class="control-group">
+              <span class="control-label">Fish Completion Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="fishEndDelay" value="2.0" step="0.1"
+                  onchange="sendToPython('set_fish_end_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">State Resend Interval</span>
+              <div class="control-input">
+                <input type="number" class="input" id="stateResend" value="0.5" step="0.05"
+                  onchange="sendToPython('set_state_resend', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Scan Loop Frequency</span>
+              <div class="control-input">
+                <input type="number" class="input" id="scanDelay" value="0.1" step="0.01"
+                  onchange="sendToPython('set_scan_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
           </div>
 
-          <div class="row">
-            <span class="label">Typing Delay:</span>
-            <input type="number" class="input-field" id="preCastType" value="3.0" step="0.1"
-              onchange="sendToPython('set_precast_type_delay', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">s</span>
+          <div class="card">
+            <div class="card-header">Window Focus Timing</div>
+            <div class="control-group">
+              <span class="control-label">Initial Focus Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="focusDelay" value="0.2" step="0.1"
+                  onchange="sendToPython('set_focus_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Post-Focus Stabilization</span>
+              <div class="control-input">
+                <input type="number" class="input" id="postFocusDelay" value="1.0" step="0.1"
+                  onchange="sendToPython('set_post_focus_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
           </div>
 
-          <div class="row">
-            <span class="label">Humanization Delay:</span>
-            <input type="number" class="input-field" id="antiDetect" value="0.05" step="0.01"
-              onchange="sendToPython('set_anti_detect_delay', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">s</span>
+          <div class="card">
+            <div class="card-header">Purchase Interaction Timing</div>
+            <div class="control-group">
+              <span class="control-label">Interaction Key Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="preCastE" value="3.0" step="0.1"
+                  onchange="sendToPython('set_precast_e_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Click Confirmation Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="preCastClick" value="3.0" step="0.1"
+                  onchange="sendToPython('set_precast_click_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Typing Input Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="preCastType" value="3.0" step="0.1"
+                  onchange="sendToPython('set_precast_type_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Humanization Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="antiDetect" value="0.05" step="0.01"
+                  onchange="sendToPython('set_anti_detect_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
           </div>
-        </div>
 
-        <div class="section">
-          <div class="section-title">Auto Store Devil Fruit</div>
-          <div class="row">
-            <span class="label">Hotkey Press Delay:</span>
-            <input type="number" class="input-field" id="fruitHotkey" value="1.0" step="0.1"
-              onchange="sendToPython('set_fruit_hotkey_delay', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">s</span>
+          <div class="card">
+            <div class="card-header">Inventory Selection Timing</div>
+            <div class="control-group">
+              <span class="control-label">Rod Selection Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="rodDelay" value="0.5" step="0.1"
+                  onchange="sendToPython('set_rod_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Bait Selection Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="baitDelay" value="0.5" step="0.1"
+                  onchange="sendToPython('set_bait_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Cursor Movement Humanization</span>
+              <div class="control-input">
+                <input type="number" class="input" id="cursorDelay" value="0.05" step="0.01"
+                  onchange="sendToPython('set_cursor_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
           </div>
-          <div class="row">
-            <span class="label">Click Delay:</span>
-            <input type="number" class="input-field" id="fruitClick" value="2.0" step="0.1"
-              onchange="sendToPython('set_fruit_click_delay', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">s</span>
-          </div>
-          <div class="row">
-            <span class="label">Shift Delay:</span>
-            <input type="number" class="input-field" id="fruitShift" value="0.5" step="0.1"
-              onchange="sendToPython('set_fruit_shift_delay', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">s</span>
-          </div>
-          <div class="row">
-            <span class="label">Backspace Delay:</span>
-            <input type="number" class="input-field" id="fruitBackspace" value="1.5" step="0.1"
-              onchange="sendToPython('set_fruit_backspace_delay', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">s</span>
-          </div>
-        </div>
 
-        <div class="section">
-          <div class="section-title">Fishing Timing</div>
-          <div class="row">
-            <span class="label">Rod Select Delay:</span>
-            <input type="number" class="input-field" id="rodDelay" value="0.5" step="0.1"
-              onchange="sendToPython('set_rod_delay', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">s</span>
-          </div>
-          <div class="row">
-            <span class="label">Bait Select Delay:</span>
-            <input type="number" class="input-field" id="baitDelay" value="0.5" step="0.1"
-              onchange="sendToPython('set_bait_delay', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">s</span>
-          </div>
-          <div class="row">
-            <span class="label">Cursor Humanization:</span>
-            <input type="number" class="input-field" id="cursorDelay" value="0.05" step="0.01"
-              onchange="sendToPython('set_cursor_delay', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">s</span>
-          </div>
-          <div class="row">
-            <span class="label">Scan Loop Delay:</span>
-            <input type="number" class="input-field" id="scanDelay" value="0.1" step="0.01"
-              onchange="sendToPython('set_scan_delay', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">s</span>
-          </div>
-        </div>
-
-        <div class="section">
-          <div class="section-title">Anti-Macro Detection</div>
-          <div class="row">
-            <span class="label">Black Screen Threshold:</span>
-            <input type="number" class="input-field" id="blackThreshold" value="0.5" step="0.05"
-              onchange="sendToPython('set_black_threshold', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">%</span>
-          </div>
-          <div class="row">
-            <span class="label">Key Spam Delay:</span>
-            <input type="number" class="input-field" id="spamDelay" value="0.25" step="0.05"
-              onchange="sendToPython('set_spam_delay', this.value)">
-            <span style="color: #6b7280; font-size: 12px;">s</span>
+          <div class="card">
+            <div class="card-header">Devil Fruit Storage Timing</div>
+            <div class="control-group">
+              <span class="control-label">Hotkey Press Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="fruitHotkey" value="1.0" step="0.1"
+                  onchange="sendToPython('set_fruit_hotkey_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Click Interaction Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="fruitClick" value="2.0" step="0.1"
+                  onchange="sendToPython('set_fruit_click_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Shift Key Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="fruitShift" value="0.5" step="0.1"
+                  onchange="sendToPython('set_fruit_shift_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Backspace Input Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="fruitBackspace" value="1.5" step="0.1"
+                  onchange="sendToPython('set_fruit_backspace_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -943,268 +1092,265 @@
   </div>
 
   <script>
-    document.querySelectorAll('.tab').forEach(tab => {
-      tab.addEventListener('click', () => {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(nav => {
+        nav.addEventListener('click', () => {
+          document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+          document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
 
-        tab.classList.add('active');
-        document.getElementById(tab.dataset.tab).classList.add('active');
-      });
-    });
-
-    function toggleSection(sectionId, checkboxId) {
-      const section = document.getElementById(sectionId);
-      const checkbox = document.getElementById(checkboxId);
-
-      setTimeout(() => {
-        section.style.display = checkbox.checked ? 'block' : 'none';
-      }, 10);
-    }
-
-    async function sendToPython(action, payload) {
-      try {
-        console.log('Sending to Python:', action, payload);
-
-        await fetch('http://localhost:8765/command', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action, payload })
+          nav.classList.add('active');
+          document.getElementById(nav.dataset.view).classList.add('active');
         });
-      } catch (error) {
-        console.error('Failed to send to Python:', error);
+      });
+
+      function toggleSetting(settingName) {
+        const toggle = document.getElementById(`${settingName}Toggle`);
+        toggle.classList.toggle('active');
+        const isActive = toggle.classList.contains('active');
+        sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
       }
-    }
 
-    function updateStatus(isRunning) {
-      const indicator = document.getElementById('statusIndicator');
-      const text = document.getElementById('statusText');
+      function toggleExpandable(settingName, expandId) {
+        const toggle = document.getElementById(`${settingName}Toggle`);
+        const section = document.getElementById(expandId);
+        toggle.classList.toggle('active');
+        const isActive = toggle.classList.contains('active');
 
-      if (isRunning) {
-        indicator.classList.add('running');
-        text.textContent = 'Status: Running';
-      } else {
-        indicator.classList.remove('running');
-        text.textContent = 'Status: Stopped';
-      }
-    }
-
-    function updateHotkey(key, value) {
-      document.getElementById(`hotkey-${key}`).textContent = value.toUpperCase();
-    }
-
-    function updatePointStatus(pointName, x, y) {
-      const status = document.getElementById(`${pointName}Status`);
-      if (x !== null && y !== null) {
-        status.textContent = `X: ${x}, Y: ${y}`;
-        status.classList.remove('unset');
-        status.classList.add('set');
-      } else {
-        status.textContent = 'Not Set';
-        status.classList.remove('set');
-        status.classList.add('unset');
-      }
-    }
-
-    function updateStats(fishCaught, timeElapsed, fishPerHour) {
-    }
-
-    function updateSetting(settingName, value) {
-      const element = document.getElementById(settingName);
-      if (element) {
-        if (element.type === 'checkbox') {
-          element.checked = value;
-
-          if (settingName === 'autoBuyBait') {
-            document.getElementById('autoBuySection').style.display = value ? 'block' : 'none';
-          }
-          if (settingName === 'autoCraftBait') {
-            document.getElementById('autoCraftSection').style.display = value ? 'block' : 'none';
-          }
-          if (settingName === 'autoStoreFruit') {
-            document.getElementById('autoStoreSection').style.display = value ? 'block' : 'none';
-          }
-          if (settingName === 'autoSelectBait') {
-            document.getElementById('autoBaitSection').style.display = value ? 'block' : 'none';
-          }
+        if (isActive) {
+          section.classList.add('expanded');
         } else {
+          section.classList.remove('expanded');
+        }
+
+        sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
+      }
+
+      async function sendToPython(action, payload) {
+        try {
+          console.log('Sending to Python:', action, payload);
+          await fetch('http://localhost:8765/command', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action, payload })
+          });
+        } catch (error) {
+          console.error('Failed to send to Python:', error);
+        }
+      }
+
+      function updateStatus(isRunning) {
+        const dot = document.getElementById('statusDot');
+        const text = document.getElementById('statusText');
+
+        if (isRunning) {
+          dot.classList.add('active');
+          text.textContent = 'Active';
+        } else {
+          dot.classList.remove('active');
+          text.textContent = 'Inactive';
+        }
+      }
+
+      function updateHotkey(key, value) {
+        const element = document.getElementById(`hotkey-${key}`);
+        if (element) {
+          element.textContent = value.toUpperCase();
+        }
+      }
+
+      function updatePointStatus(pointName, x, y) {
+        const status = document.getElementById(`${pointName}Status`);
+        if (!status) {
+          console.warn(`Point status element not found: ${pointName}Status`);
+          return;
+        }
+
+        if (x !== null && y !== null && x !== undefined && y !== undefined) {
+          status.textContent = `X: ${x}, Y: ${y}`;
+          status.classList.remove('unset');
+          status.classList.add('set');
+        } else {
+          status.textContent = 'Not Configured';
+          status.classList.remove('set');
+          status.classList.add('unset');
+        }
+      }
+
+      function setInputValue(elementId, value) {
+        const element = document.getElementById(elementId);
+        if (!element) {
+          console.warn(`Element not found: ${elementId}`);
+          return;
+        }
+
+        if (element.type === 'number' || element.tagName === 'INPUT') {
+          element.value = value;
+        } else if (element.tagName === 'SELECT') {
           element.value = value;
         }
       }
-    }
 
-    function loadAllSettings(state) {
-      if (state.hotkeys) {
-        updateHotkey('start', state.hotkeys.start_stop || 'f1');
-        updateHotkey('area', state.hotkeys.change_area || 'f2');
-        updateHotkey('exit', state.hotkeys.exit || 'f3');
-      }
-
-      updateSetting('rodHotkey', state.rodHotkey || '1');
-      updateSetting('anythingElseHotkey', state.anythingElseHotkey || '2');
-      updateSetting('devilFruitHotkey', state.devilFruitHotkey || '3');
-
-      updateSetting('alwaysOnTop', state.alwaysOnTop || false);
-      updateSetting('debugOverlay', state.showDebugOverlay || false);
-      updateSetting('autoBuyBait', state.autoBuyCommonBait || false);
-      updateSetting('autoStoreFruit', state.autoStoreDevilFruit || false);
-      updateSetting('autoSelectBait', state.autoSelectTopBait || false);
-
-      updateSetting('kp', state.kp || 0.9);
-      updateSetting('kd', state.kd || 0.3);
-      updateSetting('pdClamp', state.pdClamp || 1.0);
-      updateSetting('pdApproaching', state.pdApproachingDamping || 2.0);
-      updateSetting('pdChasing', state.pdChasingDamping || 0.5);
-      updateSetting('gapTolerance', state.gapToleranceMultiplier || 2.0);
-
-      updateSetting('castHold', state.castHoldDuration || 1.0);
-      updateSetting('recastTimeout', state.recastTimeout || 30.0);
-      updateSetting('fishEndDelay', state.fishEndDelay || 2.0);
-      updateSetting('stateResend', state.stateResendInterval || 0.5);
-      updateSetting('loopsPerPurchase', state.loopsPerPurchase || 100);
-
-      updateSetting('focusDelay', state.robloxFocusDelay || 0.2);
-      updateSetting('postFocusDelay', state.robloxPostFocusDelay || 1.0);
-      updateSetting('preCastE', state.preCastEDelay || 3.0);
-      updateSetting('preCastClick', state.preCastClickDelay || 3.0);
-      updateSetting('preCastType', state.preCastTypeDelay || 3.0);
-      updateSetting('antiDetect', state.preCastAntiDetectDelay || 0.05);
-      updateSetting('fruitHotkey', state.storeFruitHotkeyDelay || 1.0);
-      updateSetting('fruitClick', state.storeFruitClickDelay || 2.0);
-      updateSetting('fruitShift', state.storeFruitShiftDelay || 0.5);
-      updateSetting('fruitBackspace', state.storeFruitBackspaceDelay || 1.5);
-      updateSetting('rodDelay', state.rodSelectDelay || 0.5);
-      updateSetting('baitDelay', state.autoSelectBaitDelay || 0.5);
-      updateSetting('cursorDelay', state.cursorAntiDetectDelay || 0.05);
-      updateSetting('scanDelay', state.scanLoopDelay || 0.1);
-      updateSetting('blackThreshold', state.blackScreenThreshold || 0.5);
-      updateSetting('spamDelay', state.antiMacroSpamDelay || 0.25);
-
-      updateSetting('autoCraftBait', state.autoCraftBait || false);
-      updateSetting('craftsPerCycle', state.craftsPerCycle || 80);
-      updateSetting('loopsPerCraft', state.loopsPerCraft || 40);
-      updateSetting('moveDuration', state.moveDuration || 4.25);
-
-      if (state.waterPoint) {
-        updatePointStatus('waterPoint', state.waterPoint.x, state.waterPoint.y);
-      }
-      if (state.leftPoint) {
-        updatePointStatus('leftPoint', state.leftPoint.x, state.leftPoint.y);
-      }
-      if (state.middlePoint) {
-        updatePointStatus('middlePoint', state.middlePoint.x, state.middlePoint.y);
-      }
-      if (state.rightPoint) {
-        updatePointStatus('rightPoint', state.rightPoint.x, state.rightPoint.y);
-      }
-      if (state.storeFruitPoint) {
-        updatePointStatus('storeFruitPoint', state.storeFruitPoint.x, state.storeFruitPoint.y);
-      }
-      if (state.baitPoint) {
-        updatePointStatus('baitPoint', state.baitPoint.x, state.baitPoint.y);
-      }
-      if (state.craftLeftPoint) {
-        updatePointStatus('craftLeftPoint', state.craftLeftPoint.x, state.craftLeftPoint.y);
-      }
-      if (state.craftMiddlePoint) {
-        updatePointStatus('craftMiddlePoint', state.craftMiddlePoint.x, state.craftMiddlePoint.y);
-      }
-      if (state.baitRecipePoint) {
-        updatePointStatus('baitRecipePoint', state.baitRecipePoint.x, state.baitRecipePoint.y);
-      }
-      if (state.addRecipePoint) {
-        updatePointStatus('addRecipePoint', state.addRecipePoint.x, state.addRecipePoint.y);
-      }
-      if (state.topRecipePoint) {
-        updatePointStatus('topRecipePoint', state.topRecipePoint.x, state.topRecipePoint.y);
-      }
-      if (state.craftButtonPoint) {
-        updatePointStatus('craftButtonPoint', state.craftButtonPoint.x, state.craftButtonPoint.y);
-      }
-      if (state.closeMenuPoint) {
-        updatePointStatus('closeMenuPoint', state.closeMenuPoint.x, state.closeMenuPoint.y);
-      }
-    }
-
-    async function pollPythonState() {
-      try {
-        const response = await fetch('http://localhost:8765/state');
-        const state = await response.json();
-
-        updateStatus(state.isRunning);
-
-        if (state.waterPoint) {
-          updatePointStatus('waterPoint', state.waterPoint.x, state.waterPoint.y);
-        }
-        if (state.leftPoint) {
-          updatePointStatus('leftPoint', state.leftPoint.x, state.leftPoint.y);
-        }
-        if (state.middlePoint) {
-          updatePointStatus('middlePoint', state.middlePoint.x, state.middlePoint.y);
-        }
-        if (state.rightPoint) {
-          updatePointStatus('rightPoint', state.rightPoint.x, state.rightPoint.y);
-        }
-        if (state.storeFruitPoint) {
-          updatePointStatus('storeFruitPoint', state.storeFruitPoint.x, state.storeFruitPoint.y);
-        }
-        if (state.baitPoint) {
-          updatePointStatus('baitPoint', state.baitPoint.x, state.baitPoint.y);
-        }
-        if (state.craftLeftPoint) {
-          updatePointStatus('craftLeftPoint', state.craftLeftPoint.x, state.craftLeftPoint.y);
-        }
-        if (state.craftMiddlePoint) {
-          updatePointStatus('craftMiddlePoint', state.craftMiddlePoint.x, state.craftMiddlePoint.y);
-        }
-        if (state.baitRecipePoint) {
-          updatePointStatus('baitRecipePoint', state.baitRecipePoint.x, state.baitRecipePoint.y);
-        }
-        if (state.addRecipePoint) {
-          updatePointStatus('addRecipePoint', state.addRecipePoint.x, state.addRecipePoint.y);
-        }
-        if (state.topRecipePoint) {
-          updatePointStatus('topRecipePoint', state.topRecipePoint.x, state.topRecipePoint.y);
-        }
-        if (state.craftButtonPoint) {
-          updatePointStatus('craftButtonPoint', state.craftButtonPoint.x, state.craftButtonPoint.y);
-        }
-        if (state.closeMenuPoint) {
-          updatePointStatus('closeMenuPoint', state.closeMenuPoint.x, state.closeMenuPoint.y);
+      function setToggleState(elementId, isActive) {
+        const element = document.getElementById(elementId);
+        if (!element) {
+          console.warn(`Toggle element not found: ${elementId}`);
+          return;
         }
 
-      } catch (error) {
-        console.error('Failed to poll state:', error);
+        if (isActive) {
+          element.classList.add('active');
+        } else {
+          element.classList.remove('active');
+        }
       }
-    }
 
-    async function loadInitialSettings() {
-      try {
-        const response = await fetch('http://localhost:8765/state');
-        const state = await response.json();
-        loadAllSettings(state);
-        console.log('Settings loaded successfully');
-      } catch (error) {
-        console.error('Failed to load initial settings:', error);
+      function setExpandableSection(toggleId, expandId, isActive) {
+        const toggle = document.getElementById(toggleId);
+        const section = document.getElementById(expandId);
+
+        if (!toggle || !section) {
+          console.warn(`Expandable section not found: ${toggleId} or ${expandId}`);
+          return;
+        }
+
+        if (isActive) {
+          toggle.classList.add('active');
+          section.classList.add('expanded');
+        } else {
+          toggle.classList.remove('active');
+          section.classList.remove('expanded');
+        }
       }
-    }
 
-    let pollInterval;
-    function startPolling() {
-      if (pollInterval) clearInterval(pollInterval);
-      pollInterval = setInterval(pollPythonState, 500);
-    }
+      function loadAllSettings(state) {
+        console.log('Loading all settings from state:', state);
 
-    window.addEventListener('DOMContentLoaded', () => {
-      loadInitialSettings();
-      startPolling();
-    });
+        if (state.hotkeys) {
+          updateHotkey('start', state.hotkeys.start_stop || 'f1');
+          updateHotkey('area', state.hotkeys.change_area || 'f2');
+          updateHotkey('exit', state.hotkeys.exit || 'f3');
+        }
 
-    window.updateStatus = updateStatus;
-    window.updateHotkey = updateHotkey;
-    window.updatePointStatus = updatePointStatus;
-    window.updateStats = updateStats;
-    window.updateSetting = updateSetting;
+        setInputValue('rodHotkey', state.rodHotkey || '4');
+        setInputValue('anythingElseHotkey', state.anythingElseHotkey || '1');
+        setInputValue('devilFruitHotkey', state.devilFruitHotkey || '6');
+
+        setToggleState('alwaysOnTopToggle', state.alwaysOnTop);
+        setToggleState('debugOverlayToggle', state.showDebugOverlay);
+
+        setExpandableSection('autoBuyBaitToggle', 'autoBuyExpand', state.autoBuyCommonBait);
+        setExpandableSection('autoCraftBaitToggle', 'autoCraftExpand', state.autoCraftBait);
+        setExpandableSection('autoStoreFruitToggle', 'autoStoreExpand', state.autoStoreDevilFruit);
+        setToggleState('autoSelectBaitToggle', state.autoSelectTopBait);
+        setToggleState('storeToBackpackToggle', state.storeToBackpack);
+
+        setInputValue('kp', state.kp);
+        setInputValue('kd', state.kd);
+        setInputValue('pdClamp', state.pdClamp);
+        setInputValue('pdApproaching', state.pdApproachingDamping);
+        setInputValue('pdChasing', state.pdChasingDamping);
+        setInputValue('gapTolerance', state.gapToleranceMultiplier);
+
+        setInputValue('castHold', state.castHoldDuration);
+        setInputValue('recastTimeout', state.recastTimeout);
+        setInputValue('fishEndDelay', state.fishEndDelay);
+        setInputValue('stateResend', state.stateResendInterval);
+        setInputValue('loopsPerPurchase', state.loopsPerPurchase);
+        setInputValue('loopsPerStore', state.loopsPerStore);
+        setInputValue('craftsPerCycle', state.craftsPerCycle);
+        setInputValue('loopsPerCraft', state.loopsPerCraft);
+        setInputValue('moveDuration', state.moveDuration);
+
+        setInputValue('focusDelay', state.robloxFocusDelay);
+        setInputValue('postFocusDelay', state.robloxPostFocusDelay);
+
+        setInputValue('preCastE', state.preCastEDelay);
+        setInputValue('preCastClick', state.preCastClickDelay);
+        setInputValue('preCastType', state.preCastTypeDelay);
+        setInputValue('antiDetect', state.preCastAntiDetectDelay);
+
+        setInputValue('fruitHotkey', state.storeFruitHotkeyDelay);
+        setInputValue('fruitClick', state.storeFruitClickDelay);
+        setInputValue('fruitShift', state.storeFruitShiftDelay);
+        setInputValue('fruitBackspace', state.storeFruitBackspaceDelay);
+
+        setInputValue('rodDelay', state.rodSelectDelay);
+        setInputValue('baitDelay', state.autoSelectBaitDelay);
+        setInputValue('cursorDelay', state.cursorAntiDetectDelay);
+        setInputValue('scanDelay', state.scanLoopDelay);
+
+        setInputValue('blackThreshold', state.blackScreenThreshold);
+        setInputValue('spamDelay', state.antiMacroSpamDelay);
+
+        updatePointStatus('waterPoint', state.waterPoint?.x, state.waterPoint?.y);
+        updatePointStatus('leftPoint', state.leftPoint?.x, state.leftPoint?.y);
+        updatePointStatus('middlePoint', state.middlePoint?.x, state.middlePoint?.y);
+        updatePointStatus('rightPoint', state.rightPoint?.x, state.rightPoint?.y);
+        updatePointStatus('storeFruitPoint', state.storeFruitPoint?.x, state.storeFruitPoint?.y);
+        updatePointStatus('baitPoint', state.baitPoint?.x, state.baitPoint?.y);
+        updatePointStatus('craftLeftPoint', state.craftLeftPoint?.x, state.craftLeftPoint?.y);
+        updatePointStatus('craftMiddlePoint', state.craftMiddlePoint?.x, state.craftMiddlePoint?.y);
+        updatePointStatus('baitRecipePoint', state.baitRecipePoint?.x, state.baitRecipePoint?.y);
+        updatePointStatus('addRecipePoint', state.addRecipePoint?.x, state.addRecipePoint?.y);
+        updatePointStatus('topRecipePoint', state.topRecipePoint?.x, state.topRecipePoint?.y);
+        updatePointStatus('craftButtonPoint', state.craftButtonPoint?.x, state.craftButtonPoint?.y);
+        updatePointStatus('closeMenuPoint', state.closeMenuPoint?.x, state.closeMenuPoint?.y);
+        updatePointStatus('devilFruitLocationPoint', state.devilFruitLocationPoint?.x, state.devilFruitLocationPoint?.y);
+
+        console.log('All settings loaded successfully');
+      }
+
+      async function pollPythonState() {
+        try {
+          const response = await fetch('http://localhost:8765/state');
+          const state = await response.json();
+
+          updateStatus(state.isRunning);
+
+          updatePointStatus('waterPoint', state.waterPoint?.x, state.waterPoint?.y);
+          updatePointStatus('leftPoint', state.leftPoint?.x, state.leftPoint?.y);
+          updatePointStatus('middlePoint', state.middlePoint?.x, state.middlePoint?.y);
+          updatePointStatus('rightPoint', state.rightPoint?.x, state.rightPoint?.y);
+          updatePointStatus('storeFruitPoint', state.storeFruitPoint?.x, state.storeFruitPoint?.y);
+          updatePointStatus('baitPoint', state.baitPoint?.x, state.baitPoint?.y);
+          updatePointStatus('craftLeftPoint', state.craftLeftPoint?.x, state.craftLeftPoint?.y);
+          updatePointStatus('craftMiddlePoint', state.craftMiddlePoint?.x, state.craftMiddlePoint?.y);
+          updatePointStatus('baitRecipePoint', state.baitRecipePoint?.x, state.baitRecipePoint?.y);
+          updatePointStatus('addRecipePoint', state.addRecipePoint?.x, state.addRecipePoint?.y);
+          updatePointStatus('topRecipePoint', state.topRecipePoint?.x, state.topRecipePoint?.y);
+          updatePointStatus('craftButtonPoint', state.craftButtonPoint?.x, state.craftButtonPoint?.y);
+          updatePointStatus('closeMenuPoint', state.closeMenuPoint?.x, state.closeMenuPoint?.y);
+          updatePointStatus('devilFruitLocationPoint', state.devilFruitLocationPoint?.x, state.devilFruitLocationPoint?.y);
+        } catch (error) {
+          console.error('Failed to poll state:', error);
+        }
+      }
+
+      async function loadInitialSettings() {
+        try {
+          const response = await fetch('http://localhost:8765/state');
+          const state = await response.json();
+          console.log('Loaded initial state:', state);
+          loadAllSettings(state);
+        } catch (error) {
+          console.error('Failed to load initial settings:', error);
+        }
+      }
+
+      let pollInterval;
+      function startPolling() {
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(pollPythonState, 500);
+      }
+
+      window.addEventListener('DOMContentLoaded', () => {
+        console.log('DOM loaded, initializing...');
+        loadInitialSettings();
+        startPolling();
+      });
+
+      window.updateStatus = updateStatus;
+      window.updateHotkey = updateHotkey;
+      window.updatePointStatus = updatePointStatus;
   </script>
 </body>
 

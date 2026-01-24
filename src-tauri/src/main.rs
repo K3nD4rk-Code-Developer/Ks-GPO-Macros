@@ -24,7 +24,7 @@ fn send_to_python(action: String, payload: String) -> Result<String, String> {
 }
 
 fn get_backend_path(_app: &tauri::AppHandle) -> PathBuf {
-    // In development, use the Python script
+    // In development, use the Python script, reproduce dist though.
     #[cfg(debug_assertions)]
     {
         return PathBuf::from("backend.py");

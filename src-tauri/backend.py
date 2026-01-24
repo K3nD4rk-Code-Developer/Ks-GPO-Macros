@@ -203,6 +203,11 @@ class AutomatedFishingSystem:
         self.AutomaticFruitStorageEnabled = False
         self.AutomaticTopBaitSelectionEnabled = False
 
+        self.StoreToBackpackEnabled = False
+        self.DevilFruitLocationPoint = None
+        self.DevilFruitStorageFrequencyCounter = 50
+        self.DevilFruitStorageIterationCounter = 0
+
         self.RegionSelectorCurrentlyActive = False
         self.ActiveRegionSelectorInstance = None
 
@@ -258,7 +263,6 @@ class AutomatedFishingSystem:
         self.AutomaticBaitCraftingEnabled = False
         self.CraftLeftButtonLocation = None
         self.CraftMiddleButtonLocation = None
-        self.CraftRightButtonLocation = None
         self.BaitRecipeButtonLocation = None
         self.AddRecipeButtonLocation = None
         self.TopRecipeButtonLocation = None
@@ -310,6 +314,10 @@ class AutomatedFishingSystem:
 
                     self.BaitPurchaseFrequencyCounter = ParsedConfigurationData.get("loops_per_purchase", 100)
 
+                    self.StoreToBackpackEnabled = ParsedConfigurationData.get("store_to_backpack", False)
+                    self.DevilFruitLocationPoint = ParsedConfigurationData.get("devil_fruit_location_point", None)
+                    self.DevilFruitStorageFrequencyCounter = ParsedConfigurationData.get("loops_per_store", 50)
+
                     self.RobloxWindowFocusInitialDelay = ParsedConfigurationData.get("roblox_focus_delay", 0.2)
                     self.RobloxWindowFocusFollowupDelay = ParsedConfigurationData.get("roblox_post_focus_delay", 0.2)
                     self.PreCastDialogOpenDelay = ParsedConfigurationData.get("set_precast_e_delay", 1.25)
@@ -337,7 +345,6 @@ class AutomatedFishingSystem:
                     self.AutomaticBaitCraftingEnabled = ParsedConfigurationData.get("auto_craft_bait", False)
                     self.CraftLeftButtonLocation = ParsedConfigurationData.get("craft_left_point", None)
                     self.CraftMiddleButtonLocation = ParsedConfigurationData.get("craft_middle_point", None)
-                    self.CraftRightButtonLocation = ParsedConfigurationData.get("craft_right_point", None)
                     self.BaitRecipeButtonLocation = ParsedConfigurationData.get("bait_recipe_point", None)
                     self.AddRecipeButtonLocation = ParsedConfigurationData.get("add_recipe_point", None)
                     self.TopRecipeButtonLocation = ParsedConfigurationData.get("top_recipe_point", None)
@@ -385,7 +392,6 @@ class AutomatedFishingSystem:
                     "auto_craft_bait": self.AutomaticBaitCraftingEnabled,
                     "craft_left_point": self.CraftLeftButtonLocation,
                     "craft_middle_point": self.CraftMiddleButtonLocation,
-                    "craft_right_point": self.CraftRightButtonLocation,
                     "bait_recipe_point": self.BaitRecipeButtonLocation,
                     "add_recipe_point": self.AddRecipeButtonLocation,
                     "top_recipe_point": self.TopRecipeButtonLocation,
@@ -394,6 +400,9 @@ class AutomatedFishingSystem:
                     "crafts_per_cycle": self.CraftsPerCycleCount,
                     "loops_per_craft": self.BaitCraftFrequencyCounter,
                     "move_duration": self.MoveDurationSeconds,
+                    "store_to_backpack": self.StoreToBackpackEnabled,
+                    "devil_fruit_location_point": self.DevilFruitLocationPoint,
+                    "loops_per_store": self.DevilFruitStorageFrequencyCounter,
                 }, ConfigurationFileHandle, indent=4)
         except Exception as SaveError:
             print(f"Error saving settings: {SaveError}")
@@ -530,7 +539,6 @@ class AutomatedFishingSystem:
         if self.AutomaticBaitCraftingEnabled and all([
             self.CraftLeftButtonLocation,
             self.CraftMiddleButtonLocation,
-            self.CraftRightButtonLocation,
             self.BaitRecipeButtonLocation,
             self.AddRecipeButtonLocation,
             self.TopRecipeButtonLocation,
@@ -617,19 +625,16 @@ class AutomatedFishingSystem:
                 time.sleep(self.PreCastMouseClickDelay)
                 if not self.MacroCurrentlyExecuting: return False
                 
-                # Press left shift before returning
                 keyboard.press_and_release('shift')
                 time.sleep(0.1)
                 if not self.MacroCurrentlyExecuting: return False
                 
-                # Hold A to return to original position
                 keyboard.press('a')
                 time.sleep(self.MoveDurationSeconds)
                 keyboard.release('a')
-                time.sleep(1.0)  # Wait 1 second after returning
+                time.sleep(1.0)
                 if not self.MacroCurrentlyExecuting: return False
                 
-                # Press left shift after returning
                 keyboard.press_and_release('shift')
                 time.sleep(0.1)
                 if not self.MacroCurrentlyExecuting: return False
@@ -694,28 +699,78 @@ class AutomatedFishingSystem:
         if not self.MacroCurrentlyExecuting:
             return False
         
-        if self.AutomaticFruitStorageEnabled and self.FruitStorageButtonLocation:
-            keyboard.press_and_release(self.DevilFruitInventorySlot)
-            time.sleep(self.FruitStorageHotkeyActivationDelay)
-            if not self.MacroCurrentlyExecuting: return False
-            
-            ctypes.windll.user32.SetCursorPos(self.FruitStorageButtonLocation['x'], self.FruitStorageButtonLocation['y'])
-            time.sleep(self.PreCastAntiDetectionDelay)
-            ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
-            time.sleep(self.PreCastAntiDetectionDelay)
-            pyautogui.click()
-            time.sleep(self.FruitStorageClickConfirmationDelay)
-            if not self.MacroCurrentlyExecuting: return False
-            
-            keyboard.press_and_release('shift')
-            time.sleep(self.FruitStorageShiftKeyPressDelay)
-            if not self.MacroCurrentlyExecuting: return False
-            
-            keyboard.press_and_release('backspace')
-            time.sleep(self.FruitStorageBackspaceDeletionDelay)
-            if not self.MacroCurrentlyExecuting: return False
-            
-            keyboard.press_and_release('shift')
+        if self.AutomaticFruitStorageEnabled:
+            if self.DevilFruitStorageIterationCounter == 0 or self.DevilFruitStorageIterationCounter >= self.DevilFruitStorageFrequencyCounter:
+                if self.StoreToBackpackEnabled and self.DevilFruitLocationPoint:
+                    keyboard.press_and_release('`')
+                    time.sleep(self.FruitStorageHotkeyActivationDelay)
+                    if not self.MacroCurrentlyExecuting: return False
+                    
+                    ctypes.windll.user32.SetCursorPos(self.DevilFruitLocationPoint['x'], self.DevilFruitLocationPoint['y'])
+                    time.sleep(self.PreCastAntiDetectionDelay)
+                    ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
+                    time.sleep(self.PreCastAntiDetectionDelay)
+                    pyautogui.click()
+                    time.sleep(self.FruitStorageClickConfirmationDelay)
+                    if not self.MacroCurrentlyExecuting: return False
+                    
+                    if self.FruitStorageButtonLocation:
+                        ctypes.windll.user32.SetCursorPos(self.FruitStorageButtonLocation['x'], self.FruitStorageButtonLocation['y'])
+                        time.sleep(self.PreCastAntiDetectionDelay)
+                        ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
+                        time.sleep(self.PreCastAntiDetectionDelay)
+                        pyautogui.click()
+                        time.sleep(self.FruitStorageClickConfirmationDelay)
+                        if not self.MacroCurrentlyExecuting: return False
+                        
+                        # Smooth move back to fruit position
+                        pyautogui.moveTo(self.DevilFruitLocationPoint['x'], self.DevilFruitLocationPoint['y'], duration=0.2)
+                        time.sleep(0.2)
+                        if not self.MacroCurrentlyExecuting: return False
+                        print("attempting to drag")
+                        
+                        # Hold mouse button down
+                        pyautogui.mouseDown(button='left')
+                        time.sleep(0.1)
+                        
+                        # Smoothly move up while holding
+                        pyautogui.moveTo(self.DevilFruitLocationPoint['x'], self.DevilFruitLocationPoint['y'] - 150, duration=0.3)
+                        time.sleep(0.1)
+                        
+                        # Release mouse button
+                        pyautogui.mouseUp(button='left')
+                        
+                        time.sleep(self.PreCastAntiDetectionDelay)
+                        if not self.MacroCurrentlyExecuting: return False
+                        
+                        keyboard.press_and_release('`')
+                        time.sleep(self.FruitStorageHotkeyActivationDelay)
+                elif self.FruitStorageButtonLocation:
+                    keyboard.press_and_release(self.DevilFruitInventorySlot)
+                    time.sleep(self.FruitStorageHotkeyActivationDelay)
+                    if not self.MacroCurrentlyExecuting: return False
+                    
+                    ctypes.windll.user32.SetCursorPos(self.FruitStorageButtonLocation['x'], self.FruitStorageButtonLocation['y'])
+                    time.sleep(self.PreCastAntiDetectionDelay)
+                    ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
+                    time.sleep(self.PreCastAntiDetectionDelay)
+                    pyautogui.click()
+                    time.sleep(self.FruitStorageClickConfirmationDelay)
+                    if not self.MacroCurrentlyExecuting: return False
+                    
+                    keyboard.press_and_release('shift')
+                    time.sleep(self.FruitStorageShiftKeyPressDelay)
+                    if not self.MacroCurrentlyExecuting: return False
+                    
+                    keyboard.press_and_release('backspace')
+                    time.sleep(self.FruitStorageBackspaceDeletionDelay)
+                    if not self.MacroCurrentlyExecuting: return False
+                    
+                    keyboard.press_and_release('shift')
+                
+                self.DevilFruitStorageIterationCounter = 1
+            else:
+                self.DevilFruitStorageIterationCounter += 1
 
         return True
     
@@ -1010,6 +1065,9 @@ class AutomatedFishingSystem:
             CalculatedFishPerHour = (self.TotalFishSuccessfullyCaught / AccumulatedTime) * 3600
         
         return {
+            "storeToBackpack": self.StoreToBackpackEnabled,
+            "devilFruitLocationPoint": self.DevilFruitLocationPoint,
+            "loopsPerStore": self.DevilFruitStorageFrequencyCounter,
             "isRunning": self.MacroCurrentlyExecuting,
             "fishCaught": self.TotalFishSuccessfullyCaught,
             "timeElapsed": FormattedElapsedTime,
@@ -1114,6 +1172,20 @@ def ProcessIncomingCommand():
             MacroSystemInstance.InitiatePointSelectionMode('WaterCastingTargetLocation')
             return jsonify({"status": "waiting_for_click"})
         
+        elif RequestedAction == 'set_devil_fruit_location_point':
+            MacroSystemInstance.InitiatePointSelectionMode('DevilFruitLocationPoint')
+            return jsonify({"status": "waiting_for_click"})
+
+        elif RequestedAction == 'toggle_store_to_backpack':
+            MacroSystemInstance.StoreToBackpackEnabled = ActionPayload.lower() == 'true'
+            MacroSystemInstance.SaveConfigurationToDisk()
+            return jsonify({"status": "success", "value": MacroSystemInstance.StoreToBackpackEnabled})
+
+        elif RequestedAction == 'set_loops_per_store':
+            MacroSystemInstance.DevilFruitStorageFrequencyCounter = int(ActionPayload)
+            MacroSystemInstance.SaveConfigurationToDisk()
+            return jsonify({"status": "success"})
+        
         elif RequestedAction == 'set_left_point':
             MacroSystemInstance.InitiatePointSelectionMode('ShopLeftButtonLocation')
             return jsonify({"status": "waiting_for_click"})
@@ -1159,15 +1231,20 @@ def ProcessIncomingCommand():
             MacroSystemInstance.SaveConfigurationToDisk()
             return jsonify({"status": "success", "value": MacroSystemInstance.DebugOverlayVisible})
         
-        elif RequestedAction == 'toggle_auto_buy':
+        elif RequestedAction == 'toggle_auto_buy_bait':
             MacroSystemInstance.AutomaticBaitPurchaseEnabled = ActionPayload.lower() == 'true'
             MacroSystemInstance.SaveConfigurationToDisk()
             return jsonify({"status": "success", "value": MacroSystemInstance.AutomaticBaitPurchaseEnabled})
         
-        elif RequestedAction == 'toggle_auto_store':
+        elif RequestedAction == 'toggle_auto_store_fruit':
             MacroSystemInstance.AutomaticFruitStorageEnabled = ActionPayload.lower() == 'true'
             MacroSystemInstance.SaveConfigurationToDisk()
             return jsonify({"status": "success", "value": MacroSystemInstance.AutomaticFruitStorageEnabled})
+        
+        elif RequestedAction == 'toggle_auto_select_bait':
+            MacroSystemInstance.AutomaticTopBaitSelectionEnabled = ActionPayload.lower() == 'true'
+            MacroSystemInstance.SaveConfigurationToDisk()
+            return jsonify({"status": "success", "value": MacroSystemInstance.AutomaticTopBaitSelectionEnabled})
 
         elif RequestedAction == 'toggle_auto_select_bait':
             MacroSystemInstance.AutomaticTopBaitSelectionEnabled = ActionPayload.lower() == 'true'
@@ -1316,11 +1393,7 @@ def ProcessIncomingCommand():
         elif RequestedAction == 'set_craft_middle_point':
             MacroSystemInstance.InitiatePointSelectionMode('CraftMiddleButtonLocation')
             return jsonify({"status": "waiting_for_click"})
-
-        elif RequestedAction == 'set_craft_right_point':
-            MacroSystemInstance.InitiatePointSelectionMode('CraftRightButtonLocation')
-            return jsonify({"status": "waiting_for_click"})
-
+        
         elif RequestedAction == 'set_bait_recipe_point':
             MacroSystemInstance.InitiatePointSelectionMode('BaitRecipeButtonLocation')
             return jsonify({"status": "waiting_for_click"})
@@ -1341,7 +1414,7 @@ def ProcessIncomingCommand():
             MacroSystemInstance.InitiatePointSelectionMode('CloseMenuButtonLocation')
             return jsonify({"status": "waiting_for_click"})
 
-        elif RequestedAction == 'toggle_auto_craft':
+        elif RequestedAction == 'toggle_auto_craft_bait':
             MacroSystemInstance.AutomaticBaitCraftingEnabled = ActionPayload.lower() == 'true'
             MacroSystemInstance.SaveConfigurationToDisk()
             return jsonify({"status": "success", "value": MacroSystemInstance.AutomaticBaitCraftingEnabled})
