@@ -13,8 +13,8 @@
     "always_on_top": false,
     "show_debug_overlay": true,
     "water_point": {
-        "x": 971,
-        "y": 236
+        "x": 1297,
+        "y": 620
     },
     "kp": 1.4,
     "kd": 0.6,
@@ -24,7 +24,7 @@
     "fish_end_delay": 0.5,
     "rod_hotkey": "0",
     "anything_else_hotkey": "1",
-    "auto_buy_common_bait": false,
+    "auto_buy_common_bait": true,
     "auto_store_devil_fruit": false,
     "auto_select_top_bait": false,
     "left_point": {
@@ -39,7 +39,7 @@
         "x": 1512,
         "y": 1303
     },
-    "loops_per_purchase": 125,
+    "loops_per_purchase": 100,
     "store_fruit_point": {
         "x": 1284,
         "y": 1154

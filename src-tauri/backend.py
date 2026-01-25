@@ -723,21 +723,16 @@ class AutomatedFishingSystem:
                         time.sleep(self.FruitStorageClickConfirmationDelay)
                         if not self.MacroCurrentlyExecuting: return False
                         
-                        # Smooth move back to fruit position
                         pyautogui.moveTo(self.DevilFruitLocationPoint['x'], self.DevilFruitLocationPoint['y'], duration=0.2)
                         time.sleep(0.2)
                         if not self.MacroCurrentlyExecuting: return False
-                        print("attempting to drag")
                         
-                        # Hold mouse button down
                         pyautogui.mouseDown(button='left')
                         time.sleep(0.1)
                         
-                        # Smoothly move up while holding
                         pyautogui.moveTo(self.DevilFruitLocationPoint['x'], self.DevilFruitLocationPoint['y'] - 150, duration=0.3)
                         time.sleep(0.1)
                         
-                        # Release mouse button
                         pyautogui.mouseUp(button='left')
                         
                         time.sleep(self.PreCastAntiDetectionDelay)
