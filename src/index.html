@@ -267,6 +267,28 @@
       }
     }
 
+    @keyframes slideInRight {
+      from {
+        opacity: 0;
+        transform: translateX(100px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes slideOutRight {
+      from {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateX(100px);
+      }
+    }
+
     .card {
       background: linear-gradient(135deg, rgba(31, 41, 55, 0.4) 0%, rgba(17, 24, 39, 0.5) 100%);
       border: 1px solid rgba(0, 212, 255, 0.15);
@@ -736,7 +758,8 @@
               <span class="control-label">Devil Fruit Location</span>
               <div class="control-input">
                 <span class="point-indicator unset" id="devilFruitLocationPointStatus">Not Configured</span>
-                <button class="btn btn-sm" onclick="sendToPython('set_devil_fruit_location_point', '')">Configure</button>
+                <button class="btn btn-sm"
+                  onclick="sendToPython('set_devil_fruit_location_point', '')">Configure</button>
               </div>
             </div>
             <div class="control-group">
@@ -819,7 +842,8 @@
               <div class="control-group">
                 <span class="control-label">Store to Backpack (vs Drop)</span>
                 <div class="control-input">
-                  <div class="toggle-switch" id="storeToBackpackToggle" onclick="toggleSetting('storeToBackpack')"></div>
+                  <div class="toggle-switch" id="storeToBackpackToggle" onclick="toggleSetting('storeToBackpack')">
+                  </div>
                 </div>
               </div>
               <div class="control-group">
@@ -1090,196 +1114,257 @@
       </div>
     </div>
   </div>
+  </div>
 
   <script>
     document.querySelectorAll('.nav-item').forEach(nav => {
-        nav.addEventListener('click', () => {
-          document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-          document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      nav.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
 
-          nav.classList.add('active');
-          document.getElementById(nav.dataset.view).classList.add('active');
-        });
+        nav.classList.add('active');
+        document.getElementById(nav.dataset.view).classList.add('active');
       });
+    });
 
-      function toggleSetting(settingName) {
-        const toggle = document.getElementById(`${settingName}Toggle`);
-        toggle.classList.toggle('active');
-        const isActive = toggle.classList.contains('active');
-        sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
+    function toggleSetting(settingName) {
+      const toggle = document.getElementById(`${settingName}Toggle`);
+      toggle.classList.toggle('active');
+      const isActive = toggle.classList.contains('active');
+      sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
+    }
+
+    function toggleExpandable(settingName, expandId) {
+      const toggle = document.getElementById(`${settingName}Toggle`);
+      const section = document.getElementById(expandId);
+      toggle.classList.toggle('active');
+      const isActive = toggle.classList.contains('active');
+
+      if (isActive) {
+        section.classList.add('expanded');
+      } else {
+        section.classList.remove('expanded');
       }
 
-      function toggleExpandable(settingName, expandId) {
-        const toggle = document.getElementById(`${settingName}Toggle`);
-        const section = document.getElementById(expandId);
-        toggle.classList.toggle('active');
-        const isActive = toggle.classList.contains('active');
+      sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
+    }
 
-        if (isActive) {
-          section.classList.add('expanded');
-        } else {
-          section.classList.remove('expanded');
+    async function sendToPython(action, payload) {
+      try {
+        console.log('Sending to Python:', action, payload);
+        const response = await fetch('http://localhost:8765/command', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, payload })
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'error') {
+          showErrorNotification(`Error: ${result.message}`);
         }
+      } catch (error) {
+        console.error('Failed to send to Python:', error);
+        showErrorNotification(`Connection failed: ${error.message}`);
+      }
+    }
 
-        sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
+    function showErrorNotification(message) {
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+    position: fixed;
+    top: 80px;
+    right: 20px;
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(220, 38, 38, 0.95));
+    color: white;
+    padding: 16px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 14px;
+    box-shadow: 0 8px 32px rgba(239, 68, 68, 0.4);
+    z-index: 10000;
+    animation: slideInRight 0.3s ease-out;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    max-width: 400px;
+    word-wrap: break-word;
+  `;
+      notification.textContent = message;
+      document.body.appendChild(notification);
+
+      setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+      }, 5000);
+    }
+
+    function updateStatus(isRunning) {
+      const dot = document.getElementById('statusDot');
+      const text = document.getElementById('statusText');
+
+      if (isRunning) {
+        dot.classList.add('active');
+        text.textContent = 'Active';
+      } else {
+        dot.classList.remove('active');
+        text.textContent = 'Inactive';
+      }
+    }
+
+    function updateHotkey(key, value) {
+      const element = document.getElementById(`hotkey-${key}`);
+      if (element) {
+        element.textContent = value.toUpperCase();
+      }
+    }
+
+    function updatePointStatus(pointName, x, y) {
+      const status = document.getElementById(`${pointName}Status`);
+      if (!status) {
+        console.warn(`Point status element not found: ${pointName}Status`);
+        return;
       }
 
-      async function sendToPython(action, payload) {
-        try {
-          console.log('Sending to Python:', action, payload);
-          await fetch('http://localhost:8765/command', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action, payload })
-          });
-        } catch (error) {
-          console.error('Failed to send to Python:', error);
-        }
+      if (x !== null && y !== null && x !== undefined && y !== undefined) {
+        status.textContent = `X: ${x}, Y: ${y}`;
+        status.classList.remove('unset');
+        status.classList.add('set');
+      } else {
+        status.textContent = 'Not Configured';
+        status.classList.remove('set');
+        status.classList.add('unset');
+      }
+    }
+
+    function setInputValue(elementId, value) {
+      const element = document.getElementById(elementId);
+      if (!element) {
+        console.warn(`Element not found: ${elementId}`);
+        return;
       }
 
-      function updateStatus(isRunning) {
-        const dot = document.getElementById('statusDot');
-        const text = document.getElementById('statusText');
+      if (element.type === 'number' || element.tagName === 'INPUT') {
+        element.value = value;
+      } else if (element.tagName === 'SELECT') {
+        element.value = value;
+      }
+    }
 
-        if (isRunning) {
-          dot.classList.add('active');
-          text.textContent = 'Active';
-        } else {
-          dot.classList.remove('active');
-          text.textContent = 'Inactive';
-        }
+    function setToggleState(elementId, isActive) {
+      const element = document.getElementById(elementId);
+      if (!element) {
+        console.warn(`Toggle element not found: ${elementId}`);
+        return;
       }
 
-      function updateHotkey(key, value) {
-        const element = document.getElementById(`hotkey-${key}`);
-        if (element) {
-          element.textContent = value.toUpperCase();
-        }
+      if (isActive) {
+        element.classList.add('active');
+      } else {
+        element.classList.remove('active');
+      }
+    }
+
+    function setExpandableSection(toggleId, expandId, isActive) {
+      const toggle = document.getElementById(toggleId);
+      const section = document.getElementById(expandId);
+
+      if (!toggle || !section) {
+        console.warn(`Expandable section not found: ${toggleId} or ${expandId}`);
+        return;
       }
 
-      function updatePointStatus(pointName, x, y) {
-        const status = document.getElementById(`${pointName}Status`);
-        if (!status) {
-          console.warn(`Point status element not found: ${pointName}Status`);
-          return;
-        }
+      if (isActive) {
+        toggle.classList.add('active');
+        section.classList.add('expanded');
+      } else {
+        toggle.classList.remove('active');
+        section.classList.remove('expanded');
+      }
+    }
 
-        if (x !== null && y !== null && x !== undefined && y !== undefined) {
-          status.textContent = `X: ${x}, Y: ${y}`;
-          status.classList.remove('unset');
-          status.classList.add('set');
-        } else {
-          status.textContent = 'Not Configured';
-          status.classList.remove('set');
-          status.classList.add('unset');
-        }
+    function loadAllSettings(state) {
+      console.log('Loading all settings from state:', state);
+
+      if (state.hotkeys) {
+        updateHotkey('start', state.hotkeys.start_stop || 'f1');
+        updateHotkey('area', state.hotkeys.change_area || 'f2');
+        updateHotkey('exit', state.hotkeys.exit || 'f3');
       }
 
-      function setInputValue(elementId, value) {
-        const element = document.getElementById(elementId);
-        if (!element) {
-          console.warn(`Element not found: ${elementId}`);
-          return;
-        }
+      setInputValue('rodHotkey', state.rodHotkey || '4');
+      setInputValue('anythingElseHotkey', state.anythingElseHotkey || '1');
+      setInputValue('devilFruitHotkey', state.devilFruitHotkey || '6');
 
-        if (element.type === 'number' || element.tagName === 'INPUT') {
-          element.value = value;
-        } else if (element.tagName === 'SELECT') {
-          element.value = value;
-        }
-      }
+      setToggleState('alwaysOnTopToggle', state.alwaysOnTop);
+      setToggleState('debugOverlayToggle', state.showDebugOverlay);
 
-      function setToggleState(elementId, isActive) {
-        const element = document.getElementById(elementId);
-        if (!element) {
-          console.warn(`Toggle element not found: ${elementId}`);
-          return;
-        }
+      setExpandableSection('autoBuyBaitToggle', 'autoBuyExpand', state.autoBuyCommonBait);
+      setExpandableSection('autoCraftBaitToggle', 'autoCraftExpand', state.autoCraftBait);
+      setExpandableSection('autoStoreFruitToggle', 'autoStoreExpand', state.autoStoreDevilFruit);
+      setToggleState('autoSelectBaitToggle', state.autoSelectTopBait);
+      setToggleState('storeToBackpackToggle', state.storeToBackpack);
 
-        if (isActive) {
-          element.classList.add('active');
-        } else {
-          element.classList.remove('active');
-        }
-      }
+      setInputValue('kp', state.kp);
+      setInputValue('kd', state.kd);
+      setInputValue('pdClamp', state.pdClamp);
+      setInputValue('pdApproaching', state.pdApproachingDamping);
+      setInputValue('pdChasing', state.pdChasingDamping);
+      setInputValue('gapTolerance', state.gapToleranceMultiplier);
 
-      function setExpandableSection(toggleId, expandId, isActive) {
-        const toggle = document.getElementById(toggleId);
-        const section = document.getElementById(expandId);
+      setInputValue('castHold', state.castHoldDuration);
+      setInputValue('recastTimeout', state.recastTimeout);
+      setInputValue('fishEndDelay', state.fishEndDelay);
+      setInputValue('stateResend', state.stateResendInterval);
+      setInputValue('loopsPerPurchase', state.loopsPerPurchase);
+      setInputValue('loopsPerStore', state.loopsPerStore);
+      setInputValue('craftsPerCycle', state.craftsPerCycle);
+      setInputValue('loopsPerCraft', state.loopsPerCraft);
+      setInputValue('moveDuration', state.moveDuration);
 
-        if (!toggle || !section) {
-          console.warn(`Expandable section not found: ${toggleId} or ${expandId}`);
-          return;
-        }
+      setInputValue('focusDelay', state.robloxFocusDelay);
+      setInputValue('postFocusDelay', state.robloxPostFocusDelay);
 
-        if (isActive) {
-          toggle.classList.add('active');
-          section.classList.add('expanded');
-        } else {
-          toggle.classList.remove('active');
-          section.classList.remove('expanded');
-        }
-      }
+      setInputValue('preCastE', state.preCastEDelay);
+      setInputValue('preCastClick', state.preCastClickDelay);
+      setInputValue('preCastType', state.preCastTypeDelay);
+      setInputValue('antiDetect', state.preCastAntiDetectDelay);
 
-      function loadAllSettings(state) {
-        console.log('Loading all settings from state:', state);
+      setInputValue('fruitHotkey', state.storeFruitHotkeyDelay);
+      setInputValue('fruitClick', state.storeFruitClickDelay);
+      setInputValue('fruitShift', state.storeFruitShiftDelay);
+      setInputValue('fruitBackspace', state.storeFruitBackspaceDelay);
 
-        if (state.hotkeys) {
-          updateHotkey('start', state.hotkeys.start_stop || 'f1');
-          updateHotkey('area', state.hotkeys.change_area || 'f2');
-          updateHotkey('exit', state.hotkeys.exit || 'f3');
-        }
+      setInputValue('rodDelay', state.rodSelectDelay);
+      setInputValue('baitDelay', state.autoSelectBaitDelay);
+      setInputValue('cursorDelay', state.cursorAntiDetectDelay);
+      setInputValue('scanDelay', state.scanLoopDelay);
 
-        setInputValue('rodHotkey', state.rodHotkey || '4');
-        setInputValue('anythingElseHotkey', state.anythingElseHotkey || '1');
-        setInputValue('devilFruitHotkey', state.devilFruitHotkey || '6');
+      setInputValue('blackThreshold', state.blackScreenThreshold);
+      setInputValue('spamDelay', state.antiMacroSpamDelay);
 
-        setToggleState('alwaysOnTopToggle', state.alwaysOnTop);
-        setToggleState('debugOverlayToggle', state.showDebugOverlay);
+      updatePointStatus('waterPoint', state.waterPoint?.x, state.waterPoint?.y);
+      updatePointStatus('leftPoint', state.leftPoint?.x, state.leftPoint?.y);
+      updatePointStatus('middlePoint', state.middlePoint?.x, state.middlePoint?.y);
+      updatePointStatus('rightPoint', state.rightPoint?.x, state.rightPoint?.y);
+      updatePointStatus('storeFruitPoint', state.storeFruitPoint?.x, state.storeFruitPoint?.y);
+      updatePointStatus('baitPoint', state.baitPoint?.x, state.baitPoint?.y);
+      updatePointStatus('craftLeftPoint', state.craftLeftPoint?.x, state.craftLeftPoint?.y);
+      updatePointStatus('craftMiddlePoint', state.craftMiddlePoint?.x, state.craftMiddlePoint?.y);
+      updatePointStatus('baitRecipePoint', state.baitRecipePoint?.x, state.baitRecipePoint?.y);
+      updatePointStatus('addRecipePoint', state.addRecipePoint?.x, state.addRecipePoint?.y);
+      updatePointStatus('topRecipePoint', state.topRecipePoint?.x, state.topRecipePoint?.y);
+      updatePointStatus('craftButtonPoint', state.craftButtonPoint?.x, state.craftButtonPoint?.y);
+      updatePointStatus('closeMenuPoint', state.closeMenuPoint?.x, state.closeMenuPoint?.y);
+      updatePointStatus('devilFruitLocationPoint', state.devilFruitLocationPoint?.x, state.devilFruitLocationPoint?.y);
 
-        setExpandableSection('autoBuyBaitToggle', 'autoBuyExpand', state.autoBuyCommonBait);
-        setExpandableSection('autoCraftBaitToggle', 'autoCraftExpand', state.autoCraftBait);
-        setExpandableSection('autoStoreFruitToggle', 'autoStoreExpand', state.autoStoreDevilFruit);
-        setToggleState('autoSelectBaitToggle', state.autoSelectTopBait);
-        setToggleState('storeToBackpackToggle', state.storeToBackpack);
+      console.log('All settings loaded successfully');
+    }
 
-        setInputValue('kp', state.kp);
-        setInputValue('kd', state.kd);
-        setInputValue('pdClamp', state.pdClamp);
-        setInputValue('pdApproaching', state.pdApproachingDamping);
-        setInputValue('pdChasing', state.pdChasingDamping);
-        setInputValue('gapTolerance', state.gapToleranceMultiplier);
+    async function pollPythonState() {
+      try {
+        const response = await fetch('http://localhost:8765/state');
+        const state = await response.json();
 
-        setInputValue('castHold', state.castHoldDuration);
-        setInputValue('recastTimeout', state.recastTimeout);
-        setInputValue('fishEndDelay', state.fishEndDelay);
-        setInputValue('stateResend', state.stateResendInterval);
-        setInputValue('loopsPerPurchase', state.loopsPerPurchase);
-        setInputValue('loopsPerStore', state.loopsPerStore);
-        setInputValue('craftsPerCycle', state.craftsPerCycle);
-        setInputValue('loopsPerCraft', state.loopsPerCraft);
-        setInputValue('moveDuration', state.moveDuration);
-
-        setInputValue('focusDelay', state.robloxFocusDelay);
-        setInputValue('postFocusDelay', state.robloxPostFocusDelay);
-
-        setInputValue('preCastE', state.preCastEDelay);
-        setInputValue('preCastClick', state.preCastClickDelay);
-        setInputValue('preCastType', state.preCastTypeDelay);
-        setInputValue('antiDetect', state.preCastAntiDetectDelay);
-
-        setInputValue('fruitHotkey', state.storeFruitHotkeyDelay);
-        setInputValue('fruitClick', state.storeFruitClickDelay);
-        setInputValue('fruitShift', state.storeFruitShiftDelay);
-        setInputValue('fruitBackspace', state.storeFruitBackspaceDelay);
-
-        setInputValue('rodDelay', state.rodSelectDelay);
-        setInputValue('baitDelay', state.autoSelectBaitDelay);
-        setInputValue('cursorDelay', state.cursorAntiDetectDelay);
-        setInputValue('scanDelay', state.scanLoopDelay);
-
-        setInputValue('blackThreshold', state.blackScreenThreshold);
-        setInputValue('spamDelay', state.antiMacroSpamDelay);
+        updateStatus(state.isRunning);
 
         updatePointStatus('waterPoint', state.waterPoint?.x, state.waterPoint?.y);
         updatePointStatus('leftPoint', state.leftPoint?.x, state.leftPoint?.y);
@@ -1295,62 +1380,37 @@
         updatePointStatus('craftButtonPoint', state.craftButtonPoint?.x, state.craftButtonPoint?.y);
         updatePointStatus('closeMenuPoint', state.closeMenuPoint?.x, state.closeMenuPoint?.y);
         updatePointStatus('devilFruitLocationPoint', state.devilFruitLocationPoint?.x, state.devilFruitLocationPoint?.y);
-
-        console.log('All settings loaded successfully');
+      } catch (error) {
+        console.error('Failed to poll state:', error);
       }
+    }
 
-      async function pollPythonState() {
-        try {
-          const response = await fetch('http://localhost:8765/state');
-          const state = await response.json();
-
-          updateStatus(state.isRunning);
-
-          updatePointStatus('waterPoint', state.waterPoint?.x, state.waterPoint?.y);
-          updatePointStatus('leftPoint', state.leftPoint?.x, state.leftPoint?.y);
-          updatePointStatus('middlePoint', state.middlePoint?.x, state.middlePoint?.y);
-          updatePointStatus('rightPoint', state.rightPoint?.x, state.rightPoint?.y);
-          updatePointStatus('storeFruitPoint', state.storeFruitPoint?.x, state.storeFruitPoint?.y);
-          updatePointStatus('baitPoint', state.baitPoint?.x, state.baitPoint?.y);
-          updatePointStatus('craftLeftPoint', state.craftLeftPoint?.x, state.craftLeftPoint?.y);
-          updatePointStatus('craftMiddlePoint', state.craftMiddlePoint?.x, state.craftMiddlePoint?.y);
-          updatePointStatus('baitRecipePoint', state.baitRecipePoint?.x, state.baitRecipePoint?.y);
-          updatePointStatus('addRecipePoint', state.addRecipePoint?.x, state.addRecipePoint?.y);
-          updatePointStatus('topRecipePoint', state.topRecipePoint?.x, state.topRecipePoint?.y);
-          updatePointStatus('craftButtonPoint', state.craftButtonPoint?.x, state.craftButtonPoint?.y);
-          updatePointStatus('closeMenuPoint', state.closeMenuPoint?.x, state.closeMenuPoint?.y);
-          updatePointStatus('devilFruitLocationPoint', state.devilFruitLocationPoint?.x, state.devilFruitLocationPoint?.y);
-        } catch (error) {
-          console.error('Failed to poll state:', error);
-        }
+    async function loadInitialSettings() {
+      try {
+        const response = await fetch('http://localhost:8765/state');
+        const state = await response.json();
+        console.log('Loaded initial state:', state);
+        loadAllSettings(state);
+      } catch (error) {
+        console.error('Failed to load initial settings:', error);
       }
+    }
 
-      async function loadInitialSettings() {
-        try {
-          const response = await fetch('http://localhost:8765/state');
-          const state = await response.json();
-          console.log('Loaded initial state:', state);
-          loadAllSettings(state);
-        } catch (error) {
-          console.error('Failed to load initial settings:', error);
-        }
-      }
+    let pollInterval;
+    function startPolling() {
+      if (pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(pollPythonState, 500);
+    }
 
-      let pollInterval;
-      function startPolling() {
-        if (pollInterval) clearInterval(pollInterval);
-        pollInterval = setInterval(pollPythonState, 500);
-      }
+    window.addEventListener('DOMContentLoaded', () => {
+      console.log('DOM loaded, initializing...');
+      loadInitialSettings();
+      startPolling();
+    });
 
-      window.addEventListener('DOMContentLoaded', () => {
-        console.log('DOM loaded, initializing...');
-        loadInitialSettings();
-        startPolling();
-      });
-
-      window.updateStatus = updateStatus;
-      window.updateHotkey = updateHotkey;
-      window.updatePointStatus = updatePointStatus;
+    window.updateStatus = updateStatus;
+    window.updateHotkey = updateHotkey;
+    window.updatePointStatus = updatePointStatus;
   </script>
 </body>
 

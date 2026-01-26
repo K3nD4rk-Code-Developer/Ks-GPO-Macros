@@ -24,6 +24,7 @@
     "fish_end_delay": 0.5,
     "rod_hotkey": "0",
     "anything_else_hotkey": "1",
+    "devil_fruit_hotkey": "2",
     "auto_buy_common_bait": true,
     "auto_store_devil_fruit": false,
     "auto_select_top_bait": false,
@@ -39,16 +40,37 @@
         "x": 1512,
         "y": 1303
     },
-    "loops_per_purchase": 100,
     "store_fruit_point": {
         "x": 1284,
         "y": 1154
     },
-    "devil_fruit_hotkey": "2",
     "bait_point": {
         "x": 1281,
         "y": 1066
     },
+    "loops_per_purchase": 100,
+    "store_to_backpack": false,
+    "devil_fruit_location_point": {
+        "x": 913,
+        "y": 1367
+    },
+    "loops_per_store": 1,
+    "roblox_focus_delay": 0.2,
+    "roblox_post_focus_delay": 0.2,
+    "set_precast_e_delay": 1.25,
+    "pre_cast_click_delay": 0.5,
+    "pre_cast_type_delay": 0.25,
+    "pre_cast_anti_detect_delay": 0.05,
+    "store_fruit_hotkey_delay": 1.0,
+    "store_fruit_click_delay": 2.0,
+    "store_fruit_shift_delay": 0.5,
+    "store_fruit_backspace_delay": 1.5,
+    "auto_select_bait_delay": 0.5,
+    "black_screen_threshold": 0.5,
+    "anti_macro_spam_delay": 0.25,
+    "rod_select_delay": 0.2,
+    "cursor_anti_detect_delay": 0.05,
+    "scan_loop_delay": 0.1,
     "pd_approaching_damping": 2.0,
     "pd_chasing_damping": 0.5,
     "gap_tolerance_multiplier": 2.0,
@@ -69,11 +91,5 @@
     },
     "crafts_per_cycle": 80,
     "loops_per_craft": 40,
-    "move_duration": 4.25,
-    "store_to_backpack": false,
-    "devil_fruit_location_point": {
-        "x": 913,
-        "y": 1367
-    },
-    "loops_per_store": 1
+    "move_duration": 4.25
 }

@@ -375,16 +375,35 @@ class AutomatedFishingSystem:
                     "fish_end_delay": self.DelayAfterFishCaptured,
                     "rod_hotkey": self.FishingRodInventorySlot,
                     "anything_else_hotkey": self.AlternateInventorySlot,
+                    "devil_fruit_hotkey": self.DevilFruitInventorySlot,
                     "auto_buy_common_bait": self.AutomaticBaitPurchaseEnabled,
                     "auto_store_devil_fruit": self.AutomaticFruitStorageEnabled,
                     "auto_select_top_bait": self.AutomaticTopBaitSelectionEnabled,
                     "left_point": self.ShopLeftButtonLocation,
                     "middle_point": self.ShopCenterButtonLocation,
                     "right_point": self.ShopRightButtonLocation,
-                    "loops_per_purchase": self.BaitPurchaseFrequencyCounter,
                     "store_fruit_point": self.FruitStorageButtonLocation,
-                    "devil_fruit_hotkey": self.DevilFruitInventorySlot,
                     "bait_point": self.BaitSelectionButtonLocation,
+                    "loops_per_purchase": self.BaitPurchaseFrequencyCounter,
+                    "store_to_backpack": self.StoreToBackpackEnabled,
+                    "devil_fruit_location_point": self.DevilFruitLocationPoint,
+                    "loops_per_store": self.DevilFruitStorageFrequencyCounter,
+                    "roblox_focus_delay": self.RobloxWindowFocusInitialDelay,
+                    "roblox_post_focus_delay": self.RobloxWindowFocusFollowupDelay,
+                    "set_precast_e_delay": self.PreCastDialogOpenDelay,
+                    "pre_cast_click_delay": self.PreCastMouseClickDelay,
+                    "pre_cast_type_delay": self.PreCastKeyboardInputDelay,
+                    "pre_cast_anti_detect_delay": self.PreCastAntiDetectionDelay,
+                    "store_fruit_hotkey_delay": self.FruitStorageHotkeyActivationDelay,
+                    "store_fruit_click_delay": self.FruitStorageClickConfirmationDelay,
+                    "store_fruit_shift_delay": self.FruitStorageShiftKeyPressDelay,
+                    "store_fruit_backspace_delay": self.FruitStorageBackspaceDeletionDelay,
+                    "auto_select_bait_delay": self.BaitSelectionConfirmationDelay,
+                    "black_screen_threshold": self.BlackScreenDetectionRatioThreshold,
+                    "anti_macro_spam_delay": self.AntiMacroDialogSpamDelay,
+                    "rod_select_delay": self.InventorySlotSwitchingDelay,
+                    "cursor_anti_detect_delay": self.MouseMovementAntiDetectionDelay,
+                    "scan_loop_delay": self.ImageProcessingLoopDelay,
                     "pd_approaching_damping": self.PDControllerApproachingStateDamping,
                     "pd_chasing_damping": self.PDControllerChasingStateDamping,
                     "gap_tolerance_multiplier": self.BarGroupingGapToleranceMultiplier,
@@ -400,9 +419,6 @@ class AutomatedFishingSystem:
                     "crafts_per_cycle": self.CraftsPerCycleCount,
                     "loops_per_craft": self.BaitCraftFrequencyCounter,
                     "move_duration": self.MoveDurationSeconds,
-                    "store_to_backpack": self.StoreToBackpackEnabled,
-                    "devil_fruit_location_point": self.DevilFruitLocationPoint,
-                    "loops_per_store": self.DevilFruitStorageFrequencyCounter,
                 }, ConfigurationFileHandle, indent=4)
         except Exception as SaveError:
             print(f"Error saving settings: {SaveError}")
@@ -1147,293 +1163,153 @@ def ProcessIncomingCommand():
         IncomingData = request.json
         RequestedAction = IncomingData.get('action')
         ActionPayload = IncomingData.get('payload')
-                
+        
+        if not RequestedAction:
+            return jsonify({"status": "error", "message": "Missing action parameter"}), 400
+        
+        action_handlers = {
+            'set_water_point': lambda: handle_point_selection('WaterCastingTargetLocation'),
+            'set_devil_fruit_location_point': lambda: handle_point_selection('DevilFruitLocationPoint'),
+            'set_left_point': lambda: handle_point_selection('ShopLeftButtonLocation'),
+            'set_middle_point': lambda: handle_point_selection('ShopCenterButtonLocation'),
+            'set_right_point': lambda: handle_point_selection('ShopRightButtonLocation'),
+            'set_store_fruit_point': lambda: handle_point_selection('FruitStorageButtonLocation'),
+            'set_bait_point': lambda: handle_point_selection('BaitSelectionButtonLocation'),
+            'set_craft_left_point': lambda: handle_point_selection('CraftLeftButtonLocation'),
+            'set_craft_middle_point': lambda: handle_point_selection('CraftMiddleButtonLocation'),
+            'set_bait_recipe_point': lambda: handle_point_selection('BaitRecipeButtonLocation'),
+            'set_add_recipe_point': lambda: handle_point_selection('AddRecipeButtonLocation'),
+            'set_top_recipe_point': lambda: handle_point_selection('TopRecipeButtonLocation'),
+            'set_craft_button_point': lambda: handle_point_selection('CraftButtonLocation'),
+            'set_close_menu_point': lambda: handle_point_selection('CloseMenuButtonLocation'),
+            'toggle_store_to_backpack': lambda: handle_boolean_toggle('StoreToBackpackEnabled'),
+            'toggle_always_on_top': lambda: handle_boolean_toggle('WindowAlwaysOnTopEnabled'),
+            'toggle_debug_overlay': lambda: handle_boolean_toggle('DebugOverlayVisible'),
+            'toggle_auto_buy_bait': lambda: handle_boolean_toggle('AutomaticBaitPurchaseEnabled'),
+            'toggle_auto_store_fruit': lambda: handle_boolean_toggle('AutomaticFruitStorageEnabled'),
+            'toggle_auto_select_bait': lambda: handle_boolean_toggle('AutomaticTopBaitSelectionEnabled'),
+            'toggle_auto_craft_bait': lambda: handle_boolean_toggle('AutomaticBaitCraftingEnabled'),
+            'set_rod_hotkey': lambda: handle_string_value('FishingRodInventorySlot'),
+            'set_anything_else_hotkey': lambda: handle_string_value('AlternateInventorySlot'),
+            'set_devil_fruit_hotkey': lambda: handle_string_value('DevilFruitInventorySlot'),
+            'set_loops_per_store': lambda: handle_integer_value('DevilFruitStorageFrequencyCounter'),
+            'set_loops_per_purchase': lambda: handle_integer_value('BaitPurchaseFrequencyCounter'),
+            'set_crafts_per_cycle': lambda: handle_integer_value('CraftsPerCycleCount'),
+            'set_loops_per_craft': lambda: handle_integer_value('BaitCraftFrequencyCounter'),
+            'set_kp': lambda: handle_float_value('ProportionalGainCoefficient'),
+            'set_kd': lambda: handle_float_value('DerivativeGainCoefficient'),
+            'set_pd_clamp': lambda: handle_float_value('ControlSignalMaximumClamp'),
+            'set_pd_approaching': lambda: handle_float_value('PDControllerApproachingStateDamping'),
+            'set_pd_chasing': lambda: handle_float_value('PDControllerChasingStateDamping'),
+            'set_gap_tolerance': lambda: handle_float_value('BarGroupingGapToleranceMultiplier'),
+            'set_cast_hold': lambda: handle_float_value('MouseHoldDurationForCast'),
+            'set_recast_timeout': lambda: handle_float_value('MaximumWaitTimeBeforeRecast'),
+            'set_fish_end_delay': lambda: handle_float_value('DelayAfterFishCaptured'),
+            'set_state_resend': lambda: handle_float_value('InputStateResendFrequency'),
+            'set_focus_delay': lambda: handle_float_value('RobloxWindowFocusInitialDelay'),
+            'set_post_focus_delay': lambda: handle_float_value('RobloxWindowFocusFollowupDelay'),
+            'set_precast_e_delay': lambda: handle_float_value('PreCastDialogOpenDelay'),
+            'set_precast_click_delay': lambda: handle_float_value('PreCastMouseClickDelay'),
+            'set_precast_type_delay': lambda: handle_float_value('PreCastKeyboardInputDelay'),
+            'set_anti_detect_delay': lambda: handle_float_value('PreCastAntiDetectionDelay'),
+            'set_fruit_hotkey_delay': lambda: handle_float_value('FruitStorageHotkeyActivationDelay'),
+            'set_fruit_click_delay': lambda: handle_float_value('FruitStorageClickConfirmationDelay'),
+            'set_fruit_shift_delay': lambda: handle_float_value('FruitStorageShiftKeyPressDelay'),
+            'set_fruit_backspace_delay': lambda: handle_float_value('FruitStorageBackspaceDeletionDelay'),
+            'set_rod_delay': lambda: handle_float_value('InventorySlotSwitchingDelay'),
+            'set_bait_delay': lambda: handle_float_value('BaitSelectionConfirmationDelay'),
+            'set_cursor_delay': lambda: handle_float_value('MouseMovementAntiDetectionDelay'),
+            'set_scan_delay': lambda: handle_float_value('ImageProcessingLoopDelay'),
+            'set_black_threshold': lambda: handle_float_value('BlackScreenDetectionRatioThreshold'),
+            'set_spam_delay': lambda: handle_float_value('AntiMacroDialogSpamDelay'),
+            'set_move_duration': lambda: handle_float_value('MoveDurationSeconds'),
+        }
+        
         if RequestedAction == 'rebind_hotkey':
-            MacroSystemInstance.CurrentlyRebindingHotkey = ActionPayload
-            keyboard.unhook_all_hotkeys()
-            
-            def HandleKeyboardEvent(PressedKeyEvent):
-                if MacroSystemInstance.CurrentlyRebindingHotkey == ActionPayload:
-                    NewHotkeyValue = PressedKeyEvent.name.lower()
-                    MacroSystemInstance.GlobalHotkeyBindings[ActionPayload] = NewHotkeyValue
-                    MacroSystemInstance.SaveConfigurationToDisk()
-                    MacroSystemInstance.CurrentlyRebindingHotkey = None
-                    MacroSystemInstance.RegisterAllHotkeyBindings()
-            
-            keyboard.on_release(HandleKeyboardEvent, suppress=False)
-            return jsonify({"status": "waiting_for_key"})
+            return handle_hotkey_rebind(ActionPayload)
         
-        elif RequestedAction == 'set_water_point':
-            MacroSystemInstance.InitiatePointSelectionMode('WaterCastingTargetLocation')
-            return jsonify({"status": "waiting_for_click"})
-        
-        elif RequestedAction == 'set_devil_fruit_location_point':
-            MacroSystemInstance.InitiatePointSelectionMode('DevilFruitLocationPoint')
-            return jsonify({"status": "waiting_for_click"})
-
-        elif RequestedAction == 'toggle_store_to_backpack':
-            MacroSystemInstance.StoreToBackpackEnabled = ActionPayload.lower() == 'true'
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success", "value": MacroSystemInstance.StoreToBackpackEnabled})
-
-        elif RequestedAction == 'set_loops_per_store':
-            MacroSystemInstance.DevilFruitStorageFrequencyCounter = int(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_left_point':
-            MacroSystemInstance.InitiatePointSelectionMode('ShopLeftButtonLocation')
-            return jsonify({"status": "waiting_for_click"})
-        
-        elif RequestedAction == 'set_middle_point':
-            MacroSystemInstance.InitiatePointSelectionMode('ShopCenterButtonLocation')
-            return jsonify({"status": "waiting_for_click"})
-        
-        elif RequestedAction == 'set_right_point':
-            MacroSystemInstance.InitiatePointSelectionMode('ShopRightButtonLocation')
-            return jsonify({"status": "waiting_for_click"})
-        
-        elif RequestedAction == 'set_store_fruit_point':
-            MacroSystemInstance.InitiatePointSelectionMode('FruitStorageButtonLocation')
-            return jsonify({"status": "waiting_for_click"})
-        
-        elif RequestedAction == 'set_bait_point':
-            MacroSystemInstance.InitiatePointSelectionMode('BaitSelectionButtonLocation')
-            return jsonify({"status": "waiting_for_click"})
-        
-        elif RequestedAction == 'set_rod_hotkey':
-            MacroSystemInstance.FishingRodInventorySlot = ActionPayload
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_anything_else_hotkey':
-            MacroSystemInstance.AlternateInventorySlot = ActionPayload
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_devil_fruit_hotkey':
-            MacroSystemInstance.DevilFruitInventorySlot = ActionPayload
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'toggle_always_on_top':
-            MacroSystemInstance.WindowAlwaysOnTopEnabled = ActionPayload.lower() == 'true'
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success", "value": MacroSystemInstance.WindowAlwaysOnTopEnabled})
-
-        elif RequestedAction == 'toggle_debug_overlay':
-            MacroSystemInstance.DebugOverlayVisible = ActionPayload.lower() == 'true'
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success", "value": MacroSystemInstance.DebugOverlayVisible})
-        
-        elif RequestedAction == 'toggle_auto_buy_bait':
-            MacroSystemInstance.AutomaticBaitPurchaseEnabled = ActionPayload.lower() == 'true'
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success", "value": MacroSystemInstance.AutomaticBaitPurchaseEnabled})
-        
-        elif RequestedAction == 'toggle_auto_store_fruit':
-            MacroSystemInstance.AutomaticFruitStorageEnabled = ActionPayload.lower() == 'true'
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success", "value": MacroSystemInstance.AutomaticFruitStorageEnabled})
-        
-        elif RequestedAction == 'toggle_auto_select_bait':
-            MacroSystemInstance.AutomaticTopBaitSelectionEnabled = ActionPayload.lower() == 'true'
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success", "value": MacroSystemInstance.AutomaticTopBaitSelectionEnabled})
-
-        elif RequestedAction == 'toggle_auto_select_bait':
-            MacroSystemInstance.AutomaticTopBaitSelectionEnabled = ActionPayload.lower() == 'true'
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success", "value": MacroSystemInstance.AutomaticTopBaitSelectionEnabled})
-        
-        elif RequestedAction == 'set_kp':
-            MacroSystemInstance.ProportionalGainCoefficient = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_kd':
-            MacroSystemInstance.DerivativeGainCoefficient = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_pd_clamp':
-            MacroSystemInstance.ControlSignalMaximumClamp = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_pd_approaching':
-            MacroSystemInstance.PDControllerApproachingStateDamping = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_pd_chasing':
-            MacroSystemInstance.PDControllerChasingStateDamping = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_gap_tolerance':
-            MacroSystemInstance.BarGroupingGapToleranceMultiplier = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_cast_hold':
-            MacroSystemInstance.MouseHoldDurationForCast = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_recast_timeout':
-            MacroSystemInstance.MaximumWaitTimeBeforeRecast = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_fish_end_delay':
-            MacroSystemInstance.DelayAfterFishCaptured = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_state_resend':
-            MacroSystemInstance.InputStateResendFrequency = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_loops_per_purchase':
-            MacroSystemInstance.BaitPurchaseFrequencyCounter = int(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_focus_delay':
-            MacroSystemInstance.RobloxWindowFocusInitialDelay = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_post_focus_delay':
-            MacroSystemInstance.RobloxWindowFocusFollowupDelay = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_precast_e_delay':
-            MacroSystemInstance.PreCastDialogOpenDelay = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-    
-        elif RequestedAction == 'set_precast_click_delay':
-            MacroSystemInstance.PreCastMouseClickDelay = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_precast_type_delay':
-            MacroSystemInstance.PreCastKeyboardInputDelay = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_anti_detect_delay':
-            MacroSystemInstance.PreCastAntiDetectionDelay = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_fruit_hotkey_delay':
-            MacroSystemInstance.FruitStorageHotkeyActivationDelay = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_fruit_click_delay':
-            MacroSystemInstance.FruitStorageClickConfirmationDelay = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_fruit_shift_delay':
-            MacroSystemInstance.FruitStorageShiftKeyPressDelay = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_fruit_backspace_delay':
-            MacroSystemInstance.FruitStorageBackspaceDeletionDelay = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_rod_delay':
-            MacroSystemInstance.InventorySlotSwitchingDelay = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_bait_delay':
-            MacroSystemInstance.BaitSelectionConfirmationDelay = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_cursor_delay':
-            MacroSystemInstance.MouseMovementAntiDetectionDelay = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_scan_delay':
-            MacroSystemInstance.ImageProcessingLoopDelay = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_black_threshold':
-            MacroSystemInstance.BlackScreenDetectionRatioThreshold = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_spam_delay':
-            MacroSystemInstance.AntiMacroDialogSpamDelay = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
-        elif RequestedAction == 'set_craft_left_point':
-            MacroSystemInstance.InitiatePointSelectionMode('CraftLeftButtonLocation')
-            return jsonify({"status": "waiting_for_click"})
-
-        elif RequestedAction == 'set_craft_middle_point':
-            MacroSystemInstance.InitiatePointSelectionMode('CraftMiddleButtonLocation')
-            return jsonify({"status": "waiting_for_click"})
-        
-        elif RequestedAction == 'set_bait_recipe_point':
-            MacroSystemInstance.InitiatePointSelectionMode('BaitRecipeButtonLocation')
-            return jsonify({"status": "waiting_for_click"})
-
-        elif RequestedAction == 'set_add_recipe_point':
-            MacroSystemInstance.InitiatePointSelectionMode('AddRecipeButtonLocation')
-            return jsonify({"status": "waiting_for_click"})
-
-        elif RequestedAction == 'set_top_recipe_point':
-            MacroSystemInstance.InitiatePointSelectionMode('TopRecipeButtonLocation')
-            return jsonify({"status": "waiting_for_click"})
-
-        elif RequestedAction == 'set_craft_button_point':
-            MacroSystemInstance.InitiatePointSelectionMode('CraftButtonLocation')
-            return jsonify({"status": "waiting_for_click"})
-
-        elif RequestedAction == 'set_close_menu_point':
-            MacroSystemInstance.InitiatePointSelectionMode('CloseMenuButtonLocation')
-            return jsonify({"status": "waiting_for_click"})
-
-        elif RequestedAction == 'toggle_auto_craft_bait':
-            MacroSystemInstance.AutomaticBaitCraftingEnabled = ActionPayload.lower() == 'true'
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success", "value": MacroSystemInstance.AutomaticBaitCraftingEnabled})
-
-        elif RequestedAction == 'set_crafts_per_cycle':
-            MacroSystemInstance.CraftsPerCycleCount = int(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-
-        elif RequestedAction == 'set_loops_per_craft':
-            MacroSystemInstance.BaitCraftFrequencyCounter = int(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-
-        elif RequestedAction == 'set_move_duration':
-            MacroSystemInstance.MoveDurationSeconds = float(ActionPayload)
-            MacroSystemInstance.SaveConfigurationToDisk()
-            return jsonify({"status": "success"})
-        
+        if RequestedAction in action_handlers:
+            return action_handlers[RequestedAction]()
         else:
             return jsonify({"status": "error", "message": f"Unknown action: {RequestedAction}"}), 400
-
+    
+    except ValueError as e:
+        return jsonify({"status": "error", "message": f"Invalid value format: {str(e)}"}), 400
     except Exception as ErrorDetails:
         return jsonify({"status": "error", "message": str(ErrorDetails)}), 500
+
+
+def handle_point_selection(point_name):
+    MacroSystemInstance.InitiatePointSelectionMode(point_name)
+    return jsonify({"status": "waiting_for_click"})
+
+
+def handle_boolean_toggle(attribute_name):
+    ActionPayload = request.json.get('payload')
+    if ActionPayload is None:
+        return jsonify({"status": "error", "message": "Missing payload"}), 400
+    
+    boolean_value = ActionPayload.lower() == 'true'
+    setattr(MacroSystemInstance, attribute_name, boolean_value)
+    MacroSystemInstance.SaveConfigurationToDisk()
+    return jsonify({"status": "success", "value": boolean_value})
+
+
+def handle_string_value(attribute_name):
+    ActionPayload = request.json.get('payload')
+    if ActionPayload is None:
+        return jsonify({"status": "error", "message": "Missing payload"}), 400
+    
+    setattr(MacroSystemInstance, attribute_name, ActionPayload)
+    MacroSystemInstance.SaveConfigurationToDisk()
+    return jsonify({"status": "success"})
+
+
+def handle_integer_value(attribute_name):
+    ActionPayload = request.json.get('payload')
+    if ActionPayload is None:
+        return jsonify({"status": "error", "message": "Missing payload"}), 400
+    
+    try:
+        integer_value = int(ActionPayload)
+        setattr(MacroSystemInstance, attribute_name, integer_value)
+        MacroSystemInstance.SaveConfigurationToDisk()
+        return jsonify({"status": "success"})
+    except (ValueError, TypeError) as e:
+        return jsonify({"status": "error", "message": f"Invalid integer value: {str(e)}"}), 400
+
+
+def handle_float_value(attribute_name):
+    ActionPayload = request.json.get('payload')
+    if ActionPayload is None:
+        return jsonify({"status": "error", "message": "Missing payload"}), 400
+    
+    try:
+        float_value = float(ActionPayload)
+        setattr(MacroSystemInstance, attribute_name, float_value)
+        MacroSystemInstance.SaveConfigurationToDisk()
+        return jsonify({"status": "success"})
+    except (ValueError, TypeError) as e:
+        return jsonify({"status": "error", "message": f"Invalid float value: {str(e)}"}), 400
+
+
+def handle_hotkey_rebind(ActionPayload):
+    if ActionPayload is None:
+        return jsonify({"status": "error", "message": "Missing payload"}), 400
+    
+    MacroSystemInstance.CurrentlyRebindingHotkey = ActionPayload
+    keyboard.unhook_all_hotkeys()
+    
+    def HandleKeyboardEvent(PressedKeyEvent):
+        if MacroSystemInstance.CurrentlyRebindingHotkey == ActionPayload:
+            NewHotkeyValue = PressedKeyEvent.name.lower()
+            MacroSystemInstance.GlobalHotkeyBindings[ActionPayload] = NewHotkeyValue
+            MacroSystemInstance.SaveConfigurationToDisk()
+            MacroSystemInstance.CurrentlyRebindingHotkey = None
+            MacroSystemInstance.RegisterAllHotkeyBindings()
+    
+    keyboard.on_release(HandleKeyboardEvent, suppress=False)
+    return jsonify({"status": "waiting_for_key"})
 
 @FlaskApplication.route('/health', methods=['GET'])
 def PerformHealthCheck():
