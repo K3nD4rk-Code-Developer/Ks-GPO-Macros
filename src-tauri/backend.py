@@ -268,8 +268,8 @@ class AutomatedFishingSystem:
         self.TopRecipeButtonLocation = None
         self.CraftButtonLocation = None
         self.CloseMenuButtonLocation = None
-        self.CraftsPerCycleCount = 80
-        self.BaitCraftFrequencyCounter = 40
+        self.CraftsPerCycleCount = 40
+        self.BaitCraftFrequencyCounter = 5
         self.MoveDurationSeconds = 4.25
         self.BaitCraftIterationCounter = 0
 
@@ -562,19 +562,20 @@ class AutomatedFishingSystem:
             self.CloseMenuButtonLocation
         ]):
             if self.BaitCraftIterationCounter == 0 or self.BaitCraftIterationCounter >= self.BaitCraftFrequencyCounter:
-                keyboard.press_and_release('shift')
-                time.sleep(0.1)
-                if not self.MacroCurrentlyExecuting: return False
-                
-                keyboard.press('d')
-                time.sleep(self.MoveDurationSeconds)
-                keyboard.release('d')
-                time.sleep(1.0)
-                if not self.MacroCurrentlyExecuting: return False
-                
-                keyboard.press_and_release('shift')
-                time.sleep(0.1)
-                if not self.MacroCurrentlyExecuting: return False
+                if self.MoveDurationSeconds < 0:
+                    keyboard.press_and_release('shift')
+                    time.sleep(0.1)
+                    if not self.MacroCurrentlyExecuting: return False
+                    
+                    keyboard.press('d')
+                    time.sleep(self.MoveDurationSeconds)
+                    keyboard.release('d')
+                    time.sleep(1.0)
+                    if not self.MacroCurrentlyExecuting: return False
+                    
+                    keyboard.press_and_release('shift')
+                    time.sleep(0.1)
+                    if not self.MacroCurrentlyExecuting: return False
                 
                 keyboard.press_and_release('t')
                 time.sleep(self.PreCastMouseClickDelay + 0.85)
@@ -631,7 +632,7 @@ class AutomatedFishingSystem:
                         ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
                         time.sleep(self.PreCastAntiDetectionDelay)
                         pyautogui.click()
-                        time.sleep(self.PreCastMouseClickDelay)
+                        time.sleep(0.025)
                 
                 ctypes.windll.user32.SetCursorPos(self.CloseMenuButtonLocation['x'], self.CloseMenuButtonLocation['y'])
                 time.sleep(self.PreCastAntiDetectionDelay)
@@ -640,20 +641,21 @@ class AutomatedFishingSystem:
                 pyautogui.click()
                 time.sleep(self.PreCastMouseClickDelay)
                 if not self.MacroCurrentlyExecuting: return False
-                
-                keyboard.press_and_release('shift')
-                time.sleep(0.1)
-                if not self.MacroCurrentlyExecuting: return False
-                
-                keyboard.press('a')
-                time.sleep(self.MoveDurationSeconds)
-                keyboard.release('a')
-                time.sleep(1.0)
-                if not self.MacroCurrentlyExecuting: return False
-                
-                keyboard.press_and_release('shift')
-                time.sleep(0.1)
-                if not self.MacroCurrentlyExecuting: return False
+
+                if self.MoveDurationSeconds < 0: 
+                    keyboard.press_and_release('shift')
+                    time.sleep(0.1)
+                    if not self.MacroCurrentlyExecuting: return False
+                    
+                    keyboard.press('a')
+                    time.sleep(self.MoveDurationSeconds)
+                    keyboard.release('a')
+                    time.sleep(1.0)
+                    if not self.MacroCurrentlyExecuting: return False
+                    
+                    keyboard.press_and_release('shift')
+                    time.sleep(0.1)
+                    if not self.MacroCurrentlyExecuting: return False
                 
                 self.BaitCraftIterationCounter = 1
             else:
