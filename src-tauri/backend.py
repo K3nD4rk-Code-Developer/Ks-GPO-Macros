@@ -739,17 +739,32 @@ class AutomatedFishingSystem:
                         time.sleep(self.FruitStorageClickConfirmationDelay)
                         if not self.MacroCurrentlyExecuting: return False
                         
-                        pyautogui.moveTo(self.DevilFruitLocationPoint['x'], self.DevilFruitLocationPoint['y'], duration=0.2)
-                        time.sleep(0.2)
+                        start_x = self.DevilFruitLocationPoint['x']
+                        start_y = self.DevilFruitLocationPoint['y']
+                        end_x = self.DevilFruitLocationPoint['x']
+                        end_y = self.DevilFruitLocationPoint['y'] - 150
+                        
+                        ctypes.windll.user32.SetCursorPos(start_x, start_y)
+                        time.sleep(0.03)
+                        ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
+                        time.sleep(0.08)
                         if not self.MacroCurrentlyExecuting: return False
                         
-                        pyautogui.mouseDown(button='left')
-                        time.sleep(0.1)
+                        pyautogui.mouseDown()
+                        time.sleep(0.15)
+                        if not self.MacroCurrentlyExecuting:
+                            pyautogui.mouseUp()
+                            return False
                         
-                        pyautogui.moveTo(self.DevilFruitLocationPoint['x'], self.DevilFruitLocationPoint['y'] - 150, duration=0.3)
-                        time.sleep(0.1)
+                        ctypes.windll.user32.SetCursorPos(end_x, end_y)
+                        time.sleep(0.03)
+                        ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
+                        time.sleep(0.25)
+                        if not self.MacroCurrentlyExecuting:
+                            pyautogui.mouseUp()
+                            return False
                         
-                        pyautogui.mouseUp(button='left')
+                        pyautogui.mouseUp()
                         
                         time.sleep(self.PreCastAntiDetectionDelay)
                         if not self.MacroCurrentlyExecuting: return False

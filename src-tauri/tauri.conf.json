@@ -47,7 +47,8 @@
       "icons/icon.ico"
     ],
     "resources": [
-      "dist/backend.exe"
+      "python-embed/**/*",
+      "backend.py"
     ]
   }
 }

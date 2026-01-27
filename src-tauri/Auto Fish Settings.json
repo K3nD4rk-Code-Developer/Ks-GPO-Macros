@@ -49,7 +49,7 @@
         "y": 1066
     },
     "loops_per_purchase": 100,
-    "store_to_backpack": false,
+    "store_to_backpack": true,
     "devil_fruit_location_point": {
         "x": 913,
         "y": 1367

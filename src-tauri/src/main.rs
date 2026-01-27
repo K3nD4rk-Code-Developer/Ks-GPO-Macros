@@ -4,8 +4,20 @@ use tauri::{Manager, PhysicalPosition};
 use std::process::{Command, Child, Stdio};
 use std::sync::Mutex;
 use std::path::PathBuf;
+use std::fs::OpenOptions;
+use std::io::Write;
 
 struct PythonProcess(Mutex<Option<Child>>);
+
+fn log_to_file(message: &str) {
+    if let Ok(mut file) = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("debug.log")
+    {
+        let _ = writeln!(file, "{}", message);
+    }
+}
 
 #[tauri::command]
 fn send_to_python(action: String, payload: String) -> Result<String, String> {
@@ -23,57 +35,146 @@ fn send_to_python(action: String, payload: String) -> Result<String, String> {
     }
 }
 
-fn get_backend_path(_app: &tauri::AppHandle) -> PathBuf {
-    // In development, use the Python script, reproduce dist though.
+fn get_python_and_script(app: &tauri::AppHandle) -> (PathBuf, PathBuf) {
     #[cfg(debug_assertions)]
     {
-        return PathBuf::from("backend.py");
+        (PathBuf::from("python"), PathBuf::from("backend.py"))
     }
     
-    // In production, use the bundled executable
     #[cfg(not(debug_assertions))]
     {
         let resource_path = app.path().resource_dir()
             .expect("Failed to get resource directory");
-        return resource_path.join("dist").join("backend.exe");
+        let python_exe = resource_path.join("python-embed").join("python.exe");
+        let script = resource_path.join("backend.py");
+        (python_exe, script)
     }
 }
 
+fn wait_for_backend() -> bool {
+    log_to_file("Starting backend healthcheck...");
+    let client = reqwest::blocking::Client::new();
+    let max_attempts = 30;
+    
+    for i in 0..max_attempts {
+        std::thread::sleep(std::time::Duration::from_millis(500));
+        
+        match client.get("http://localhost:8765/health").send() {
+            Ok(_) => {
+                log_to_file(&format!("Backend ready after {} attempts", i + 1));
+                return true;
+            }
+            Err(e) => {
+                log_to_file(&format!("Attempt {}/{}: {}", i + 1, max_attempts, e));
+            }
+        }
+    }
+    
+    log_to_file("Backend failed to start!");
+    false
+}
+
 fn main() {
+    let _ = std::fs::remove_file("debug.log");
+    log_to_file("=== APP STARTING ===");
+    
     tauri::Builder::default()
         .setup(|app| {
-            let backend_path = get_backend_path(&app.handle());
+            log_to_file("In setup function");
             
             let python_process = if cfg!(debug_assertions) {
-                // Development: run Python script
+                log_to_file("DEBUG MODE");
+                
                 #[cfg(target_os = "windows")]
                 let python_cmd = "python";
                 
                 #[cfg(not(target_os = "windows"))]
                 let python_cmd = "python3";
                 
-                Command::new(python_cmd)
-                    .arg(backend_path)
-                    .stdout(Stdio::null())
-                    .stderr(Stdio::null())
+                match Command::new(python_cmd)
+                    .arg("backend.py")
                     .spawn()
-                    .expect("Failed to start Python backend")
+                {
+                    Ok(child) => {
+                        log_to_file("Python backend started in debug mode");
+                        child
+                    }
+                    Err(e) => {
+                        log_to_file(&format!("Failed to start debug backend: {}", e));
+                        panic!("Failed to start Python backend: {}", e);
+                    }
+                }
             } else {
-                // Production: run bundled executable
-                Command::new(backend_path)
-                    .stdout(Stdio::null())
-                    .stderr(Stdio::null())
+                log_to_file("PRODUCTION MODE");
+                
+                let (python_exe, script) = get_python_and_script(&app.handle());
+                let resource_dir = app.path().resource_dir().unwrap();
+                
+                log_to_file(&format!("Python exe: {:?}", python_exe));
+                log_to_file(&format!("Script: {:?}", script));
+                log_to_file(&format!("Python exists: {}", python_exe.exists()));
+                log_to_file(&format!("Script exists: {}", script.exists()));
+                
+                if !python_exe.exists() {
+                    log_to_file("ERROR: Python executable not found!");
+                    panic!("Python executable not found at: {:?}", python_exe);
+                }
+                
+                if !script.exists() {
+                    log_to_file("ERROR: Backend script not found!");
+                    panic!("Backend script not found at: {:?}", script);
+                }
+                
+                log_to_file(&format!("Working directory: {:?}", resource_dir));
+                
+                let stdout_log = resource_dir.join("python_stdout.log");
+                let stderr_log = resource_dir.join("python_stderr.log");
+                
+                log_to_file(&format!("Python stdout will be in: {:?}", stdout_log));
+                log_to_file(&format!("Python stderr will be in: {:?}", stderr_log));
+                
+                let stdout_file = std::fs::File::create(&stdout_log)
+                    .expect("Failed to create stdout log");
+                let stderr_file = std::fs::File::create(&stderr_log)
+                    .expect("Failed to create stderr log");
+                
+                match Command::new(&python_exe)
+                    .arg(&script)
+                    .current_dir(&resource_dir)
+                    .stdout(Stdio::from(stdout_file))
+                    .stderr(Stdio::from(stderr_file))
                     .spawn()
-                    .expect("Failed to start backend executable")
+                {
+                    Ok(child) => {
+                        log_to_file("Python backend spawned successfully");
+                        child
+                    }
+                    Err(e) => {
+                        log_to_file(&format!("Failed to spawn backend: {}", e));
+                        panic!("Failed to start Python backend: {}", e);
+                    }
+                }
             };
             
             app.manage(PythonProcess(Mutex::new(Some(python_process))));
             
+            log_to_file("Waiting for backend...");
+            if !wait_for_backend() {
+                log_to_file("PANIC: Backend didn't start in time");
+                
+                let resource_dir = app.path().resource_dir().unwrap();
+                let stderr_log = resource_dir.join("python_stderr.log");
+                if let Ok(errors) = std::fs::read_to_string(&stderr_log) {
+                    log_to_file(&format!("Python errors: {}", errors));
+                }
+                
+                panic!("Backend failed to start within 15 seconds!");
+            }
+            
+            log_to_file("Backend is running!");
+            
             let main_window = app.get_webview_window("main").unwrap();
             let stats_window = app.get_webview_window("stats");
-            
-            // Wait for backend to start
-            std::thread::sleep(std::time::Duration::from_secs(2));
             
             let main_window_clone = main_window.clone();
             std::thread::spawn(move || {
@@ -125,17 +226,33 @@ fn main() {
                 });
             }
             
+            log_to_file("Setup complete!");
             Ok(())
         })
         .on_window_event(|window, event| {
-            if let tauri::WindowEvent::Destroyed = event {
+            if let tauri::WindowEvent::CloseRequested { .. } = event {
                 if window.label() == "main" {
+                    log_to_file("Main window close requested, terminating backend...");
                     if let Some(python_process) = window.app_handle().try_state::<PythonProcess>() {
                         if let Ok(mut process_guard) = python_process.0.lock() {
                             if let Some(mut child) = process_guard.take() {
-                                let _ = child.kill();
+                                #[cfg(target_os = "windows")]
+                                {
+                                    // On Windows, forcefully kill the process tree
+                                    let pid = child.id();
+                                    log_to_file(&format!("Killing Python process PID: {}", pid));
+                                    let _ = Command::new("taskkill")
+                                        .args(&["/F", "/T", "/PID", &pid.to_string()])
+                                        .output();
+                                }
+                                
+                                #[cfg(not(target_os = "windows"))]
+                                {
+                                    let _ = child.kill();
+                                }
+                                
                                 let _ = child.wait();
-                                println!("Backend terminated");
+                                log_to_file("Backend terminated");
                             }
                         }
                     }
