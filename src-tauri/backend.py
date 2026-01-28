@@ -559,9 +559,9 @@ class AutomatedFishingSystem:
 
             ScanRegion = {
                 "top": 60,
-                "left": int(MonitorWidth * 0.35),
-                "width": int(MonitorWidth * 0.30),
-                "height": int(MonitorHeight * 0.30)
+                "left": int(MonitorWidth * 0.40),
+                "width": int(MonitorWidth * 0.20),
+                "height": int(MonitorHeight * 0.20)
             }
 
             with mss.mss() as ScreenCapture:
@@ -1056,14 +1056,57 @@ class AutomatedFishingSystem:
                     if InitGreenDetected and self.WebhookUrl:
                         DetectedFruitName = None
                         if self.TextDetectionEnabled:
-                            print("trying to find fruit name via ocr...")
                             DetectedFruitName = self.DetectNewItemNotification()
 
                         if not self.MacroCurrentlyExecuting: return False
-                        print(DetectedFruitName)
+
                         if not self.DetectGreenishColor(self.FruitStorageButtonLocation):
+                            def GetClosestFruit(Name, Cutoff=0.6):
+                                KnownFruits = {
+                                    "Soul",
+                                    "Dragon",
+                                    "Mochi",
+                                    "Ope",
+                                    "Tori",
+                                    "Buddha",
+                                    "Pika",
+                                    "Kage",
+                                    "Magu",
+                                    "Gura",
+                                    "Yuki",
+                                    "Smoke",
+                                    "Goru",
+                                    "Suna",
+                                    "Mera",
+                                    "Goro",
+                                    "Ito",
+                                    "Paw",
+                                    "Yami",
+                                    "Zushi",
+                                    "Kira",
+                                    "Spring",
+                                    "Yomi",
+                                    "Bomu",
+                                    "Bari",
+                                    "Mero",
+                                    "Horo",
+                                    "Gomu",
+                                    "Suke",
+                                    "Heal",
+                                    "Kilo",
+                                    "Spin",
+                                    "Hie",
+                                    "Venom",
+                                    "Pteranodon",
+                                }
+
+                                from difflib import get_close_matches
+                                Matches = get_close_matches(Name, KnownFruits, n=1, cutoff=Cutoff)
+                                return Matches[0] if Matches else None
+
                             if DetectedFruitName:
-                                self.SendWebhookNotification(f"Devil Fruit: '{DetectedFruitName}' stored successfully!")
+                                ClosestMatch = GetClosestFruit(DetectedFruitName)
+                                self.SendWebhookNotification(f"Devil Fruit {ClosestMatch or DetectedFruitName} stored successfully!")
                             else:
                                 self.SendWebhookNotification("Devil Fruit stored successfully!")
                         else:
