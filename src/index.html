@@ -272,6 +272,7 @@
         opacity: 0;
         transform: translateX(100px);
       }
+
       to {
         opacity: 1;
         transform: translateX(0);
@@ -283,6 +284,7 @@
         opacity: 1;
         transform: translateX(0);
       }
+
       to {
         opacity: 0;
         transform: translateX(100px);
@@ -693,7 +695,9 @@
           </div>
 
           <div class="card">
-            <div class="card-header">Crafting Interface Points</div>
+            <div class="card-header">
+              Crafting Interface Points
+            </div>
             <div class="control-group">
               <span class="control-label">Left UI</span>
               <div class="control-input">
@@ -709,27 +713,6 @@
               </div>
             </div>
             <div class="control-group">
-              <span class="control-label">Bait Recipe Selection</span>
-              <div class="control-input">
-                <span class="point-indicator unset" id="baitRecipePointStatus">Not Configured</span>
-                <button class="btn btn-sm" onclick="sendToPython('set_bait_recipe_point', '')">Configure</button>
-              </div>
-            </div>
-            <div class="control-group">
-              <span class="control-label">Add Recipe</span>
-              <div class="control-input">
-                <span class="point-indicator unset" id="addRecipePointStatus">Not Configured</span>
-                <button class="btn btn-sm" onclick="sendToPython('set_add_recipe_point', '')">Configure</button>
-              </div>
-            </div>
-            <div class="control-group">
-              <span class="control-label">Top Recipe Slot</span>
-              <div class="control-input">
-                <span class="point-indicator unset" id="topRecipePointStatus">Not Configured</span>
-                <button class="btn btn-sm" onclick="sendToPython('set_top_recipe_point', '')">Configure</button>
-              </div>
-            </div>
-            <div class="control-group">
               <span class="control-label">Craft Confirmation</span>
               <div class="control-input">
                 <span class="point-indicator unset" id="craftButtonPointStatus">Not Configured</span>
@@ -742,6 +725,15 @@
                 <span class="point-indicator unset" id="closeMenuPointStatus">Not Configured</span>
                 <button class="btn btn-sm" onclick="sendToPython('set_close_menu_point', '')">Configure</button>
               </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              Crafting Recipes
+              <button class="btn btn-sm" onclick="AddNewRecipe()" style="float: right;">+ Add Recipe</button>
+            </div>
+            <div id="RecipesContainer">
             </div>
           </div>
 
@@ -817,25 +809,25 @@
                 </div>
               </div>
               <div class="control-group">
-                <span class="control-label">Amount of Crafts</span>
-                <div class="control-input">
-                  <input type="number" class="input" id="craftsPerCycle" value="40" step="1"
-                    onchange="sendToPython('set_crafts_per_cycle', this.value)">
-                </div>
-              </div>
-              <div class="control-group">
-                <span class="control-label">Switch Fish Cycle</span>
-                <div class="control-input">
-                  <input type="number" class="input" id="loopsPerCraft" value="5" step="1"
-                    onchange="sendToPython('set_loops_per_craft', this.value)">
-                </div>
-              </div>
-              <div class="control-group">
                 <span class="control-label">Movement Duration</span>
                 <div class="control-input">
                   <input type="number" class="input" id="moveDuration" value="4.25" step="0.25"
                     onchange="sendToPython('set_move_duration', this.value)">
                   <span class="unit">seconds</span>
+                </div>
+              </div>
+              <div class="control-group">
+                <span class="control-label">Add Recipe</span>
+                <div class="control-input">
+                  <span class="point-indicator unset" id="addRecipePointStatus">Not Configured</span>
+                  <button class="btn btn-sm" onclick="sendToPython('set_add_recipe_point', '')">Configure</button>
+                </div>
+              </div>
+              <div class="control-group">
+                <span class="control-label">Top Recipe Slot</span>
+                <div class="control-input">
+                  <span class="point-indicator unset" id="topRecipePointStatus">Not Configured</span>
+                  <button class="btn btn-sm" onclick="sendToPython('set_top_recipe_point', '')">Configure</button>
                 </div>
               </div>
             </div>
@@ -874,8 +866,7 @@
             <div class="control-group">
               <span class="control-label">Enable Auto Select Top Bait</span>
               <div class="control-input">
-                <div class="toggle-switch" id="autoSelectBaitToggle"
-                  onclick="toggleSetting('autoSelectBait')"></div>
+                <div class="toggle-switch" id="autoSelectBaitToggle" onclick="toggleSetting('autoSelectBait')"></div>
               </div>
             </div>
           </div>
@@ -887,18 +878,20 @@
             <div class="control-group">
               <span class="control-label">Discord Webhook URL</span>
               <div class="control-input">
-                <input type="text" class="input input-wide" id="webhookUrl" placeholder="https://discord.com/api/webhooks/..."
+                <input type="text" class="input input-wide" id="webhookUrl"
+                  placeholder="https://discord.com/api/webhooks/..."
                   onchange="sendToPython('set_webhook_url', this.value)">
               </div>
             </div>
             <div class="help-hint">Paste your Discord webhook URL to receive notifications</div>
           </div>
-        
+
           <div class="card">
             <div class="card-header">Event Logging</div>
             <div class="checkbox-group">
               <div class="checkbox-item">
-                <input type="checkbox" id="logDevilFruit" onchange="sendToPython('toggle_log_devil_fruit', this.checked.toString())">
+                <input type="checkbox" id="logDevilFruit"
+                  onchange="sendToPython('toggle_log_devil_fruit', this.checked.toString())">
                 <label class="checkbox-label" for="logDevilFruit">
                   Devil Fruit Stored
                 </label>
@@ -1149,6 +1142,74 @@
               </div>
             </div>
           </div>
+          <div class="card">
+            <div class="card-header">Crafting Timing</div>
+
+            <div class="control-group">
+              <span class="control-label">Menu Open Delay (T key press)</span>
+              <div class="control-input">
+                <input type="number" class="input" id="craftMenuDelay" value="0.85" step="0.05"
+                  onchange="sendToPython('set_craft_menu_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">UI Click Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="craftClickDelay" value="0.5" step="0.05"
+                  onchange="sendToPython('set_craft_click_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">Recipe Selection Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="craftRecipeDelay" value="0.5" step="0.05"
+                  onchange="sendToPython('set_craft_recipe_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">Add Recipe Button Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="craftAddDelay" value="0.5" step="0.05"
+                  onchange="sendToPython('set_craft_add_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">Top Recipe Slot Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="craftTopDelay" value="0.5" step="0.05"
+                  onchange="sendToPython('set_craft_top_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">Craft Button Click Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="craftButtonDelay" value="0.025" step="0.005"
+                  onchange="sendToPython('set_craft_button_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">Close Menu Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="craftCloseDelay" value="0.5" step="0.05"
+                  onchange="sendToPython('set_craft_close_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+
+            <div class="help-hint">Fine-tune delays between crafting actions to prevent errors</div>
+          </div>
         </div>
       </div>
     </div>
@@ -1320,6 +1381,129 @@
       }
     }
 
+    async function AddNewRecipe() {
+      try {
+        const Response = await fetch('http://localhost:8765/add_recipe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const Result = await Response.json();
+        if (Result.status === 'success') {
+          await pollPythonState();
+        }
+      } catch (Error) {
+        console.error('Failed to add recipe:', Error);
+      }
+    }
+
+    async function RemoveRecipe(RecipeIndex) {
+      try {
+        const Response = await fetch('http://localhost:8765/remove_recipe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ index: RecipeIndex })
+        });
+        await pollPythonState();
+      } catch (Error) {
+        console.error('Failed to remove recipe:', Error);
+      }
+    }
+
+    async function SetRecipePoint(RecipeIndex, PointType) {
+      try {
+        const Response = await fetch('http://localhost:8765/set_recipe_point', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recipeIndex: RecipeIndex, pointType: PointType })
+        });
+      } catch (Error) {
+        console.error('Failed to set recipe point:', Error);
+      }
+    }
+
+    let LastRenderedRecipes = null;
+
+    function RenderRecipes(Recipes) {
+      const Container = document.getElementById('RecipesContainer');
+      if (!Container) return;
+
+      if (JSON.stringify(Recipes) === JSON.stringify(LastRenderedRecipes)) {
+        return;
+      }
+
+      LastRenderedRecipes = JSON.parse(JSON.stringify(Recipes));
+
+      Container.innerHTML = '';
+
+      if (Recipes.length === 0) {
+        Container.innerHTML = '<div style="text-align: center; padding: 20px; color: #6b7280;">No recipes configured. Click "+ Add Recipe" to get started.</div>';
+        return;
+      }
+
+      Recipes.forEach((Recipe, Index) => {
+        const RecipeDiv = document.createElement('div');
+        RecipeDiv.className = 'recipe-item';
+        RecipeDiv.style.cssText = `
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 12px;
+            background: rgba(17, 24, 39, 0.3);
+        `;
+
+        RecipeDiv.innerHTML = `
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+              <strong style="color: #00d4ff;">Recipe ${Index + 1}</strong>
+              <button class="btn btn-sm btn-secondary" onclick="RemoveRecipe(${Index})">Remove</button>
+          </div>
+          
+          <div class="control-group">
+              <span class="control-label">Bait Recipe Selection</span>
+              <div class="control-input">
+                  <span class="point-indicator ${Recipe.BaitRecipePoint ? 'set' : 'unset'}">
+                      ${Recipe.BaitRecipePoint ? `X: ${Recipe.BaitRecipePoint.x}, Y: ${Recipe.BaitRecipePoint.y}` : 'Not Configured'}
+                  </span>
+                  <button class="btn btn-sm" onclick="SetRecipePoint(${Index}, 'BaitRecipePoint')">Configure</button>
+              </div>
+          </div>
+          
+          <div class="control-group">
+              <span class="control-label">Amount of Crafts</span>
+              <div class="control-input">
+                  <input type="number" class="input" value="${Recipe.CraftsPerCycle || 40}" step="1"
+                      onchange="UpdateRecipeValue(${Index}, 'CraftsPerCycle', this.value)">
+              </div>
+          </div>
+          
+          <div class="control-group">
+              <span class="control-label">Switch Fish Cycle</span>
+              <div class="control-input">
+                  <input type="number" class="input" value="${Recipe.SwitchFishCycle || 5}" step="1"
+                      onchange="UpdateRecipeValue(${Index}, 'SwitchFishCycle', this.value)">
+              </div>
+          </div>
+      `;
+
+        Container.appendChild(RecipeDiv);
+      });
+    }
+
+    async function UpdateRecipeValue(RecipeIndex, FieldName, Value) {
+      try {
+        const Response = await fetch('http://localhost:8765/update_recipe_value', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipeIndex: RecipeIndex,
+            fieldName: FieldName,
+            value: parseInt(Value)
+          })
+        });
+      } catch (Error) {
+        console.error('Failed to update recipe value:', Error);
+      }
+    }
+
     function loadAllSettings(state) {
       console.log('Loading all settings from state:', state);
 
@@ -1381,6 +1565,10 @@
       setInputValue('blackThreshold', state.blackScreenThreshold);
       setInputValue('spamDelay', state.antiMacroSpamDelay);
 
+      setInputValue('craftMenuDelay', state.craftMenuOpenDelay);
+      setInputValue('craftClickDelay', state.craftClickDelay);
+      setInputValue('craftRecipeDelay', state.craftRecipeSelectDelay);
+
       updatePointStatus('waterPoint', state.waterPoint?.x, state.waterPoint?.y);
       updatePointStatus('leftPoint', state.leftPoint?.x, state.leftPoint?.y);
       updatePointStatus('middlePoint', state.middlePoint?.x, state.middlePoint?.y);
@@ -1409,6 +1597,10 @@
 
         updateStatus(state.isRunning);
 
+        if (state.baitRecipes !== undefined) {
+          RenderRecipes(state.baitRecipes);
+        }
+
         updatePointStatus('waterPoint', state.waterPoint?.x, state.waterPoint?.y);
         updatePointStatus('leftPoint', state.leftPoint?.x, state.leftPoint?.y);
         updatePointStatus('middlePoint', state.middlePoint?.x, state.middlePoint?.y);
@@ -1417,9 +1609,6 @@
         updatePointStatus('baitPoint', state.baitPoint?.x, state.baitPoint?.y);
         updatePointStatus('craftLeftPoint', state.craftLeftPoint?.x, state.craftLeftPoint?.y);
         updatePointStatus('craftMiddlePoint', state.craftMiddlePoint?.x, state.craftMiddlePoint?.y);
-        updatePointStatus('baitRecipePoint', state.baitRecipePoint?.x, state.baitRecipePoint?.y);
-        updatePointStatus('addRecipePoint', state.addRecipePoint?.x, state.addRecipePoint?.y);
-        updatePointStatus('topRecipePoint', state.topRecipePoint?.x, state.topRecipePoint?.y);
         updatePointStatus('craftButtonPoint', state.craftButtonPoint?.x, state.craftButtonPoint?.y);
         updatePointStatus('closeMenuPoint', state.closeMenuPoint?.x, state.closeMenuPoint?.y);
         updatePointStatus('devilFruitLocationPoint', state.devilFruitLocationPoint?.x, state.devilFruitLocationPoint?.y);

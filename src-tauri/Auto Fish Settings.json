@@ -8,10 +8,10 @@
         "ShowDebugOverlay": true
     },
     "ScanArea": {
-        "x1": 1343,
-        "y1": 420,
-        "x2": 1753,
-        "y2": 1138
+        "x1": 1292,
+        "y1": 510,
+        "x2": 1709,
+        "y2": 1132
     },
     "ClickPoints": {
         "WaterPoint": {
@@ -41,7 +41,10 @@
                 "x": 1378,
                 "y": 1147
             },
-            "DevilFruitLocationPoint": null
+            "DevilFruitLocationPoint": {
+                "x": 819,
+                "y": 544
+            }
         },
         "Crafting": {
             "CraftLeftPoint": {
@@ -52,18 +55,6 @@
                 "x": 1276,
                 "y": 1304
             },
-            "BaitRecipePoint": {
-                "x": 1038,
-                "y": 805
-            },
-            "AddRecipePoint": {
-                "x": 1487,
-                "y": 496
-            },
-            "TopRecipePoint": {
-                "x": 1824,
-                "y": 396
-            },
             "CraftButtonPoint": {
                 "x": 1485,
                 "y": 1024
@@ -71,7 +62,27 @@
             "CloseMenuPoint": {
                 "x": 1665,
                 "y": 348
-            }
+            },
+            "BaitRecipes": [
+                {
+                    "BaitRecipePoint": {
+                        "x": 1025,
+                        "y": 800
+                    },
+                    "CraftsPerCycle": 40,
+                    "LoopsPerCraft": 5,
+                    "SwitchFishCycle": 5
+                },
+                {
+                    "BaitRecipePoint": {
+                        "x": 1042,
+                        "y": 763
+                    },
+                    "CraftsPerCycle": 40,
+                    "SwitchFishCycle": 2
+                }
+            ],
+            "CurrentRecipeIndex": 0
         }
     },
     "InventoryHotkeys": {
@@ -81,9 +92,9 @@
     },
     "AutomationFeatures": {
         "AutoBuyCommonBait": false,
-        "AutoStoreDevilFruit": true,
+        "AutoStoreDevilFruit": false,
         "AutoSelectTopBait": false,
-        "AutoCraftBait": false
+        "AutoCraftBait": true
     },
     "AutomationFrequencies": {
         "LoopsPerPurchase": 100,
@@ -143,7 +154,14 @@
             "AntiMacroSpamDelay": 0.25
         },
         "Crafting": {
-            "MoveDuration": 0.0
+            "MoveDuration": 0.0,
+            "CraftMenuOpenDelay": 0.85,
+            "CraftClickDelay": 0.2,
+            "CraftRecipeSelectDelay": 0.2,
+            "CraftAddRecipeDelay": 0.2,
+            "CraftTopRecipeDelay": 0.2,
+            "CraftButtonClickDelay": 0.025,
+            "CraftCloseMenuDelay": 0.2
         }
     }
 }

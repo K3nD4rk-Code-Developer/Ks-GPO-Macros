@@ -35,7 +35,7 @@ fn send_to_python(action: String, payload: String) -> Result<String, String> {
     }
 }
 
-fn get_python_and_script(_app: &tauri::AppHandle) -> (PathBuf, PathBuf) {
+fn get_python_and_script(app: &tauri::AppHandle) -> (PathBuf, PathBuf) {
     #[cfg(debug_assertions)]
     {
         (PathBuf::from("python"), PathBuf::from("backend.py"))
