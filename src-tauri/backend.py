@@ -298,7 +298,7 @@ class AutomatedFishingSystem:
         self.BaitSelectionButtonLocation = None
 
         self.BaitPurchaseFrequencyCounter = 100
-        self.DevilFruitInventorySlot = "3"
+        self.DevilFruitInventorySlots = ["3"]
 
         self.RobloxWindowFocusInitialDelay = 0.2
         self.RobloxWindowFocusFollowupDelay = 0.2
@@ -411,7 +411,7 @@ class AutomatedFishingSystem:
                     InventoryHotkeys = ParsedConfigurationData.get("InventoryHotkeys", {})
                     self.FishingRodInventorySlot = InventoryHotkeys.get("RodHotkey", "1")
                     self.AlternateInventorySlot = InventoryHotkeys.get("AnythingElseHotkey", "2")
-                    self.DevilFruitInventorySlot = InventoryHotkeys.get("DevilFruitHotkey", "3")
+                    self.DevilFruitInventorySlots = InventoryHotkeys.get("DevilFruitHotkey", ["3"])
                     
                     Automation = ParsedConfigurationData.get("AutomationFeatures", {})
                     self.AutomaticBaitPurchaseEnabled = Automation.get("AutoBuyCommonBait", True)
@@ -525,7 +525,7 @@ class AutomatedFishingSystem:
                     "InventoryHotkeys": {
                         "RodHotkey": self.FishingRodInventorySlot,
                         "AnythingElseHotkey": self.AlternateInventorySlot,
-                        "DevilFruitHotkey": self.DevilFruitInventorySlot
+                        "DevilFruitHotkeys": self.DevilFruitInventorySlots,
                     },
                     "AutomationFeatures": {
                         "AutoBuyCommonBait": self.AutomaticBaitPurchaseEnabled,
@@ -1132,68 +1132,69 @@ class AutomatedFishingSystem:
                                 self.SendWebhookNotification("Devil Fruit could not be stored.")
                                 
                 elif self.FruitStorageButtonLocation:
-                    keyboard.press_and_release(self.AlternateInventorySlot)
-                    time.sleep(self.InventorySlotSwitchingDelay)
+                    for Slot in self.DevilFruitInventorySlots:
+                        keyboard.press_and_release(self.AlternateInventorySlot)
+                        time.sleep(self.InventorySlotSwitchingDelay)
 
-                    keyboard.press_and_release(self.FishingRodInventorySlot)
-                    time.sleep(self.InventorySlotSwitchingDelay)
+                        keyboard.press_and_release(self.FishingRodInventorySlot)
+                        time.sleep(self.InventorySlotSwitchingDelay)
 
-                    keyboard.press_and_release(self.FishingRodInventorySlot)
-                    time.sleep(self.InventorySlotSwitchingDelay)
+                        keyboard.press_and_release(self.FishingRodInventorySlot)
+                        time.sleep(self.InventorySlotSwitchingDelay)
 
-                    keyboard.press_and_release(self.DevilFruitInventorySlot)
-                    time.sleep(self.FruitStorageHotkeyActivationDelay)
-                    if not self.MacroCurrentlyExecuting: return False
-
-                    InitGreenDetected = False
-                    if self.LogDevilFruitEnabled and self.DetectGreenishColor(self.FruitStorageButtonLocation):
-                        InitGreenDetected = True
-                            
-                    ctypes.windll.user32.SetCursorPos(self.FruitStorageButtonLocation['x'], self.FruitStorageButtonLocation['y'])
-                    time.sleep(self.PreCastAntiDetectionDelay)
-                    ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
-                    time.sleep(self.PreCastAntiDetectionDelay)
-                    pyautogui.click()
-                    time.sleep(self.FruitStorageClickConfirmationDelay)
-                    if not self.MacroCurrentlyExecuting: return False
-                    
-                    if InitGreenDetected and self.WebhookUrl:
-                        DetectedFruitName = None
-                        if self.TextDetectionEnabled:
-                            DetectedFruitName = self.DetectNewItemNotification()
-
+                        keyboard.press_and_release(Slot)
+                        time.sleep(self.FruitStorageHotkeyActivationDelay)
                         if not self.MacroCurrentlyExecuting: return False
 
-                        if not self.DetectGreenishColor(self.FruitStorageButtonLocation):
-                            def GetClosestFruit(Name, Cutoff=0.6):
-                                KnownFruits = {
-                                    "Soul", "Dragon", "Mochi", "Ope", "Tori", "Buddha",
-                                    "Pika", "Kage", "Magu", "Gura", "Yuki", "Smoke",
-                                    "Goru", "Suna", "Mera", "Goro", "Ito", "Paw",
-                                    "Yami", "Zushi", "Kira", "Spring", "Yomi",
-                                    "Bomu", "Bari", "Mero", "Horo", "Gomu", "Suke", "Heal",
-                                    "Kilo", "Spin", "Hie", "Venom", "Pteranodon",
-                                }
+                        InitGreenDetected = False
+                        if self.LogDevilFruitEnabled and self.DetectGreenishColor(self.FruitStorageButtonLocation):
+                            InitGreenDetected = True
+                                
+                        ctypes.windll.user32.SetCursorPos(self.FruitStorageButtonLocation['x'], self.FruitStorageButtonLocation['y'])
+                        time.sleep(self.PreCastAntiDetectionDelay)
+                        ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
+                        time.sleep(self.PreCastAntiDetectionDelay)
+                        pyautogui.click()
+                        time.sleep(self.FruitStorageClickConfirmationDelay)
+                        if not self.MacroCurrentlyExecuting: return False
+                        
+                        if InitGreenDetected and self.WebhookUrl:
+                            DetectedFruitName = None
+                            if self.TextDetectionEnabled:
+                                DetectedFruitName = self.DetectNewItemNotification()
 
-                                Matches = get_close_matches(Name, KnownFruits, n=1, cutoff=Cutoff)
-                                return Matches[0] if Matches else None
+                            if not self.MacroCurrentlyExecuting: return False
 
-                            if DetectedFruitName:
-                                ClosestMatch = GetClosestFruit(DetectedFruitName)
-                                self.SendWebhookNotification(f"Devil Fruit {ClosestMatch or DetectedFruitName} stored successfully!")
+                            if not self.DetectGreenishColor(self.FruitStorageButtonLocation):
+                                def GetClosestFruit(Name, Cutoff=0.6):
+                                    KnownFruits = {
+                                        "Soul", "Dragon", "Mochi", "Ope", "Tori", "Buddha",
+                                        "Pika", "Kage", "Magu", "Gura", "Yuki", "Smoke",
+                                        "Goru", "Suna", "Mera", "Goro", "Ito", "Paw",
+                                        "Yami", "Zushi", "Kira", "Spring", "Yomi",
+                                        "Bomu", "Bari", "Mero", "Horo", "Gomu", "Suke", "Heal",
+                                        "Kilo", "Spin", "Hie", "Venom", "Pteranodon",
+                                    }
+
+                                    Matches = get_close_matches(Name, KnownFruits, n=1, cutoff=Cutoff)
+                                    return Matches[0] if Matches else None
+
+                                if DetectedFruitName:
+                                    ClosestMatch = GetClosestFruit(DetectedFruitName)
+                                    self.SendWebhookNotification(f"Devil Fruit {ClosestMatch or DetectedFruitName} stored successfully!")
+                                else:
+                                    self.SendWebhookNotification("Devil Fruit stored successfully!")
                             else:
-                                self.SendWebhookNotification("Devil Fruit stored successfully!")
-                        else:
-                            self.SendWebhookNotification("Devil Fruit could not be stored.")
-                            keyboard.press_and_release('shift')
-                            time.sleep(self.FruitStorageShiftKeyPressDelay)
-                            if not self.MacroCurrentlyExecuting: return False
-                            
-                            keyboard.press_and_release('backspace')
-                            time.sleep(self.FruitStorageBackspaceDeletionDelay)
-                            if not self.MacroCurrentlyExecuting: return False
-                            
-                            keyboard.press_and_release('shift')
+                                self.SendWebhookNotification("Devil Fruit could not be stored.")
+                                keyboard.press_and_release('shift')
+                                time.sleep(self.FruitStorageShiftKeyPressDelay)
+                                if not self.MacroCurrentlyExecuting: return False
+                                
+                                keyboard.press_and_release('backspace')
+                                time.sleep(self.FruitStorageBackspaceDeletionDelay)
+                                if not self.MacroCurrentlyExecuting: return False
+                                
+                                keyboard.press_and_release('shift')
                 
                     
                 self.DevilFruitStorageIterationCounter = 1
@@ -1545,7 +1546,7 @@ class AutomatedFishingSystem:
             "hotkeys": self.GlobalHotkeyBindings,
             "rodHotkey": self.FishingRodInventorySlot,
             "anythingElseHotkey": self.AlternateInventorySlot,
-            "devilFruitHotkey": self.DevilFruitInventorySlot,
+            "devilFruitHotkeys": self.DevilFruitInventorySlots,
             "alwaysOnTop": self.WindowAlwaysOnTopEnabled,
             "showDebugOverlay": self.DebugOverlayVisible,
             "autoBuyCommonBait": self.AutomaticBaitPurchaseEnabled,
@@ -1652,7 +1653,7 @@ def ProcessIncomingCommand():
             'toggle_auto_craft_bait': lambda: handle_boolean_toggle('AutomaticBaitCraftingEnabled'),
             'set_rod_hotkey': lambda: handle_string_value('FishingRodInventorySlot'),
             'set_anything_else_hotkey': lambda: handle_string_value('AlternateInventorySlot'),
-            'set_devil_fruit_hotkey': lambda: handle_string_value('DevilFruitInventorySlot'),
+            'set_devil_fruit_hotkeys': lambda: handle_devil_fruit_slots(ActionPayload),
             'set_loops_per_store': lambda: handle_integer_value('DevilFruitStorageFrequencyCounter'),
             'set_loops_per_purchase': lambda: handle_integer_value('BaitPurchaseFrequencyCounter'),
             'set_fish_count_per_craft': lambda: handle_integer_value('FishCountPerCraft'),
@@ -1715,8 +1716,8 @@ def AddNewRecipe():
     try:
         MacroSystemInstance.BaitRecipes.append({
             "BaitRecipePoint": None,
-            "CraftsPerCycle": 40,  # Add this
-            "SwitchFishCycle": 5   # Add this
+            "CraftsPerCycle": 40,
+            "SwitchFishCycle": 5 
         })
         MacroSystemInstance.SaveConfigurationToDisk()
         return jsonify({"status": "success", "recipeIndex": len(MacroSystemInstance.BaitRecipes) - 1})
@@ -1780,6 +1781,18 @@ def SetRecipePoint():
         return jsonify({"status": "waiting_for_click"})
     except Exception as ErrorDetails:
         return jsonify({"status": "error", "message": str(ErrorDetails)}), 500
+
+def handle_devil_fruit_slots(ActionPayload):
+    if ActionPayload is None:
+        return jsonify({"status": "error", "message": "Missing payload"}), 400
+    
+    try:
+        slots = [s.strip() for s in ActionPayload.split(',') if s.strip()]
+        MacroSystemInstance.DevilFruitInventorySlots = slots
+        MacroSystemInstance.SaveConfigurationToDisk()
+        return jsonify({"status": "success", "slots": slots})
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Invalid slots: {str(e)}"}), 400
 
 def handle_point_selection(point_name):
     MacroSystemInstance.InitiatePointSelectionMode(point_name)

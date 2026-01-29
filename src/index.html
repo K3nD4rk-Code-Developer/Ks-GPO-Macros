@@ -537,7 +537,7 @@
         <div class="logo">K</div>
         <div class="title-group">
           <h1>GPO Fishing Macro</h1>
-          <div class="version">Version 1.2.2</div>
+          <div class="version">Version 1.2.4</div>
         </div>
       </div>
       <div class="status-badge">
@@ -620,23 +620,13 @@
               </div>
             </div>
             <div class="control-group">
-              <span class="control-label">Devil Fruit Slot</span>
-              <div class="control-input">
-                <select class="select" id="devilFruitHotkey"
-                  onchange="sendToPython('set_devil_fruit_hotkey', this.value)">
-                  <option>1</option>
-                  <option>2</option>
-                  <option selected>3</option>
-                  <option>4</option>
-                  <option>5</option>
-                  <option>6</option>
-                  <option>7</option>
-                  <option>8</option>
-                  <option>9</option>
-                  <option>0</option>
-                </select>
+              <span class="control-label">Devil Fruit Slots</span>
+              <div class="control-input" style="margin-left: 20px;">
+                <div id="devilFruitSlotSelector" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                </div>
               </div>
             </div>
+            <div class="help-hint">Select multiple slots to check for devil fruits</div>
           </div>
 
           <div class="card">
@@ -1146,7 +1136,7 @@
             <div class="card-header">Crafting Timing</div>
 
             <div class="control-group">
-              <span class="control-label">Menu Open Delay (T key press)</span>
+              <span class="control-label">Menu Open Delay</span>
               <div class="control-input">
                 <input type="number" class="input" id="craftMenuDelay" value="0.85" step="0.05"
                   onchange="sendToPython('set_craft_menu_delay', this.value)">
@@ -1233,6 +1223,60 @@
       const isActive = toggle.classList.contains('active');
       sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
     }
+
+    function renderDevilFruitSlotSelector(selectedSlots) {
+        const container = document.getElementById('devilFruitSlotSelector');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        for (let i = 0; i <= 9; i++) {
+          const button = document.createElement('button');
+          button.className = 'btn btn-sm slot-button';
+          button.textContent = i.toString();
+
+          const isSelected = selectedSlots && selectedSlots.includes(i.toString());
+
+          if (isSelected) {
+            button.style.cssText = `
+        min-width: 36px; 
+        padding: 6px 10px;
+        background: linear-gradient(135deg, #00d4ff, #0099ff);
+        border-color: #00d4ff;
+        box-shadow: 0 4px 12px rgba(0, 212, 255, 0.4);
+      `;
+          } else {
+            button.style.cssText = `
+        min-width: 36px; 
+        padding: 6px 10px;
+        background: linear-gradient(135deg, rgba(75, 85, 99, 0.5), rgba(55, 65, 81, 0.6));
+        box-shadow: none;
+      `;
+          }
+
+          button.onclick = () => toggleDevilFruitSlot(i.toString());
+          container.appendChild(button);
+        }
+      }
+
+      function toggleDevilFruitSlot(slot) {
+        let currentSlots = window.currentDevilFruitSlots || ['3'];
+
+        if (currentSlots.includes(slot)) {
+          currentSlots = currentSlots.filter(s => s !== slot);
+        } else {
+          currentSlots.push(slot);
+        }
+
+        if (currentSlots.length === 0) {
+          currentSlots = ['3'];
+        }
+
+        window.currentDevilFruitSlots = currentSlots;
+        renderDevilFruitSlotSelector(currentSlots);
+
+        sendToPython('set_devil_fruit_hotkeys', currentSlots.join(','));
+      }
 
     function toggleExpandable(settingName, expandId) {
       const toggle = document.getElementById(`${settingName}Toggle`);
@@ -1513,9 +1557,14 @@
         updateHotkey('exit', state.hotkeys.exit || 'f3');
       }
 
-      setInputValue('rodHotkey', state.rodHotkey || '4');
-      setInputValue('anythingElseHotkey', state.anythingElseHotkey || '1');
-      setInputValue('devilFruitHotkey', state.devilFruitHotkey || '6');
+      setInputValue('rodHotkey', state.rodHotkey || '1');
+      setInputValue('anythingElseHotkey', state.anythingElseHotkey || '2');
+      let dfSlots = state.devilFruitHotkeys || state.devilFruitHotkey || ['3'];
+      if (!Array.isArray(dfSlots)) {
+        dfSlots = [dfSlots];
+      }
+      window.currentDevilFruitSlots = dfSlots;
+      renderDevilFruitSlotSelector(dfSlots);
 
       setToggleState('alwaysOnTopToggle', state.alwaysOnTop);
       setToggleState('debugOverlayToggle', state.showDebugOverlay);

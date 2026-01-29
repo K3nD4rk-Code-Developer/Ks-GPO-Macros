@@ -88,13 +88,15 @@
     "InventoryHotkeys": {
         "RodHotkey": "0",
         "AnythingElseHotkey": "1",
-        "DevilFruitHotkey": "2"
+        "DevilFruitHotkeys": [
+            "3"
+        ]
     },
     "AutomationFeatures": {
-        "AutoBuyCommonBait": false,
+        "AutoBuyCommonBait": true,
         "AutoStoreDevilFruit": false,
         "AutoSelectTopBait": false,
-        "AutoCraftBait": true
+        "AutoCraftBait": false
     },
     "AutomationFrequencies": {
         "LoopsPerPurchase": 100,
@@ -105,7 +107,7 @@
     },
     "DevilFruitStorage": {
         "StoreToBackpack": false,
-        "LogDevilFruit": true,
+        "LogDevilFruit": false,
         "WebhookUrl": "https://discord.com/api/webhooks/1355302138020106340/HfF7EF56swzYC_i75qPqWxvyqbIVg8FL03FGsZUkghrxe0azLIpfTURa_Synb8zCCGGQ"
     },
     "FishingControl": {
@@ -144,8 +146,8 @@
             "AutoSelectBaitDelay": 0.5
         },
         "DevilFruitStorage": {
-            "StoreFruitHotkeyDelay": 1.0,
-            "StoreFruitClickDelay": 2.0,
+            "StoreFruitHotkeyDelay": 0.5,
+            "StoreFruitClickDelay": 1.0,
             "StoreFruitShiftDelay": 0.5,
             "StoreFruitBackspaceDelay": 1.5
         },
