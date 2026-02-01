@@ -8,15 +8,15 @@
         "ShowDebugOverlay": true
     },
     "ScanArea": {
-        "x1": 1273,
-        "y1": 464,
-        "x2": 1711,
-        "y2": 1111
+        "x1": 1258,
+        "y1": 492,
+        "x2": 1655,
+        "y2": 1074
     },
     "ClickPoints": {
         "WaterPoint": {
-            "x": 1349,
-            "y": 327
+            "x": 1230,
+            "y": 478
         },
         "Shop": {
             "LeftPoint": {
@@ -77,6 +77,16 @@
                         "x": 1022,
                         "y": 765
                     },
+                    "CraftsPerCycle": 40,
+                    "SwitchFishCycle": 5
+                },
+                {
+                    "BaitRecipePoint": null,
+                    "CraftsPerCycle": 40,
+                    "SwitchFishCycle": 5
+                },
+                {
+                    "BaitRecipePoint": null,
                     "CraftsPerCycle": 40,
                     "SwitchFishCycle": 5
                 }

@@ -20,6 +20,7 @@ from difflib import get_close_matches
 import re
 import sys
 from ctypes import wintypes
+import webbrowser
 
 pyautogui.PAUSE = 0
 
@@ -1777,6 +1778,7 @@ def ProcessIncomingCommand():
             'set_webhook_url': lambda: handle_string_value('WebhookUrl'),
             'toggle_log_devil_fruit': lambda: handle_boolean_toggle('LogDevilFruitEnabled'),
             'open_area_selector': lambda: handle_area_selector(),
+            'open_browser': lambda: handle_open_browser(ActionPayload),
         }
         
         if RequestedAction == 'rebind_hotkey':
@@ -1882,6 +1884,16 @@ def handle_point_selection(point_name):
 def handle_area_selector():
     MacroSystemInstance.ModifyScanningRegion()
     return jsonify({"status": "opening_selector"})
+
+def handle_open_browser(url):
+    if not url:
+        return jsonify({"status": "error", "message": "Missing URL"}), 400
+    
+    try:
+        webbrowser.open(url)
+        return jsonify({"status": "success"})
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
 
 def handle_boolean_toggle(attribute_name):
     ActionPayload = request.json.get('payload')

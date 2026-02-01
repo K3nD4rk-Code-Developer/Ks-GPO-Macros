@@ -1870,7 +1870,7 @@ dependencies = [
 
 [[package]]
 name = "gpo-fish-macro"
-version = "0.1.2"
+version = "1.2.6"
 dependencies = [
  "enigo",
  "image 0.25.9",
