@@ -45,6 +45,38 @@
             color: #00d4ff;
             text-align: right;
         }
+
+        .status-line {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(100, 100, 100, 0.3);
+        }
+
+        .status-label {
+            color: #888;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .status-value {
+            color: #10b981;
+            font-size: 13px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.6;
+            }
+        }
     </style>
 </head>
 
@@ -62,6 +94,10 @@
             <span class="stat-label">Fish/Hour</span>
             <span class="stat-value" id="fishPerHour">0.0</span>
         </div>
+        <div class="status-line">
+            <div class="status-label">Current Status</div>
+            <div class="status-value" id="currentStatus">Idle</div>
+        </div>
     </div>
 
     <script>
@@ -75,6 +111,7 @@
                 document.getElementById('fishCount').textContent = state.fishCaught || 0;
                 document.getElementById('timeElapsed').textContent = state.timeElapsed || '0:00:00';
                 document.getElementById('fishPerHour').textContent = (state.fishPerHour || 0).toFixed(1);
+                document.getElementById('currentStatus').textContent = state.currentStatus || 'Idle';
 
                 if (state.isRunning && state.showDebugOverlay) {
                     await appWindow.show();

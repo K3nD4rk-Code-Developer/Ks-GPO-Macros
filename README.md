@@ -59,4 +59,4 @@ Windows only because of the `win32gui` and `keyboard` libraries.
 
 ## License
 
-MIT - do whatever you want with it, just credit
+Personal Use LC - Do whatever you want with it, just credit. Don't publish or release partially modified verisons though.

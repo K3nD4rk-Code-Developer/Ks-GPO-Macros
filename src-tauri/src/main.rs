@@ -196,26 +196,44 @@ fn main() {
                 std::thread::spawn(move || {
                     let client = reqwest::blocking::Client::new();
                     std::thread::sleep(std::time::Duration::from_secs(2));
-                    
+
+                    let mut has_positioned = false;
+
                     loop {
                         std::thread::sleep(std::time::Duration::from_secs(1));
-                        
+
                         if let Ok(response) = client.get("http://localhost:8765/state").send() {
                             if let Ok(state) = response.json::<serde_json::Value>() {
-                                let is_running = state.get("isRunning").and_then(|v| v.as_bool()).unwrap_or(false);
-                                let show_debug = state.get("showDebugOverlay").and_then(|v| v.as_bool()).unwrap_or(false);
-                                
+                                let is_running = state
+                                    .get("isRunning")
+                                    .and_then(|v| v.as_bool())
+                                    .unwrap_or(false);
+
+                                let show_debug = state
+                                    .get("showDebugOverlay")
+                                    .and_then(|v| v.as_bool())
+                                    .unwrap_or(false);
+
                                 if is_running && show_debug {
-                                    if let Ok(monitor) = stats_win.current_monitor() {
-                                        if let Some(monitor) = monitor {
-                                            if let Ok(size) = stats_win.outer_size() {
-                                                let screen_width = monitor.size().width as i32;
-                                                let window_width = size.width as i32;
-                                                let x = (screen_width - window_width) / 2;
-                                                let _ = stats_win.set_position(PhysicalPosition::new(x, 20));
+                                    // Position ONLY once
+                                    if !has_positioned {
+                                        if let Ok(monitor) = stats_win.current_monitor() {
+                                            if let Some(monitor) = monitor {
+                                                if let Ok(size) = stats_win.outer_size() {
+                                                    let screen_width = monitor.size().width as i32;
+                                                    let window_width = size.width as i32;
+                                                    let x = (screen_width - window_width) / 2;
+
+                                                    let _ = stats_win.set_position(
+                                                        PhysicalPosition::new(x, 20),
+                                                    );
+
+                                                    has_positioned = true;
+                                                }
                                             }
                                         }
                                     }
+
                                     let _ = stats_win.show();
                                 } else {
                                     let _ = stats_win.hide();
@@ -225,7 +243,7 @@ fn main() {
                     }
                 });
             }
-            
+
             log_to_file("Setup complete!");
             Ok(())
         })

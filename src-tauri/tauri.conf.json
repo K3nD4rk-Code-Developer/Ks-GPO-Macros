@@ -19,7 +19,7 @@
       {
         "title": "Stats",
         "width": 300,
-        "height": 120,
+        "height": 150,
         "resizable": false,
         "decorations": false,
         "transparent": true,

@@ -47,7 +47,7 @@ class AutomatedFishingSystem:
             handle = kernel32.OpenProcess(PROCESS_SET_INFORMATION, False, pid)
             
             if handle:
-                result = kernel32.SetPriorityClass(handle, 0x00000080)
+                result = kernel32.SetPriorityClass(handle, 0x00000100)
                 kernel32.CloseHandle(handle)
                 
                 if not result:
@@ -198,8 +198,13 @@ class AutomatedFishingSystem:
         self.MouseEventListenerInstance = None
         self.CurrentlySettingPointName = None
 
+        self.CurrentMacroStatus = "Idle"
+
         self.LoadConfigurationFromDisk()
         self.RegisterAllHotkeyBindings()
+
+    def UpdateStatus(self, status_message):
+        self.CurrentMacroStatus = status_message
     
     def LoadConfigurationFromDisk(self):
         if not os.path.exists(self.ConfigurationFilePath):
@@ -527,6 +532,7 @@ class AutomatedFishingSystem:
                 if not self.TextDetectionEnabled:
                     return None
                 
+                self.UpdateStatus("Initializing OCR...")
                 self.InitializeOCR()
                 
                 WaitStartTime = time.time()
@@ -540,7 +546,8 @@ class AutomatedFishingSystem:
                 if self.OCRReader is None:
                     self.TextDetectionEnabled = False
                     return None
-                                
+            
+            self.UpdateStatus("Scanning for Devil Fruit...")
             SystemDisplayMetrics = ctypes.windll.user32
             MonitorWidth = SystemDisplayMetrics.GetSystemMetrics(0)
             MonitorHeight = SystemDisplayMetrics.GetSystemMetrics(1)
@@ -609,6 +616,7 @@ class AutomatedFishingSystem:
         self.MacroCurrentlyExecuting = not self.MacroCurrentlyExecuting
         
         if self.MacroCurrentlyExecuting:
+            self.UpdateStatus("Starting macro...")
             self.CurrentSessionBeginTimestamp = time.time()
             self.RobloxWindowAlreadyFocused = False
             self.ConsecutiveRecastTimeouts = 0
@@ -618,6 +626,7 @@ class AutomatedFishingSystem:
                 self.SendWebhookNotification("Macro started.")
             threading.Thread(target=self.ExecutePrimaryMacroLoop, daemon=True).start()
         else:
+            self.UpdateStatus("Stopping macro...")
             if self.CurrentSessionBeginTimestamp:
                 self.CumulativeRunningTimeSeconds += time.time() - self.CurrentSessionBeginTimestamp
                 self.CurrentSessionBeginTimestamp = None
@@ -626,6 +635,7 @@ class AutomatedFishingSystem:
                 self.MouseButtonCurrentlyPressed = False
             if self.WebhookUrl and self.LogGeneralUpdates:
                 self.SendWebhookNotification(f"Macro stopped. Fish this session: {self.TotalFishSuccessfullyCaught}")
+            self.UpdateStatus("Idle")
     
     def ModifyScanningRegion(self):
         if self.RegionSelectorCurrentlyActive:
@@ -657,6 +667,7 @@ class AutomatedFishingSystem:
         os._exit(0)
 
     def HandleRecastTimeout(self):
+        self.UpdateStatus("Recast timeout detected")
         self.TotalRecastTimeouts += 1
         self.ConsecutiveRecastTimeouts += 1
         if not self.WebhookUrl or not self.LogRecastTimeouts:
@@ -757,39 +768,53 @@ class AutomatedFishingSystem:
     def ExecutePrimaryMacroLoop(self):
         while self.MacroCurrentlyExecuting:
             try:
+                self.UpdateStatus("Starting new fishing cycle")
                 self.PreviousControlLoopErrorValue = None
                 self.PreviousTargetBarVerticalPosition = None
                 self.LastImageScanTimestamp = time.time()
                 
                 if self.MouseButtonCurrentlyPressed:
+                    self.UpdateStatus("Releasing mouse from previous cycle")
                     pyautogui.mouseUp()
                     self.MouseButtonCurrentlyPressed = False
                 
                 if not self.MacroCurrentlyExecuting:
                     break
                 
+                self.UpdateStatus("Beginning pre-cast sequence")
                 if not self.ExecutePreCastSequence():
+                    self.UpdateStatus("Pre-cast sequence failed - restarting cycle")
                     continue
+                
+                self.UpdateStatus("Pre-cast sequence complete")
                 
                 if not self.MacroCurrentlyExecuting:
                     break
                 
+                self.UpdateStatus("Waiting for bobber to appear")
                 if not self.WaitForFishingBobberReady():
+                    self.UpdateStatus("Bobber timeout - recasting")
                     self.HandleRecastTimeout()
                     continue
 
                 self.ConsecutiveRecastTimeouts = 0
+                self.UpdateStatus("Bobber ready - starting minigame")
                 
+                self.UpdateStatus("Entering minigame control loop")
                 while self.MacroCurrentlyExecuting:
                     if not self.PerformActiveFishingControl():
+                        self.UpdateStatus("Minigame control loop ended")
                         break
                 
                 if self.MacroCurrentlyExecuting:
+                    self.UpdateStatus("Fish caught successfully!")
                     self.TotalFishSuccessfullyCaught += 1
                     self.FishCountSinceLastCraft += 1
                     self.MostRecentFishCaptureTimestamp = time.time()
+                    self.UpdateStatus(f"Total fish: {self.TotalFishSuccessfullyCaught}")
                     self.CheckPeriodicStats()
                     
+                    self.UpdateStatus(f"Waiting {self.DelayAfterFishCaptured}s before next cast")
                     RemainingDelayTime = self.DelayAfterFishCaptured
                     while RemainingDelayTime > 0 and self.MacroCurrentlyExecuting:
                         DelayIncrement = min(0.1, RemainingDelayTime)
@@ -797,13 +822,17 @@ class AutomatedFishingSystem:
                         RemainingDelayTime -= DelayIncrement
             
             except Exception as MainLoopError:
+                self.UpdateStatus(f"Error: {str(MainLoopError)[:30]}")
                 print(f"Error in Main: {MainLoopError}")
                 if self.WebhookUrl and self.LogGeneralUpdates:
                     self.SendWebhookNotification(f"Macro crashed: {MainLoopError}")
                 break
+        
+        self.UpdateStatus("Idle")
     
     def ExecutePreCastSequence(self):
         if not self.RobloxWindowAlreadyFocused:
+            self.UpdateStatus("Focusing Roblox window")
             def LocateRobloxWindowHandle(WindowHandle, WindowCollection):
                 if win32gui.IsWindowVisible(WindowHandle):
                     WindowTitleText = win32gui.GetWindowText(WindowHandle)
@@ -817,6 +846,7 @@ class AutomatedFishingSystem:
                 win32gui.SetForegroundWindow(DiscoveredWindows[0])
                 time.sleep(self.RobloxWindowFocusInitialDelay)
                 self.RobloxWindowAlreadyFocused = True
+                self.UpdateStatus("Window focused")
                 time.sleep(self.RobloxWindowFocusFollowupDelay)
 
         if not self.MacroCurrentlyExecuting:
@@ -832,6 +862,7 @@ class AutomatedFishingSystem:
             len(self.BaitRecipes) > 0
         ]):
             if self.FishCountSinceLastCraft >= self.FishCountPerCraft:
+                self.UpdateStatus("Starting crafting cycle")
                 time.sleep(self.CraftMenuOpenDelay)
                 if self.MoveDurationSeconds < 0:
                     keyboard.press_and_release('shift')
@@ -848,6 +879,8 @@ class AutomatedFishingSystem:
                     keyboard.press_and_release('shift')
                     time.sleep(0.1)
                     if not self.MacroCurrentlyExecuting: return False
+                
+                self.UpdateStatus("Opening craft menu")
                 keyboard.press_and_release('t')
                 time.sleep(self.CraftMenuOpenDelay)
                 if not self.MacroCurrentlyExecuting: return False
@@ -869,6 +902,7 @@ class AutomatedFishingSystem:
                 if not self.MacroCurrentlyExecuting: return False
                 
                 for RecipeIndex in range(len(self.BaitRecipes)):
+                    self.UpdateStatus(f"Crafting recipe {RecipeIndex+1}/{len(self.BaitRecipes)}")
                     CurrentRecipe = self.BaitRecipes[RecipeIndex]
                     
                     if not CurrentRecipe.get('BaitRecipePoint'):
@@ -905,6 +939,7 @@ class AutomatedFishingSystem:
                         if not self.MacroCurrentlyExecuting: return False
                         
                         for CraftIteration in range(RecipeCraftsPerCycle):
+                            self.UpdateStatus(f"Crafting iteration {CraftIteration+1}/{RecipeCraftsPerCycle}")
                             if not self.MacroCurrentlyExecuting: return False
                             
                             ctypes.windll.user32.SetCursorPos(self.CraftButtonLocation['x'], self.CraftButtonLocation['y'])
@@ -914,6 +949,7 @@ class AutomatedFishingSystem:
                             pyautogui.click()
                             time.sleep(0.025)
                 
+                self.UpdateStatus("Closing craft menu")
                 ctypes.windll.user32.SetCursorPos(self.CloseMenuButtonLocation['x'], self.CloseMenuButtonLocation['y'])
                 time.sleep(self.PreCastAntiDetectionDelay)
                 ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
@@ -938,52 +974,66 @@ class AutomatedFishingSystem:
                     if not self.MacroCurrentlyExecuting: return False
                 
                 self.FishCountSinceLastCraft = 0
+                self.UpdateStatus("Crafting complete")
 
                 if self.WebhookUrl and self.LogGeneralUpdates:
                     self.SendWebhookNotification("Crafting cycle complete.")
         
         if self.AutomaticBaitPurchaseEnabled and self.ShopLeftButtonLocation and self.ShopCenterButtonLocation and self.ShopRightButtonLocation:
-            if self.BaitPurchaseIterationCounter == 0 or self.BaitPurchaseIterationCounter >= self.BaitPurchaseFrequencyCounter:                
+            if self.BaitPurchaseIterationCounter == 0 or self.BaitPurchaseIterationCounter >= self.BaitPurchaseFrequencyCounter:
+                self.UpdateStatus("Opening Shop")
                 keyboard.press_and_release('e')
                 time.sleep(self.PreCastDialogOpenDelay)
-                if not self.MacroCurrentlyExecuting: return False
+                if not self.MacroCurrentlyExecuting:
+                    return False
                 
+                self.UpdateStatus("Clicking shop left button")
                 ctypes.windll.user32.SetCursorPos(self.ShopLeftButtonLocation['x'], self.ShopLeftButtonLocation['y'])
                 time.sleep(self.PreCastAntiDetectionDelay)
                 ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
                 time.sleep(self.PreCastAntiDetectionDelay)
                 pyautogui.click()
                 time.sleep(self.PreCastMouseClickDelay)
-                if not self.MacroCurrentlyExecuting: return False
+                if not self.MacroCurrentlyExecuting:
+                    return False
                 
+                self.UpdateStatus("Clicking shop center button")
                 ctypes.windll.user32.SetCursorPos(self.ShopCenterButtonLocation['x'], self.ShopCenterButtonLocation['y'])
                 time.sleep(self.PreCastAntiDetectionDelay)
                 ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
                 time.sleep(self.PreCastAntiDetectionDelay)
                 pyautogui.click()
                 time.sleep(self.PreCastMouseClickDelay)
-                if not self.MacroCurrentlyExecuting: return False
+                if not self.MacroCurrentlyExecuting:
+                    return False
                 
+                self.UpdateStatus(f"Entering quantity: {self.BaitPurchaseFrequencyCounter}")
                 keyboard.write(str(self.BaitPurchaseFrequencyCounter))
                 time.sleep(self.PreCastKeyboardInputDelay)
-                if not self.MacroCurrentlyExecuting: return False
+                if not self.MacroCurrentlyExecuting:
+                    return False
                 
+                self.UpdateStatus("Confirming left button")
                 ctypes.windll.user32.SetCursorPos(self.ShopLeftButtonLocation['x'], self.ShopLeftButtonLocation['y'])
                 time.sleep(self.PreCastAntiDetectionDelay)
                 ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
                 time.sleep(self.PreCastAntiDetectionDelay)
                 pyautogui.click()
                 time.sleep(self.PreCastMouseClickDelay)
-                if not self.MacroCurrentlyExecuting: return False
+                if not self.MacroCurrentlyExecuting:
+                    return False
                 
+                self.UpdateStatus("Clicking shop right button")
                 ctypes.windll.user32.SetCursorPos(self.ShopRightButtonLocation['x'], self.ShopRightButtonLocation['y'])
                 time.sleep(self.PreCastAntiDetectionDelay)
                 ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
                 time.sleep(self.PreCastAntiDetectionDelay)
                 pyautogui.click()
                 time.sleep(self.PreCastMouseClickDelay)
-                if not self.MacroCurrentlyExecuting: return False
+                if not self.MacroCurrentlyExecuting:
+                    return False
                 
+                self.UpdateStatus("Final shop center click")
                 ctypes.windll.user32.SetCursorPos(self.ShopCenterButtonLocation['x'], self.ShopCenterButtonLocation['y'])
                 time.sleep(self.PreCastAntiDetectionDelay)
                 ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
@@ -991,20 +1041,32 @@ class AutomatedFishingSystem:
                 pyautogui.click()
                 time.sleep(self.PreCastMouseClickDelay)
                 
+                self.UpdateStatus("Bait purchased successfully")
                 self.BaitPurchaseIterationCounter = 1
             else:
+                self.UpdateStatus(f"Skipping bait purchase ({self.BaitPurchaseIterationCounter}/{self.BaitPurchaseFrequencyCounter})")
                 self.BaitPurchaseIterationCounter += 1
-        
+        elif self.AutomaticBaitPurchaseEnabled:
+            if not self.ShopLeftButtonLocation:
+                self.UpdateStatus("Bait purchase skipped - left button not set")
+            elif not self.ShopCenterButtonLocation:
+                self.UpdateStatus("Bait purchase skipped - center button not set")
+            elif not self.ShopRightButtonLocation:
+                self.UpdateStatus("Bait purchase skipped - right button not set")
+
         if not self.MacroCurrentlyExecuting:
             return False
         
         if self.AutomaticFruitStorageEnabled:
             if self.DevilFruitStorageIterationCounter == 0 or self.DevilFruitStorageIterationCounter >= self.DevilFruitStorageFrequencyCounter:
+                self.UpdateStatus("Storing Devil Fruit")
                 if self.StoreToBackpackEnabled and self.DevilFruitLocationPoint:
+                    self.UpdateStatus("Opening inventory")
                     keyboard.press_and_release('`')
                     time.sleep(self.FruitStorageHotkeyActivationDelay)
                     if not self.MacroCurrentlyExecuting: return False
                     
+                    self.UpdateStatus("Clicking fruit location")
                     ctypes.windll.user32.SetCursorPos(self.DevilFruitLocationPoint['x'], self.DevilFruitLocationPoint['y'])
                     time.sleep(self.PreCastAntiDetectionDelay)
                     ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
@@ -1014,6 +1076,7 @@ class AutomatedFishingSystem:
                     if not self.MacroCurrentlyExecuting: return False
                     
                     if self.FruitStorageButtonLocation:
+                        self.UpdateStatus("Checking fruit status")
                         InitGreenDetected = False
                         if self.LogDevilFruitEnabled and self.DetectGreenishColor(self.FruitStorageButtonLocation):
                             InitGreenDetected = True
@@ -1063,8 +1126,10 @@ class AutomatedFishingSystem:
                             time.sleep(1.0)
                             if not self.MacroCurrentlyExecuting: return False
                             if not self.DetectGreenishColor(self.FruitStorageButtonLocation):
+                                self.UpdateStatus("Fruit stored successfully")
                                 self.SendWebhookNotification("Devil Fruit stored successfully!")
                             else:
+                                self.UpdateStatus("Fruit storage failed")
                                 self.SendWebhookNotification("Devil Fruit could not be stored.")
                                 
                 elif self.FruitStorageButtonLocation:
@@ -1082,6 +1147,7 @@ class AutomatedFishingSystem:
                         time.sleep(self.FruitStorageHotkeyActivationDelay)
                         if not self.MacroCurrentlyExecuting: return False
 
+                        self.UpdateStatus("Checking fruit status")
                         InitGreenDetected = False
                         if self.DetectGreenishColor(self.FruitStorageButtonLocation):
                             InitGreenDetected = True
@@ -1116,11 +1182,14 @@ class AutomatedFishingSystem:
 
                                 if DetectedFruitName:
                                     ClosestMatch = GetClosestFruit(DetectedFruitName)
+                                    self.UpdateStatus("Fruit stored successfully")
                                     self.SendWebhookNotification(f"Devil Fruit {ClosestMatch or DetectedFruitName} stored successfully!")
                                 else:
+                                    self.UpdateStatus("Fruit stored successfully")
                                     self.SendWebhookNotification("Devil Fruit stored successfully!")
                             else:
                                 if self.WebhookUrl:
+                                    self.UpdateStatus("Fruit storage failed")
                                     self.SendWebhookNotification("Devil Fruit could not be stored.")
 
                                 if self.AutomaticBaitPurchaseEnabled:
@@ -1134,23 +1203,26 @@ class AutomatedFishingSystem:
 
                                 if self.AutomaticBaitPurchaseEnabled:
                                     keyboard.press_and_release('shift')
-                    
+                
                 self.DevilFruitStorageIterationCounter = 1
             else:
                 self.DevilFruitStorageIterationCounter += 1
 
+        self.UpdateStatus("Pre-cast complete")
         return True
     
     def WaitForFishingBobberReady(self):
         if not self.WaterCastingTargetLocation:
             return False
         
+        self.UpdateStatus("Switching to alternate slot")
         keyboard.press_and_release(self.AlternateInventorySlot)
         time.sleep(self.InventorySlotSwitchingDelay)
         
         if not self.MacroCurrentlyExecuting:
             return False
         
+        self.UpdateStatus("Switching to fishing rod")
         keyboard.press_and_release(self.FishingRodInventorySlot)
         time.sleep(self.InventorySlotSwitchingDelay)
         
@@ -1158,6 +1230,7 @@ class AutomatedFishingSystem:
             return False
         
         if self.AutomaticTopBaitSelectionEnabled and self.BaitSelectionButtonLocation:
+            self.UpdateStatus("Selecting top bait")
             ctypes.windll.user32.SetCursorPos(self.BaitSelectionButtonLocation['x'], self.BaitSelectionButtonLocation['y'])
             time.sleep(self.PreCastAntiDetectionDelay)
             ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
@@ -1168,6 +1241,7 @@ class AutomatedFishingSystem:
         if not self.MacroCurrentlyExecuting:
             return False
         
+        self.UpdateStatus("Casting fishing line")
         ctypes.windll.user32.SetCursorPos(self.WaterCastingTargetLocation['x'], self.WaterCastingTargetLocation['y'])
         time.sleep(self.MouseMovementAntiDetectionDelay)
         ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
@@ -1184,6 +1258,7 @@ class AutomatedFishingSystem:
         
         pyautogui.mouseUp()
         
+        self.UpdateStatus("Waiting for bobber...")
         CastingStartTime = time.time()
         BobberBlueColor = np.array([85, 170, 255])
         BobberWhiteColor = np.array([255, 255, 255])
@@ -1206,25 +1281,27 @@ class AutomatedFishingSystem:
                 ScreenImageArray = np.array(CapturedScreen)
             
             if self.DetectBlackScreenCondition(ScreenImageArray):
+                self.UpdateStatus("Checking for anti-macro...")
                 if not self.HandleAntiMacroDetection():
                     return False
                 continue
             
             BluePixelMask = ((ScreenImageArray[:, :, 2] == BobberBlueColor[0]) & 
-                       (ScreenImageArray[:, :, 1] == BobberBlueColor[1]) & 
-                       (ScreenImageArray[:, :, 0] == BobberBlueColor[2]))
+                    (ScreenImageArray[:, :, 1] == BobberBlueColor[1]) & 
+                    (ScreenImageArray[:, :, 0] == BobberBlueColor[2]))
             WhitePixelMask = ((ScreenImageArray[:, :, 2] == BobberWhiteColor[0]) & 
                         (ScreenImageArray[:, :, 1] == BobberWhiteColor[1]) & 
                         (ScreenImageArray[:, :, 0] == BobberWhiteColor[2]))
             DarkGrayPixelMask = ((ScreenImageArray[:, :, 2] == BobberDarkGrayColor[0]) & 
-                           (ScreenImageArray[:, :, 1] == BobberDarkGrayColor[1]) & 
-                           (ScreenImageArray[:, :, 0] == BobberDarkGrayColor[2]))
+                        (ScreenImageArray[:, :, 1] == BobberDarkGrayColor[1]) & 
+                        (ScreenImageArray[:, :, 0] == BobberDarkGrayColor[2]))
             
             BlueColorDetected = np.any(BluePixelMask)
             WhiteColorDetected = np.any(WhitePixelMask)
             DarkGrayColorDetected = np.any(DarkGrayPixelMask)
             
             if BlueColorDetected and WhiteColorDetected and DarkGrayColorDetected:
+                self.UpdateStatus("Bobber detected!")
                 return True
             
             time.sleep(self.ImageProcessingLoopDelay)
@@ -1248,7 +1325,11 @@ class AutomatedFishingSystem:
         TotalPixelCount = ImageArrayToCheck.shape[0] * ImageArrayToCheck.shape[1]
         BlackPixelRatio = TotalBlackPixelCount / TotalPixelCount
         
-        return BlackPixelRatio >= self.BlackScreenDetectionRatioThreshold
+        if BlackPixelRatio >= self.BlackScreenDetectionRatioThreshold:
+            self.UpdateStatus(f"Black screen: {BlackPixelRatio*100:.1f}%")
+            return True
+        
+        return False
     
     def DetectGreenishColor(self, TargetPoint, ToleranceRadius=20):
         if not TargetPoint:
@@ -1286,20 +1367,24 @@ class AutomatedFishingSystem:
             return False
     
     def HandleAntiMacroDetection(self):
+        self.UpdateStatus("Anti-macro detected - clearing")
         RetryAttemptCount = 0
         MaximumRetryAttempts = 20
         
         while self.MacroCurrentlyExecuting and RetryAttemptCount < MaximumRetryAttempts:
             if not self.DetectBlackScreenCondition():
+                self.UpdateStatus("Anti-macro cleared")
                 return True
             
             keyboard.press_and_release(self.AlternateInventorySlot)
             time.sleep(self.AntiMacroDialogSpamDelay)
             RetryAttemptCount += 1
         
+        self.UpdateStatus("Anti-macro clear failed")
         return False
     
     def PerformActiveFishingControl(self):
+        self.UpdateStatus("Capturing screen for analysis")
         with mss.mss() as ScreenCapture:
             CaptureRegion = {
                 "top": self.ScanningRegionBounds["y1"],
@@ -1311,53 +1396,62 @@ class AutomatedFishingSystem:
             ScreenImageArray = np.array(CapturedScreen)
         
         if self.DetectBlackScreenCondition(ScreenImageArray):
+            self.UpdateStatus("Black screen detected - checking anti-macro")
             if self.MouseButtonCurrentlyPressed:
                 pyautogui.mouseUp()
                 self.MouseButtonCurrentlyPressed = False
             self.HandleAntiMacroDetection()
             return False
         
+        self.UpdateStatus("Searching for blue bobber pixels")
         BobberBlueColor = np.array([85, 170, 255])
         BluePixelMask = ((ScreenImageArray[:, :, 2] == BobberBlueColor[0]) & 
                     (ScreenImageArray[:, :, 1] == BobberBlueColor[1]) & 
                     (ScreenImageArray[:, :, 0] == BobberBlueColor[2]))
         
         if not np.any(BluePixelMask):
+            self.UpdateStatus("No blue pixels - fish escaped or caught")
             if self.MouseButtonCurrentlyPressed:
                 pyautogui.mouseUp()
                 self.MouseButtonCurrentlyPressed = False
             return False
         
+        self.UpdateStatus("Blue pixels found - analyzing position")
         BluePixelYCoordinates, BluePixelXCoordinates = np.where(BluePixelMask)
         HorizontalCenterPosition = int(np.mean(BluePixelXCoordinates))
         
         VerticalSliceArray = ScreenImageArray[:, HorizontalCenterPosition:HorizontalCenterPosition+1, :]
         
+        self.UpdateStatus("Searching for gray boundary pixels")
         BoundaryGrayColor = np.array([25, 25, 25])
         GrayPixelMask = ((VerticalSliceArray[:, 0, 2] == BoundaryGrayColor[0]) & 
                 (VerticalSliceArray[:, 0, 1] == BoundaryGrayColor[1]) & 
                 (VerticalSliceArray[:, 0, 0] == BoundaryGrayColor[2]))
         
         if not np.any(GrayPixelMask):
+            self.UpdateStatus("No gray boundary - minigame not ready")
             return True
         
+        self.UpdateStatus("Gray boundary found - extracting bar region")
         GrayPixelYCoordinates = np.where(GrayPixelMask)[0]
         TopBoundaryPosition = GrayPixelYCoordinates[0]
         BottomBoundaryPosition = GrayPixelYCoordinates[-1]
         BoundedSliceArray = VerticalSliceArray[TopBoundaryPosition:BottomBoundaryPosition+1, :, :]
         
+        self.UpdateStatus("Searching for white indicator bar")
         IndicatorWhiteColor = np.array([255, 255, 255])
         WhitePixelMask = ((BoundedSliceArray[:, 0, 2] == IndicatorWhiteColor[0]) & 
                     (BoundedSliceArray[:, 0, 1] == IndicatorWhiteColor[1]) & 
                     (BoundedSliceArray[:, 0, 0] == IndicatorWhiteColor[2]))
         
         if not np.any(WhitePixelMask):
+            self.UpdateStatus("No white indicator - holding mouse")
             if not self.MouseButtonCurrentlyPressed:
                 pyautogui.mouseDown()
-                print("No White Indicator Detected - Mouse Button")
-                
+                self.MouseButtonCurrentlyPressed = True
             return True
         
+        self.UpdateStatus("White indicator found - calculating position")
         WhitePixelYCoordinates = np.where(WhitePixelMask)[0]
         WhiteBarTopPosition = WhitePixelYCoordinates[0]
         WhiteBarBottomPosition = WhitePixelYCoordinates[-1]
@@ -1365,19 +1459,21 @@ class AutomatedFishingSystem:
         WhiteBarCenterPosition = (WhiteBarTopPosition + WhiteBarBottomPosition) // 2
         WhiteBarCenterScreenY = self.ScanningRegionBounds["y1"] + TopBoundaryPosition + WhiteBarCenterPosition
         
+        self.UpdateStatus("Searching for target dark gray bar")
         TargetDarkGrayColor = np.array([25, 25, 25])
         DarkGrayPixelMask = ((BoundedSliceArray[:, 0, 2] == TargetDarkGrayColor[0]) & 
                     (BoundedSliceArray[:, 0, 1] == TargetDarkGrayColor[1]) & 
                     (BoundedSliceArray[:, 0, 0] == TargetDarkGrayColor[2]))
         
         if not np.any(DarkGrayPixelMask):
+            self.UpdateStatus("No target bar - panic click")
             if not self.MouseButtonCurrentlyPressed:
                 pyautogui.mouseDown()
                 print("Panic Click Engaged - No Dark Gray Pixels Detected")
                 self.MouseButtonCurrentlyPressed = True
-                
             return True
         
+        self.UpdateStatus("Target bar found - grouping pixels")
         DarkGrayPixelYCoordinates = np.where(DarkGrayPixelMask)[0]
         MaximumAllowedGap = WhiteBarHeight * self.BarGroupingGapToleranceMultiplier
         
@@ -1393,10 +1489,12 @@ class AutomatedFishingSystem:
         
         PixelGroupCollections.append(ActivePixelGroup)
         
+        self.UpdateStatus("Finding largest target group")
         LargestPixelGroup = max(PixelGroupCollections, key=len)
         LargestGroupCenterPosition = (LargestPixelGroup[0] + LargestPixelGroup[-1]) // 2
         LargestGroupCenterScreenY = self.ScanningRegionBounds["y1"] + TopBoundaryPosition + LargestGroupCenterPosition
         
+        self.UpdateStatus("Calculating PD control signal")
         ProportionalGain = self.ProportionalGainCoefficient
         DerivativeGain = self.DerivativeGainCoefficient
         MaximumControlClamp = self.ControlSignalMaximumClamp
@@ -1414,9 +1512,11 @@ class AutomatedFishingSystem:
             TargetMovingTowardIndicator = (TargetBarVelocity > 0 and CurrentPositionError > 0) or (TargetBarVelocity < 0 and CurrentPositionError < 0)
             
             if ErrorDecreasingInMagnitude and TargetMovingTowardIndicator:
+                self.UpdateStatus("Target approaching - applying damping")
                 AppliedDampingMultiplier = self.PDControllerApproachingStateDamping
                 DerivativeControlTerm = -DerivativeGain * AppliedDampingMultiplier * TargetBarVelocity
             else:
+                self.UpdateStatus("Chasing target - normal control")
                 AppliedDampingMultiplier = self.PDControllerChasingStateDamping
                 DerivativeControlTerm = -DerivativeGain * AppliedDampingMultiplier * TargetBarVelocity
         
@@ -1425,11 +1525,13 @@ class AutomatedFishingSystem:
         ShouldHoldMouseButton = FinalControlSignal <= 0
         
         if ShouldHoldMouseButton and not self.MouseButtonCurrentlyPressed:
+            self.UpdateStatus("Holding mouse button")
             pyautogui.mouseDown()
             self.MouseButtonCurrentlyPressed = True
             self.LastControlStateChangeTimestamp = CurrentTimestamp
             self.LastInputResendTimestamp = CurrentTimestamp
         elif not ShouldHoldMouseButton and self.MouseButtonCurrentlyPressed:
+            self.UpdateStatus("Releasing mouse button")
             pyautogui.mouseUp()
             self.MouseButtonCurrentlyPressed = False
             self.LastControlStateChangeTimestamp = CurrentTimestamp
@@ -1438,6 +1540,7 @@ class AutomatedFishingSystem:
             TimeSinceLastResend = CurrentTimestamp - self.LastInputResendTimestamp
             
             if TimeSinceLastResend >= self.InputStateResendFrequency:
+                self.UpdateStatus("Resending input state")
                 if self.MouseButtonCurrentlyPressed:
                     pyautogui.mouseDown()
                 else:
@@ -1543,6 +1646,7 @@ class AutomatedFishingSystem:
             "logDevilFruit": self.LogDevilFruitEnabled,
             "baitRecipes": self.BaitRecipes,
             "currentRecipeIndex": self.CurrentRecipeIndex,
+            "currentStatus": self.CurrentMacroStatus,
         }
 
 class RegionSelectionWindow:
