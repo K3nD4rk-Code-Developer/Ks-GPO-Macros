@@ -22,21 +22,21 @@ import sys
 from ctypes import wintypes
 import webbrowser
 
-pyautogui.PAUSE = 0
-
-try:
-    ctypes.windll.shcore.SetProcessDpiAwareness(2)
-except:
-    try:
-        ctypes.windll.user32.SetProcessDPIAware()
-    except:
-        pass
-
 FlaskApplication = Flask(__name__)
 CORS(FlaskApplication)
 
 class AutomatedFishingSystem:
     def __init__(self):
+        pyautogui.PAUSE = 0
+
+        try:
+            ctypes.windll.shcore.SetProcessDpiAwareness(2)
+        except:
+            try:
+                ctypes.windll.user32.SetProcessDPIAware()
+            except:
+                pass
+            
         SystemDisplayMetrics = ctypes.windll.user32
 
         try:

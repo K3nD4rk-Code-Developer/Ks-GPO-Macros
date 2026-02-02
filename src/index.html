@@ -182,6 +182,33 @@
       background: rgba(0, 212, 255, 0.5);
     }
 
+    .requirement-warning {
+      display: none;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 8px;
+      padding: 12px;
+      margin-top: 12px;
+      font-size: 12px;
+      color: #fca5a5;
+      line-height: 1.5;
+    }
+
+    .requirement-warning.show {
+      display: block;
+      animation: slideDown 0.3s ease-out;
+    }
+
+    .requirement-warning strong {
+      color: #f87171;
+    }
+
+    .requirement-warning a {
+      color: #60a5fa;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
     .nav-item {
       padding: 12px 24px;
       margin: 0 12px 6px 12px;
@@ -1112,9 +1139,9 @@
         <div class="title-group">
           <h1>K's GPO Fishing Macro</h1>
           <div style="display: flex; align-items: center; gap: 8px;">
-            <div class="version">Version 1.2.6</div>
-            <div style="color: #707aff; opacity: 0.9; font-size: 0.75em;">Production</div>
-            <div style="color: #888; opacity: 0.2; font-size: 0.75em;">9089dd099627d95193611a66fb84204f</div>
+            <div class="version">Version 1.2.7</div>
+            <div style="color: #ffd417; opacity: 0.9; font-size: 0.75em;">Development</div>
+            <div style="color: #888; opacity: 0.2; font-size: 0.75em;">7505833ffe00e12a00d2e779836d4ac8</div>
           </div>
         </div>
       </div>
@@ -1319,7 +1346,7 @@
             <div class="control-group">
               <span class="control-label">Fishing Rod Slot</span>
               <div class="control-input">
-                <select class="select" id="rodHotkey" onchange="sendToPython('set_rod_hotkey', this.value)">
+                <select class="select" id="rodHotkey" onchange="validateAndSetRodSlot(this.value)">
                   <option selected>1</option>
                   <option>2</option>
                   <option>3</option>
@@ -1336,8 +1363,7 @@
             <div class="control-group">
               <span class="control-label">Secondary Item Slot</span>
               <div class="control-input">
-                <select class="select" id="anythingElseHotkey"
-                  onchange="sendToPython('set_anything_else_hotkey', this.value)">
+                <select class="select" id="anythingElseHotkey" onchange="validateAndSetSecondarySlot(this.value)">
                   <option>1</option>
                   <option selected>2</option>
                   <option>3</option>
@@ -1506,6 +1532,11 @@
                   onclick="toggleExpandable('autoBuyBait', 'autoBuyExpand')"></div>
               </div>
             </div>
+            <div class="requirement-warning" id="autoBuyBaitWarning">
+              <strong>⚠️ Missing Requirements:</strong><br>
+              You need to configure all Bait Shop points first.<br>
+              Go to <a onclick="navigateToLocations()">Locations → Bait Shop Interaction Points</a>
+            </div>
             <div class="expandable-section" id="autoBuyExpand">
               <div class="control-group">
                 <span class="control-label">Purchase Frequency</span>
@@ -1525,6 +1556,11 @@
                 <div class="toggle-switch" id="autoCraftBaitToggle"
                   onclick="toggleExpandable('autoCraftBait', 'autoCraftExpand')"></div>
               </div>
+            </div>
+            <div class="requirement-warning" id="autoCraftBaitWarning">
+              <strong>Missing Requirements:</strong><br>
+              You need to configure all crafting points and recipes first.<br>
+              Go to <a onclick="navigateToLocations()">Locations → Crafting Interface Points</a>
             </div>
             <div class="expandable-section" id="autoCraftExpand">
               <div class="control-group">
@@ -1554,6 +1590,11 @@
                   onclick="toggleExpandable('autoStoreFruit', 'autoStoreExpand')"></div>
               </div>
             </div>
+            <div class="requirement-warning" id="autoStoreFruitWarning">
+              <strong>Missing Requirements:</strong><br>
+              You need to configure the Devil Fruit Store location first.<br>
+              Go to <a onclick="navigateToLocations()">Locations → Devil Fruit Locations</a>
+            </div>
             <div class="expandable-section" id="autoStoreExpand">
               <div class="control-group">
                 <span class="control-label">Store to Backpack (vs Drop)</span>
@@ -1581,6 +1622,11 @@
               <div class="control-input">
                 <div class="toggle-switch" id="autoSelectBaitToggle" onclick="toggleSetting('autoSelectBait')"></div>
               </div>
+            </div>
+            <div class="requirement-warning" id="autoSelectBaitWarning">
+              <strong>Missing Requirements:</strong><br>
+              You need to configure the Top Bait Point first.<br>
+              Go to <a onclick="navigateToLocations()">Locations → Bait Locations</a>
             </div>
           </div>
         </div>
@@ -1969,7 +2015,7 @@
   </div>
 
   <script>
-    const CURRENT_VERSION = '1.2.6';
+    const CURRENT_VERSION = '1.2.7';
     const GITHUB_REPO = 'K3nD4rk-Code-Developer/Grand-Piece-Online-Fishing';
 
     function extractVersion(versionString) {
@@ -2272,6 +2318,17 @@
       }
     }
 
+    function showWarningNotification(message) {
+      const notification = document.createElement('div');
+      notification.style.cssText = 'position:fixed;top:80px;right:20px;background:linear-gradient(135deg,rgba(251,191,36,0.95),rgba(245,158,11,0.95));color:#111;padding:16px 24px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:0 8px 32px rgba(251,191,36,0.4);z-index:10000;animation:slideInRight 0.3s ease-out;border:1px solid rgba(255,255,255,0.2);max-width:400px;word-wrap:break-word;';
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+      }, 5000);
+    }
+
     document.addEventListener('DOMContentLoaded', buildSlideshow);
 
     function checkDisclaimer() {
@@ -2301,13 +2358,6 @@
       });
     });
 
-    function toggleSetting(settingName) {
-      const toggle = document.getElementById(`${settingName}Toggle`);
-      toggle.classList.toggle('active');
-      const isActive = toggle.classList.contains('active');
-      sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
-    }
-
     function renderDevilFruitSlotSelector(selectedSlots) {
       const container = document.getElementById('devilFruitSlotSelector');
       if (!container) { setTimeout(() => renderDevilFruitSlotSelector(selectedSlots), 100); return; }
@@ -2329,9 +2379,25 @@
     }
 
     function toggleDevilFruitSlot(slot) {
+      const rodSlot = document.getElementById('rodHotkey').value;
+      const secondarySlot = document.getElementById('anythingElseHotkey').value;
+
+      if (slot === rodSlot) {
+        showWarningNotification(`Slot ${slot} is already used by the Fishing Rod!`);
+        return;
+      }
+
+      if (slot === secondarySlot) {
+        showWarningNotification(`Slot ${slot} is already used by the Secondary Item!`);
+        return;
+      }
+
       let currentSlots = window.currentDevilFruitSlots || ['3'];
-      if (currentSlots.includes(slot)) { currentSlots = currentSlots.filter(s => s !== slot); }
-      else { currentSlots.push(slot); }
+      if (currentSlots.includes(slot)) {
+        currentSlots = currentSlots.filter(s => s !== slot);
+      } else {
+        currentSlots.push(slot);
+      }
       if (currentSlots.length === 0) currentSlots = ['3'];
       window.currentDevilFruitSlots = currentSlots;
       renderDevilFruitSlotSelector(currentSlots);
@@ -2341,9 +2407,64 @@
     function toggleExpandable(settingName, expandId) {
       const toggle = document.getElementById(`${settingName}Toggle`);
       const section = document.getElementById(expandId);
+      const willBeActive = !toggle.classList.contains('active');
+
       toggle.classList.toggle('active');
       const isActive = toggle.classList.contains('active');
-      if (isActive) { section.classList.add('expanded'); } else { section.classList.remove('expanded'); }
+      if (isActive) {
+        section.classList.add('expanded');
+      } else {
+        section.classList.remove('expanded');
+      }
+      sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
+    }
+
+    function validateAndSetRodSlot(value) {
+      const secondarySlot = document.getElementById('anythingElseHotkey').value;
+      const devilFruitSlots = window.currentDevilFruitSlots || ['3'];
+
+      if (value === secondarySlot) {
+        showWarningNotification(`Slot ${value} is already used by the Secondary Item!`);
+        document.getElementById('rodHotkey').value = window.lastValidRodSlot || '1';
+        return;
+      }
+
+      if (devilFruitSlots.includes(value)) {
+        showWarningNotification(`Slot ${value} is already used by Devil Fruit slots!`);
+        document.getElementById('rodHotkey').value = window.lastValidRodSlot || '1';
+        return;
+      }
+
+      window.lastValidRodSlot = value;
+      sendToPython('set_rod_hotkey', value);
+    }
+
+    function validateAndSetSecondarySlot(value) {
+      const rodSlot = document.getElementById('rodHotkey').value;
+      const devilFruitSlots = window.currentDevilFruitSlots || ['3'];
+
+      if (value === rodSlot) {
+        showWarningNotification(`Slot ${value} is already used by the Fishing Rod!`);
+        document.getElementById('anythingElseHotkey').value = window.lastValidSecondarySlot || '2';
+        return;
+      }
+
+      if (devilFruitSlots.includes(value)) {
+        showWarningNotification(`Slot ${value} is already used by Devil Fruit slots!`);
+        document.getElementById('anythingElseHotkey').value = window.lastValidSecondarySlot || '2';
+        return;
+      }
+
+      window.lastValidSecondarySlot = value;
+      sendToPython('set_anything_else_hotkey', value);
+    }
+
+    function toggleSetting(settingName) {
+      const toggle = document.getElementById(`${settingName}Toggle`);
+      const willBeActive = !toggle.classList.contains('active');
+
+      toggle.classList.toggle('active');
+      const isActive = toggle.classList.contains('active');
       sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
     }
 
@@ -2370,6 +2491,111 @@
       document.body.appendChild(notification);
       setTimeout(() => { notification.style.animation = 'slideOutRight 0.3s ease-out'; setTimeout(() => notification.remove(), 300); }, 5000);
     }
+
+    function checkRequirements(settingName) {
+      const warningId = `${settingName}Warning`;
+      const warningEl = document.getElementById(warningId);
+      const toggleEl = document.getElementById(`${settingName}Toggle`);
+
+      if (!warningEl) return true;
+
+      const isToggled = toggleEl && toggleEl.classList.contains('active');
+
+      let missingRequirements = false;
+      let message = '<strong>⚠️ Missing Requirements:</strong><br>';
+
+      if (settingName === 'autoStoreFruit') {
+        const storeFruitStatus = document.getElementById('storeFruitPointStatus');
+        if (storeFruitStatus && storeFruitStatus.classList.contains('unset')) {
+          missingRequirements = true;
+          message += 'Configure Devil Fruit Store location in <a onclick="navigateToLocations()">Locations → Devil Fruit Locations</a>';
+        }
+      }
+
+      if (settingName === 'autoBuyBait') {
+        const leftStatus = document.getElementById('leftPointStatus');
+        const middleStatus = document.getElementById('middlePointStatus');
+        const rightStatus = document.getElementById('rightPointStatus');
+
+        const missing = [];
+        if (leftStatus && leftStatus.classList.contains('unset')) missing.push('Left Dialog');
+        if (middleStatus && middleStatus.classList.contains('unset')) missing.push('Middle Dialog');
+        if (rightStatus && rightStatus.classList.contains('unset')) missing.push('Right Dialog');
+
+        if (missing.length > 0) {
+          missingRequirements = true;
+          message += `Configure ${missing.join(', ')} in <a onclick="navigateToLocations()">Locations → Bait Shop Interaction Points</a>`;
+        }
+      }
+
+      if (settingName === 'autoCraftBait') {
+        const points = {
+          'craftLeftPointStatus': 'Left Dialog',
+          'craftMiddlePointStatus': 'Middle Dialog',
+          'craftButtonPointStatus': 'Craft Confirm',
+          'closeMenuPointStatus': 'Menu Close',
+          'addRecipePointStatus': 'Add Recipe',
+          'topRecipePointStatus': 'Top Recipe Slot'
+        };
+
+        const missing = [];
+        for (const [id, name] of Object.entries(points)) {
+          const status = document.getElementById(id);
+          if (status && status.classList.contains('unset')) missing.push(name);
+        }
+
+        if (missing.length > 0) {
+          missingRequirements = true;
+          message += `Configure ${missing.join(', ')} in <a onclick="navigateToLocations()">Locations → Crafting Interface Points</a>`;
+        }
+
+        const recipesContainer = document.getElementById('RecipesContainer');
+        if (!recipesContainer || recipesContainer.children.length === 0 ||
+          recipesContainer.textContent.includes('No recipes configured')) {
+          if (!missingRequirements) {
+            missingRequirements = true;
+            message += 'Add at least one bait recipe in <a onclick="navigateToLocations()">Locations → Crafting Recipes</a>';
+          } else {
+            message += '<br>Also add at least one bait recipe in <a onclick="navigateToLocations()">Locations → Crafting Recipes</a>';
+          }
+        }
+      }
+
+      if (settingName === 'autoSelectBait') {
+        const baitStatus = document.getElementById('baitPointStatus');
+        if (baitStatus && baitStatus.classList.contains('unset')) {
+          missingRequirements = true;
+          message += 'Configure Top Bait Point in <a onclick="navigateToLocations()">Locations → Bait Locations</a>';
+        }
+      }
+
+      if (isToggled && missingRequirements) {
+        warningEl.innerHTML = message;
+        warningEl.classList.add('show');
+      } else {
+        warningEl.classList.remove('show');
+      }
+
+      return !missingRequirements;
+    }
+
+    function navigateToLocations() {
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.querySelector('[data-view="locations"]').classList.add('active');
+      document.getElementById('locations').classList.add('active');
+    }
+
+    function getClientId() {
+      let clientId = localStorage.getItem('macroClientId');
+      if (!clientId) {
+        clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem('macroClientId', clientId);
+      }
+      return clientId;
+    }
+
+    const CLIENT_ID = getClientId();
 
     function updateStatus(isRunning) {
       const dot = document.getElementById('statusDot');
@@ -2586,6 +2812,10 @@
         setToggleState('logPeriodicStatsToggle', state.logPeriodicStats);
         setToggleState('logGeneralUpdatesToggle', state.logGeneralUpdates);
         setInputValue('periodicStatsInterval', state.periodicStatsInterval || 5);
+        checkRequirements('autoStoreFruit');
+        checkRequirements('autoBuyBait');
+        checkRequirements('autoCraftBait');
+        checkRequirements('autoSelectBait');
       } catch (error) { console.error('Failed to poll state:', error); }
     }
 

@@ -215,7 +215,6 @@ fn main() {
                                     .unwrap_or(false);
 
                                 if is_running && show_debug {
-                                    // Position ONLY once
                                     if !has_positioned {
                                         if let Ok(monitor) = stats_win.current_monitor() {
                                             if let Some(monitor) = monitor {
@@ -252,12 +251,10 @@ fn main() {
                 if window.label() == "main" {
                     log_to_file("Main window close requested, terminating backend...");
                     
-                    // Prevent the window from closing immediately
                     api.prevent_close();
                     
                     let app_handle = window.app_handle().clone();
                     
-                    // Spawn a thread to handle cleanup
                     std::thread::spawn(move || {
                         if let Some(python_process) = app_handle.try_state::<PythonProcess>() {
                             if let Ok(mut process_guard) = python_process.0.lock() {
@@ -282,7 +279,6 @@ fn main() {
                             }
                         }
                         
-                        // Now exit the app
                         log_to_file("Exiting application...");
                         app_handle.exit(0);
                     });
