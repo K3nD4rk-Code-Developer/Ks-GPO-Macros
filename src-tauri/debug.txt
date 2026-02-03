@@ -1,9 +1,0 @@
-=== APP STARTING ===
-In setup function
-DEBUG MODE
-Python backend started in debug mode
-Waiting for backend...
-Starting backend healthcheck...
-Backend ready after 1 attempts
-Backend is running!
-Setup complete!

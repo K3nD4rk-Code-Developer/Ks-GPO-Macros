@@ -99,20 +99,20 @@
         ]
     },
     "AutomationFeatures": {
-        "AutoBuyCommonBait": false,
-        "AutoStoreDevilFruit": false,
+        "AutoBuyCommonBait": true,
+        "AutoStoreDevilFruit": true,
         "AutoSelectTopBait": false,
         "AutoCraftBait": false
     },
     "AutomationFrequencies": {
         "LoopsPerPurchase": 100,
-        "LoopsPerStore": 1,
+        "LoopsPerStore": 100,
         "LoopsPerCraft": 5,
         "CraftsPerCycle": 40,
         "FishCountPerCraft": 3
     },
     "DevilFruitStorage": {
-        "StoreToBackpack": true,
+        "StoreToBackpack": false,
         "LogDevilFruit": true,
         "WebhookUrl": "https://discord.com/api/webhooks/1467696258851541188/-hMxPzPDtpf8Li23zcF34FnWQcqj-N2_KQjH0DoIXqC2r6sYuIEnTFOTnzLAu4UfIaje"
     },
@@ -123,8 +123,8 @@
         "PeriodicStatsIntervalMinutes": 5
     },
     "FishingModes": {
-        "MegalodonSound": true,
-        "SoundSensitivity": 0.7
+        "MegalodonSound": false,
+        "SoundSensitivity": 0.05
     },
     "RDPSettings": {
         "AutoDetectRDP": true,

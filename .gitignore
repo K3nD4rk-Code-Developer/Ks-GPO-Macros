@@ -12,7 +12,6 @@ dist
 dist-ssr
 *.local
 
-# Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
@@ -24,4 +23,3 @@ dist-ssr
 *.sw?
 /src-tauri/build
 src-tauri/Auto Fish Settings.json
-/src-tauri/Embed

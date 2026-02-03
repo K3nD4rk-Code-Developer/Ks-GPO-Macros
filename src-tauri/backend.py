@@ -15,7 +15,7 @@ import win32con
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import requests
-from datetime import datetime
+from datetime import datetime, timezone
 from difflib import get_close_matches
 import re
 import sys
@@ -25,19 +25,10 @@ import win32api
 import tkinter as tk
 import shutil
 import traceback
-
-try:
-    import pyaudiowpatch as pyaudio
-    PYAUDIO_AVAILABLE = True
-except:
-    PYAUDIO_AVAILABLE = False
-    
-try:
-    import librosa
-    import sounddevice as sd
-    SOUND_RECOGNITION_AVAILABLE = True
-except ImportError:
-    SOUND_RECOGNITION_AVAILABLE = False
+from scipy.fft import fft
+import pyaudiowpatch as pyaudio
+import librosa
+import sounddevice as sd
 
 FlaskApplication = Flask(__name__)
 CORS(FlaskApplication)
@@ -226,7 +217,7 @@ class AutomatedFishingSystem:
         self.CurrentClientId = "unknown"
 
         self.MegalodonSoundRecognitionEnabled = False
-        self.SoundMatchSensitivity = 0.7
+        self.SoundMatchSensitivity = 0.05
         self.MegalodonSoundPath = os.path.join(ApplicationPath, "Sounds", "Megalodon.wav")
         
         self.AutoDetectRDP = True
@@ -837,7 +828,7 @@ class AutomatedFishingSystem:
                 "title": f"{emoji} GPO Fishing Macro",
                 "description": f"**{message}**",
                 "color": color,
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
                 "footer": {
                     "text": "Macro Notification System",
                     "icon_url": "https://cdn.discordapp.com/avatars/1351127835175288893/208dc6bfcc148a0c3ad2482b12520f43.webp"
@@ -1455,7 +1446,7 @@ class AutomatedFishingSystem:
         return False
     
     def ListenForMegalodonSound(self, TimeoutDuration=5.0):
-        if not self.MegalodonSoundRecognitionEnabled or not SOUND_RECOGNITION_AVAILABLE:
+        if not self.MegalodonSoundRecognitionEnabled:
             return True
         
         try:
@@ -1473,10 +1464,8 @@ class AutomatedFishingSystem:
                             DefaultSpeakersDevice = LoopbackDevice
                             break
                 
-                print(f"Recording from: {DefaultSpeakersDevice['name']}")
                 
                 AudioSampleRate = int(DefaultSpeakersDevice['defaultSampleRate'])
-                print(f"Using sample rate: {AudioSampleRate} Hz")
                 
                 RecordingDuration = 1.5
                 
@@ -1517,7 +1506,6 @@ class AutomatedFishingSystem:
                 return False
             
             RecordedAudioData = RecordedAudioData / MaximumAudioValue
-            print(f"  Audio level: {MaximumAudioValue:.4f}")
             
             ModelCoefficients = [1.0902, 0.7471, 0.3720, -1.1829, -1.0433, -0.6251, -0.4898]
             ModelIntercept = -3.2025
@@ -2505,7 +2493,6 @@ def handle_export_settings():
         root.withdraw()
         root.attributes('-topmost', True)
         
-        from datetime import datetime
         default_filename = f"fishing_macro_settings_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         
         file_path = filedialog.asksaveasfilename(

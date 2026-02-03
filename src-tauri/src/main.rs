@@ -4,16 +4,25 @@ use tauri::{Manager, PhysicalPosition};
 use std::process::{Command, Child, Stdio};
 use std::sync::Mutex;
 use std::path::PathBuf;
-use std::fs::OpenOptions;
+use std::fs::{self, OpenOptions};
 use std::io::Write;
 
 struct PythonProcess(Mutex<Option<Child>>);
 
+fn get_logs_dir() -> PathBuf {
+    let logs_dir = PathBuf::from("logs");
+    if !logs_dir.exists() {
+        let _ = fs::create_dir_all(&logs_dir);
+    }
+    logs_dir
+}
+
 fn log_to_file(message: &str) {
+    let log_path = get_logs_dir().join("debug.txt");
     if let Ok(mut file) = OpenOptions::new()
         .create(true)
         .append(true)
-        .open("debug.txt")
+        .open(log_path)
     {
         let _ = writeln!(file, "{}", message);
     }
@@ -40,16 +49,24 @@ fn get_python_and_script(app: &tauri::AppHandle) -> (PathBuf, PathBuf) {
     {
         (PathBuf::from("python"), PathBuf::from("backend.py"))
     }
-    
+
     #[cfg(not(debug_assertions))]
     {
-        let resource_path = app.path().resource_dir()
+        let resource_path = app
+            .path()
+            .resource_dir()
             .expect("Failed to get resource directory");
-        let python_exe = resource_path.join("Embed").join("pythonw.exe");
+
+        let python_exe = resource_path
+            .join("Python314")
+            .join("pythonw.exe");
+
         let script = resource_path.join("backend.py");
+
         (python_exe, script)
     }
 }
+
 
 fn wait_for_backend() -> bool {
     log_to_file("Starting backend healthcheck...");
@@ -75,7 +92,9 @@ fn wait_for_backend() -> bool {
 }
 
 fn main() {
-    let _ = std::fs::remove_file("debug.txt");
+    // Create logs directory and clear old debug log
+    let logs_dir = get_logs_dir();
+    let _ = std::fs::remove_file(logs_dir.join("debug.txt"));
     log_to_file("=== APP STARTING ===");
     
     tauri::Builder::default()
@@ -127,8 +146,12 @@ fn main() {
                 
                 log_to_file(&format!("Working directory: {:?}", resource_dir));
                 
-                let stdout_log = resource_dir.join("python_stdout.txt");
-                let stderr_log = resource_dir.join("python_stderr.txt");
+                // Create logs directory in resource_dir for production
+                let production_logs_dir = resource_dir.join("logs");
+                let _ = fs::create_dir_all(&production_logs_dir);
+                
+                let stdout_log = production_logs_dir.join("python_stdout.txt");
+                let stderr_log = production_logs_dir.join("python_stderr.txt");
                 
                 log_to_file(&format!("Python stdout will be in: {:?}", stdout_log));
                 log_to_file(&format!("Python stderr will be in: {:?}", stderr_log));
@@ -163,7 +186,7 @@ fn main() {
                 log_to_file("PANIC: Backend didn't start in time");
                 
                 let resource_dir = app.path().resource_dir().unwrap();
-                let stderr_log = resource_dir.join("python_stderr.txt");
+                let stderr_log = resource_dir.join("logs").join("python_stderr.txt");
                 if let Ok(errors) = std::fs::read_to_string(&stderr_log) {
                     log_to_file(&format!("Python errors: {}", errors));
                 }
