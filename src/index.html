@@ -2,6 +2,7 @@
 <html lang="en">
 
 <head>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>K's GPO Fishing Macro</title>
@@ -80,10 +81,16 @@
       align-items: center;
       justify-content: center;
       font-weight: 900;
-      font-size: 20px;
+      font-size: 30px;
       color: white;
       box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
     }
+
+    .logo span {
+      display: block;
+      transform: translate(-0.5px, -2px);
+    }
+
 
     .title-group h1 {
       font-size: 20px;
@@ -194,6 +201,130 @@
       line-height: 1.5;
     }
 
+    .rdp-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #60a5fa;
+    }
+
+    .rdp-indicator.active {
+      background: rgba(59, 130, 246, 0.2);
+      border-color: rgba(59, 130, 246, 0.5);
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .rdp-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #60a5fa;
+    }
+
+    .device-card {
+      background: linear-gradient(135deg, rgba(31, 41, 55, 0.4) 0%, rgba(17, 24, 39, 0.5) 100%);
+      border: 1px solid rgba(0, 212, 255, 0.15);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 12px;
+      transition: all 0.3s ease;
+    }
+
+    .device-card:hover {
+      border-color: rgba(0, 212, 255, 0.3);
+    }
+
+    .device-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .device-name {
+      font-size: 14px;
+      font-weight: 700;
+      color: #f9fafb;
+    }
+
+    .device-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #34d399;
+    }
+
+    .device-status.offline {
+      background: rgba(239, 68, 68, 0.1);
+      border-color: rgba(239, 68, 68, 0.3);
+      color: #f87171;
+    }
+
+    .device-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .device-stat {
+      text-align: center;
+      padding: 8px;
+      background: rgba(17, 24, 39, 0.5);
+      border-radius: 6px;
+    }
+
+    .device-stat-label {
+      font-size: 10px;
+      color: #9ca3af;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .device-stat-value {
+      font-size: 16px;
+      font-weight: 700;
+      color: #00d4ff;
+    }
+
+    .sync-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 8px;
+      font-size: 12px;
+      color: #34d399;
+    }
+
+    .sync-status i {
+      animation: spin 2s linear infinite;
+    }
+
+    @keyframes spin {
+      from {
+        transform: rotate(0deg);
+      }
+
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
     .requirement-warning.show {
       display: block;
       animation: slideDown 0.3s ease-out;
@@ -220,6 +351,21 @@
       transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       border: 1px solid transparent;
       position: relative;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .nav-item i {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .nav-item svg {
+      width: 18px;
+      height: 18px;
+      stroke-width: 2;
     }
 
     .nav-item::before {
@@ -1135,44 +1281,79 @@
   <div class="container">
     <div class="header">
       <div class="brand">
-        <div class="logo">K</div>
+        <div class="logo"><span>K</span></div>
         <div class="title-group">
           <h1>K's GPO Fishing Macro</h1>
           <div style="display: flex; align-items: center; gap: 8px;">
             <div class="version">Version 1.2.7</div>
-            <div style="color: #ffd417; opacity: 0.9; font-size: 0.75em;">Development</div>
+            <div style="color: #1797ff; opacity: 0.9; font-size: 0.75em;">Development</div>
             <div style="color: #888; opacity: 0.2; font-size: 0.75em;">7505833ffe00e12a00d2e779836d4ac8</div>
           </div>
         </div>
       </div>
-      <div class="status-badge">
-        <div class="status-dot" id="statusDot"></div>
-        <span class="status-text" id="statusText">Inactive</span>
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <div class="rdp-indicator" id="rdpIndicator">
+          <div class="rdp-dot"></div>
+          <span id="rdpText">Local Session</span>
+        </div>
+        <div class="status-badge">
+          <div class="status-dot" id="statusDot"></div>
+          <span class="status-text" id="statusText">Inactive</span>
+        </div>
       </div>
     </div>
 
     <div class="main-content">
       <div class="sidebar">
-        <div class="nav-item active" data-view="home">Dashboard</div>
-        <div class="nav-item" data-view="controls">Control Center</div>
-        <div class="nav-item" data-view="locations">Locations</div>
-        <div class="nav-item" data-view="automation">Automation</div>
-        <div class="nav-item" data-view="logging">Logging</div>
-        <div class="nav-item" data-view="tuning">Tuning</div>
-        <div class="nav-item" data-view="timing">Timing</div>
+        <div class="nav-item active" data-view="home">
+          <i data-lucide="home"></i>
+          <span>Dashboard</span>
+        </div>
+        <div class="nav-item" data-view="controls">
+          <i data-lucide="blinds"></i>
+          <span>Control Center</span>
+        </div>
+        <div class="nav-item" data-view="locations">
+          <i data-lucide="map-pin"></i>
+          <span>Locations</span>
+        </div>
+        <div class="nav-item" data-view="automation">
+          <i data-lucide="chart-network"></i>
+          <span>Automation</span>
+        </div>
+        <div class="nav-item" data-view="logging">
+          <i data-lucide="file-text"></i>
+          <span>Logging</span>
+        </div>
+        <div class="nav-item" data-view="fishing-modes">
+          <i data-lucide="fish"></i>
+          <span>Fishing Modes</span>
+        </div>
+        <div class="nav-item" data-view="tuning">
+          <i data-lucide="sliders-horizontal"></i>
+          <span>Tuning</span>
+        </div>
+        <div class="nav-item" data-view="timing">
+          <i data-lucide="clock"></i>
+          <span>Timing</span>
+        </div>
+        <div class="nav-item" data-view="settings">
+          <i data-lucide="cog"></i>
+          <span>Settings</span>
+        </div>
       </div>
 
       <div class="content-area">
         <div class="view active" id="home">
           <div class="hero-section">
-            <div class="hero-icon">🎣</div>
             <h1 class="hero-title">Welcome to K's GPO Fishing Macro</h1>
             <p class="hero-subtitle">
               An advanced automation tool for Grand Piece Online fishing. Configure your settings, set up locations, and
               start fishing efficiently!
             </p>
             <div class="quick-links">
-              <a href="https://github.com/K3nD4rk-Code-Developer/Grand-Piece-Online-Fishing" target="_blank" class="quick-link">
+              <a href="https://github.com/K3nD4rk-Code-Developer/Grand-Piece-Online-Fishing" target="_blank"
+                class="quick-link">
                 <span class="quick-link-icon"><i class="fab fa-github"></i></span>
                 GitHub Repository
               </a>
@@ -1201,25 +1382,13 @@
             <div class="tip-item">
               <div class="tip-icon"></div>
               <div class="tip-text">
-                <strong>Set Process Priority:</strong> Open Task Manager → Details tab → Find Roblox → Right-click → Set
-                Priority
-                → Realtime (This improves performance and reduces detection)
+                <strong>FPS Cap:</strong> Set your in-game FPS to your monitors refresh rate to prevent missed catches.
               </div>
             </div>
             <div class="tip-item">
               <div class="tip-icon"></div>
               <div class="tip-text">
-                <strong>FPS Cap:</strong> Set your in-game FPS to 120-180 for optimal fishing bar detection (60 if your
-                monitor is set to that). Too low FPS will
-                cause missed catches.
-              </div>
-            </div>
-            <div class="tip-item">
-              <div class="tip-icon"></div>
-              <div class="tip-text">
-                <strong>Camera Zoom:</strong> Keep your camera zoomed in until the bait selection bar appears underneath
-                your
-                character's feet. This ensures proper click positioning.
+                <strong>Camera Zoom:</strong> Keep your camera zoomed enough to see the bar closely enough but not too much it's above other UI's.
               </div>
             </div>
           </div>
@@ -1291,7 +1460,8 @@
             </div>
             <div class="tip-item">
               <div class="tip-text">
-                <strong>Missing fish games:</strong> Adjust the scan area so it fully covers the fishing bar (and a bit beyond). Make sure Roblox is running at your
+                <strong>Missing fish games:</strong> Adjust the scan area so it fully covers the fishing bar (and a bit
+                beyond). Make sure Roblox is running at your
                 monitor’s refresh rate, the bar doesn’t overlap with others UI, and the app’s priority is set
                 to High in Task Manager.
               </div>
@@ -1655,19 +1825,22 @@
             <div class="control-group">
               <span class="control-label">Log Recast Timeouts</span>
               <div class="control-input">
-                <div class="toggle-switch" id="logRecastTimeoutsToggle" onclick="toggleSetting('logRecastTimeouts')"></div>
+                <div class="toggle-switch" id="logRecastTimeoutsToggle" onclick="toggleSetting('logRecastTimeouts')">
+                </div>
               </div>
             </div>
             <div class="control-group">
               <span class="control-label">Log Periodic Stats</span>
               <div class="control-input">
-                <div class="toggle-switch" id="logPeriodicStatsToggle" onclick="toggleSetting('logPeriodicStats')"></div>
+                <div class="toggle-switch" id="logPeriodicStatsToggle" onclick="toggleSetting('logPeriodicStats')">
+                </div>
               </div>
             </div>
             <div class="control-group">
               <span class="control-label">Log General Updates</span>
               <div class="control-input">
-                <div class="toggle-switch" id="logGeneralUpdatesToggle" onclick="toggleSetting('logGeneralUpdates')"></div>
+                <div class="toggle-switch" id="logGeneralUpdatesToggle" onclick="toggleSetting('logGeneralUpdates')">
+                </div>
               </div>
             </div>
             <div class="control-group">
@@ -1678,7 +1851,154 @@
                 <span class="unit">minutes</span>
               </div>
             </div>
-            <div class="help-hint">Configure which events and how frequently notifications are sent to your webhook</div>
+            <div class="help-hint">Configure which events and how frequently notifications are sent to your webhook
+            </div>
+          </div>
+        </div>
+
+        <div class="view" id="fishing-modes">
+          <div class="card">
+            <div class="card-header">Megalodon Mode</div>
+            <div class="control-group">
+              <span class="control-label">Enable Megalodon Sound Recognition</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="megalodonSoundToggle" onclick="toggleSetting('megalodonSound')"></div>
+              </div>
+            </div>
+            <div class="help-hint">Listens for Megalodon roar sound and only continues fishing if detected</div>
+            <div class="control-group">
+              <span class="control-label">Sound Sensitivity</span>
+              <div class="control-input">
+                <input type="number" class="input" id="soundSensitivity" value="0.7" step="0.1" min="0" max="1"
+                  onchange="sendToPython('set_sound_sensitivity', this.value)">
+                <span class="unit">threshold</span>
+              </div>
+            </div>
+            <div class="help-hint">Higher values require closer sound match (0.5-0.9 recommended)</div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">RDP Session Detection</div>
+            <div class="control-group">
+              <span class="control-label">Current Session Type</span>
+              <div class="control-input">
+                <span class="rdp-indicator" id="sessionTypeIndicator">
+                  <div class="rdp-dot"></div>
+                  <span id="sessionTypeText">Detecting...</span>
+                </span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Auto-Detect RDP Sessions</span>
+              <div class="control-input">
+                <div class="toggle-switch active" id="autoDetectRdpToggle" onclick="toggleSetting('autoDetectRdp')">
+                </div>
+              </div>
+            </div>
+            <div class="help-hint">Automatically detect when running in Remote Desktop and adjust behavior</div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">RDP Behavior Settings</div>
+            <div class="control-group">
+              <span class="control-label">Run Macro in RDP</span>
+              <div class="control-input">
+                <div class="toggle-switch active" id="allowRdpExecutionToggle"
+                  onclick="toggleSetting('allowRdpExecution')">
+                </div>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Pause on RDP Disconnect</span>
+              <div class="control-input">
+                <div class="toggle-switch active" id="pauseOnRdpDisconnectToggle"
+                  onclick="toggleSetting('pauseOnRdpDisconnect')"></div>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Resume on RDP Reconnect</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="resumeOnRdpReconnectToggle"
+                  onclick="toggleSetting('resumeOnRdpReconnect')">
+                </div>
+              </div>
+            </div>
+            <div class="help-hint">Control how the macro behaves during RDP connection changes</div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Multi-Device Sync</div>
+            <div class="control-group">
+              <span class="control-label">Enable Device Synchronization</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="enableDeviceSyncToggle"
+                  onclick="toggleExpandable('enableDeviceSync', 'deviceSyncExpand')"></div>
+              </div>
+            </div>
+            <div class="expandable-section" id="deviceSyncExpand">
+              <div class="control-group">
+                <span class="control-label">Sync Settings Across Devices</span>
+                <div class="control-input">
+                  <div class="toggle-switch active" id="syncSettingsToggle" onclick="toggleSetting('syncSettings')">
+                  </div>
+                </div>
+              </div>
+              <div class="control-group">
+                <span class="control-label">Sync Statistics</span>
+                <div class="control-input">
+                  <div class="toggle-switch active" id="syncStatsToggle" onclick="toggleSetting('syncStats')"></div>
+                </div>
+              </div>
+              <div class="control-group">
+                <span class="control-label">Share Fish Count Across Devices</span>
+                <div class="control-input">
+                  <div class="toggle-switch" id="sharesFishCountToggle" onclick="toggleSetting('shareFishCount')"></div>
+                </div>
+              </div>
+              <div class="control-group">
+                <span class="control-label">Sync Interval</span>
+                <div class="control-input">
+                  <input type="number" class="input" id="syncInterval" value="5" step="1" min="1" max="60"
+                    onchange="sendToPython('set_sync_interval', this.value)">
+                  <span class="unit">seconds</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              Connected Devices
+              <span class="sync-status" id="syncStatus" style="float: right; display: none;">
+                <i class="fas fa-sync-alt"></i>
+                <span>Syncing...</span>
+              </span>
+            </div>
+            <div id="devicesContainer">
+              <div style="text-align:center;padding:20px;color:#6b7280;">
+                No devices connected. Enable device synchronization to see connected devices.
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Client Identification</div>
+            <div class="control-group">
+              <span class="control-label">Device Name</span>
+              <div class="control-input">
+                <input type="text" class="input input-wide" id="deviceName" placeholder="My Gaming PC"
+                  onchange="sendToPython('set_device_name', this.value)">
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Client ID</span>
+              <div class="control-input">
+                <span class="hotkey-badge" id="clientIdDisplay"
+                  style="font-size: 10px; letter-spacing: 0;">Loading...</span>
+                <button class="btn btn-sm btn-secondary" onclick="regenerateClientId()">Regenerate</button>
+              </div>
+            </div>
+            <div class="help-hint">Each device has a unique ID for tracking and synchronization</div>
           </div>
         </div>
 
@@ -1977,6 +2297,79 @@
             <div class="help-hint">Fine-tune delays between crafting actions to prevent errors</div>
           </div>
         </div>
+
+        <div class="view" id="settings">
+          <div class="card">
+            <div class="card-header">Configuration Management</div>
+            <div class="control-group">
+              <span class="control-label">Export Settings to File</span>
+              <div class="control-input">
+                <button class="btn btn-sm" onclick="sendToPython('export_settings', '')">Export Settings</button>
+              </div>
+            </div>
+            <div class="help-hint">Save your current configuration to a file</div>
+
+            <div class="control-group">
+              <span class="control-label">Import Settings from File</span>
+              <div class="control-input">
+                <button class="btn btn-sm" onclick="sendToPython('import_settings', '')">Import Settings</button>
+              </div>
+            </div>
+            <div class="help-hint">Load configuration from a previously exported file</div>
+
+            <div class="control-group">
+              <span class="control-label">Reset to Default Settings</span>
+              <div class="control-input">
+                <button class="btn btn-sm btn-secondary" onclick="confirmResetSettings()">Reset Settings</button>
+              </div>
+            </div>
+            <div class="help-hint">This will erase all your current settings and restore defaults</div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Application Information</div>
+            <div class="control-group">
+              <span class="control-label">Version</span>
+              <div class="control-input">
+                <span class="hotkey-badge"
+                  style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(5, 150, 105, 0.15)); border-color: rgba(16, 185, 129, 0.4); color: #34d399;">1.2.7</span>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">Build Hash</span>
+              <div class="control-input">
+                <span class="hotkey-badge"
+                  style="font-size: 9px; letter-spacing: 0; background: rgba(17, 24, 39, 0.6);">7505833ffe00e12a00d2e779836d4ac8</span>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">Configuration File</span>
+              <div class="control-input">
+                <button class="btn btn-sm btn-secondary" onclick="sendToPython('open_config_folder', '')">Open Config
+                  Folder</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Debug Tools</div>
+            <div class="control-group">
+              <span class="control-label">View Current Configuration</span>
+              <div class="control-input">
+                <button class="btn btn-sm" onclick="sendToPython('view_config', '')">View Config JSON</button>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">Clear Cached Data</span>
+              <div class="control-input">
+                <button class="btn btn-sm btn-secondary" onclick="sendToPython('clear_cache', '')">Clear Cache</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -2085,7 +2478,8 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             action: 'open_browser',
-            payload: url
+            payload: url,
+            clientId: CLIENT_ID
           })
         });
       } catch (error) {
@@ -2220,6 +2614,99 @@
         ]
       }
     ];
+
+    function updateRdpIndicator(isRdp, sessionState) {
+      const indicator = document.getElementById('rdpIndicator');
+      const text = document.getElementById('rdpText');
+      const sessionTypeIndicator = document.getElementById('sessionTypeIndicator');
+      const sessionTypeText = document.getElementById('sessionTypeText');
+
+      if (isRdp) {
+        indicator.classList.add('active');
+        text.textContent = sessionState === 'connected' ? 'RDP Active' : 'RDP Disconnected';
+
+        if (sessionTypeIndicator) {
+          sessionTypeIndicator.classList.add('active');
+          sessionTypeText.textContent = 'Remote Desktop Protocol';
+        }
+      } else {
+        indicator.classList.remove('active');
+        text.textContent = 'Local Session';
+
+        if (sessionTypeText) {
+          sessionTypeText.textContent = 'Local Desktop';
+        }
+      }
+    }
+
+    function renderConnectedDevices(devices) {
+      const container = document.getElementById('devicesContainer');
+      if (!container) return;
+
+      if (!devices || devices.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:20px;color:#6b7280;">No devices connected. Enable device synchronization to see connected devices.</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+      devices.forEach((device, index) => {
+        const isOnline = device.last_seen && (Date.now() - device.last_seen * 1000) < 30000;
+        const deviceCard = document.createElement('div');
+        deviceCard.className = 'device-card';
+        deviceCard.innerHTML = `
+      <div class="device-header">
+        <div class="device-name">
+          <i class="fas fa-desktop"></i> ${device.name || `Device ${index + 1}`}
+        </div>
+        <div class="device-status ${isOnline ? '' : 'offline'}">
+          <div style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></div>
+          ${isOnline ? 'Online' : 'Offline'}
+        </div>
+      </div>
+      <div style="font-size: 10px; color: #6b7280; margin-bottom: 8px;">
+        ID: ${device.client_id}
+      </div>
+      <div class="device-stats">
+        <div class="device-stat">
+          <div class="device-stat-label">Fish Caught</div>
+          <div class="device-stat-value">${device.fish_caught || 0}</div>
+        </div>
+        <div class="device-stat">
+          <div class="device-stat-label">Uptime</div>
+          <div class="device-stat-value">${formatUptime(device.uptime || 0)}</div>
+        </div>
+        <div class="device-stat">
+          <div class="device-stat-label">Status</div>
+          <div class="device-stat-value" style="font-size: 12px;">${device.is_running ? 'Active' : 'Idle'}</div>
+        </div>
+      </div>
+    `;
+        container.appendChild(deviceCard);
+      });
+    }
+
+    function formatUptime(seconds) {
+      if (seconds < 60) return `${Math.floor(seconds)}s`;
+      if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+      return `${Math.floor(seconds / 3600)}h`;
+    }
+
+    async function regenerateClientId() {
+      if (!confirm('This will generate a new Client ID and may disconnect this device from sync. Continue?')) {
+        return;
+      }
+
+      localStorage.removeItem('macroClientId');
+      const newClientId = getClientId();
+      document.getElementById('clientIdDisplay').textContent = newClientId;
+
+      try {
+        await sendToPython('set_client_id', newClientId);
+        showWarningNotification('Client ID regenerated. Please restart the macro.');
+      } catch (error) {
+        showErrorNotification('Failed to regenerate Client ID');
+      }
+    }
 
     let activeCategoryIndex = 0;
     let activeSlideIndex = 0;
@@ -2484,6 +2971,14 @@
       }
     }
 
+    function confirmResetSettings() {
+      if (confirm('⚠️ WARNING: This will reset ALL settings to their default values.\n\nThis action cannot be undone. Are you sure you want to continue?')) {
+        if (confirm('Really reset everything? Click OK to confirm.')) {
+          sendToPython('reset_settings', 'confirm');
+        }
+      }
+    }
+
     function showErrorNotification(message) {
       const notification = document.createElement('div');
       notification.style.cssText = 'position:fixed;top:80px;right:20px;background:linear-gradient(135deg,rgba(239,68,68,0.95),rgba(220,38,38,0.95));color:white;padding:16px 24px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:0 8px 32px rgba(239,68,68,0.4);z-index:10000;animation:slideInRight 0.3s ease-out;border:1px solid rgba(255,255,255,0.2);max-width:400px;word-wrap:break-word;';
@@ -2719,7 +3214,6 @@
       console.log('Loading all settings from state:', state);
       if (state.hotkeys) {
         updateHotkey('start', state.hotkeys.start_stop || 'f1');
-        updateHotkey('area', state.hotkeys.change_area || 'f2');
         updateHotkey('exit', state.hotkeys.exit || 'f3');
       }
       setInputValue('rodHotkey', state.rodHotkey || '1');
@@ -2730,6 +3224,8 @@
       setTimeout(() => renderDevilFruitSlotSelector(dfSlots), 100);
       setToggleState('alwaysOnTopToggle', state.alwaysOnTop);
       setToggleState('debugOverlayToggle', state.showDebugOverlay);
+      setToggleState('megalodonSoundToggle', state.megalodonSoundEnabled);
+      setInputValue('soundSensitivity', state.soundSensitivity || 0.7);
       setExpandableSection('autoBuyBaitToggle', 'autoBuyExpand', state.autoBuyCommonBait);
       setExpandableSection('autoCraftBaitToggle', 'autoCraftExpand', state.autoCraftBait);
       setExpandableSection('autoStoreFruitToggle', 'autoStoreExpand', state.autoStoreDevilFruit);
@@ -2791,9 +3287,50 @@
 
     async function pollPythonState() {
       try {
-        const response = await fetch('http://localhost:8765/state');
+        const response = await fetch(`http://localhost:8765/state?clientId=${CLIENT_ID}`);
         const state = await response.json();
+
         updateStatus(state.isRunning);
+
+        if (state.rdp_detected !== undefined) {
+          updateRdpIndicator(state.rdp_detected, state.rdp_session_state);
+        }
+
+        if (state.connected_devices) {
+          renderConnectedDevices(state.connected_devices);
+        }
+
+        if (state.is_syncing) {
+          const syncStatus = document.getElementById('syncStatus');
+          if (syncStatus) syncStatus.style.display = 'flex';
+        } else {
+          const syncStatus = document.getElementById('syncStatus');
+          if (syncStatus) syncStatus.style.display = 'none';
+        }
+
+        if (state.device_name && document.getElementById('deviceName')) {
+          document.getElementById('deviceName').value = state.device_name;
+        }
+
+        if (document.getElementById('clientIdDisplay')) {
+          document.getElementById('clientIdDisplay').textContent = CLIENT_ID;
+        }
+
+        setToggleState('autoDetectRdpToggle', state.auto_detect_rdp !== false);
+        setToggleState('allowRdpExecutionToggle', state.allow_rdp_execution !== false);
+        setToggleState('pauseOnRdpDisconnectToggle', state.pause_on_rdp_disconnect !== false);
+        setToggleState('resumeOnRdpReconnectToggle', state.resume_on_rdp_reconnect || false);
+
+        setToggleState('enableDeviceSyncToggle', state.enable_device_sync || false);
+        setExpandableSection('enableDeviceSyncToggle', 'deviceSyncExpand', state.enable_device_sync || false);
+        setToggleState('syncSettingsToggle', state.sync_settings !== false);
+        setToggleState('syncStatsToggle', state.sync_stats !== false);
+        setToggleState('shareFishCountToggle', state.share_fish_count || false);
+
+        if (state.sync_interval && document.getElementById('syncInterval')) {
+          document.getElementById('syncInterval').value = state.sync_interval;
+        }
+
         if (state.baitRecipes !== undefined) RenderRecipes(state.baitRecipes);
         updatePointStatus('waterPoint', state.waterPoint?.x, state.waterPoint?.y);
         updatePointStatus('leftPoint', state.leftPoint?.x, state.leftPoint?.y);
@@ -2812,11 +3349,15 @@
         setToggleState('logPeriodicStatsToggle', state.logPeriodicStats);
         setToggleState('logGeneralUpdatesToggle', state.logGeneralUpdates);
         setInputValue('periodicStatsInterval', state.periodicStatsInterval || 5);
+
         checkRequirements('autoStoreFruit');
         checkRequirements('autoBuyBait');
         checkRequirements('autoCraftBait');
         checkRequirements('autoSelectBait');
-      } catch (error) { console.error('Failed to poll state:', error); }
+
+      } catch (error) {
+        console.error('Failed to poll state:', error);
+      }
     }
 
     async function loadInitialSettings() {
@@ -2843,6 +3384,16 @@
     window.updateStatus = updateStatus;
     window.updateHotkey = updateHotkey;
     window.updatePointStatus = updatePointStatus;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+
+      document.querySelectorAll('.nav-item').forEach(nav => {
+        nav.addEventListener('click', () => {
+          setTimeout(() => lucide.createIcons(), 100);
+        });
+      });
+    });
   </script>
 </body>
 

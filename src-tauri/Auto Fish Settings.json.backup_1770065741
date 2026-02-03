@@ -100,7 +100,7 @@
     },
     "AutomationFeatures": {
         "AutoBuyCommonBait": false,
-        "AutoStoreDevilFruit": false,
+        "AutoStoreDevilFruit": true,
         "AutoSelectTopBait": false,
         "AutoCraftBait": false
     },
@@ -123,7 +123,7 @@
         "PeriodicStatsIntervalMinutes": 5
     },
     "FishingModes": {
-        "MegalodonSound": true,
+        "MegalodonSound": false,
         "SoundSensitivity": 0.7
     },
     "RDPSettings": {

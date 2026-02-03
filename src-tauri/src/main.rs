@@ -13,7 +13,7 @@ fn log_to_file(message: &str) {
     if let Ok(mut file) = OpenOptions::new()
         .create(true)
         .append(true)
-        .open("debug.log")
+        .open("debug.txt")
     {
         let _ = writeln!(file, "{}", message);
     }
@@ -45,7 +45,7 @@ fn get_python_and_script(app: &tauri::AppHandle) -> (PathBuf, PathBuf) {
     {
         let resource_path = app.path().resource_dir()
             .expect("Failed to get resource directory");
-        let python_exe = resource_path.join("python-embed").join("pythonw.exe");
+        let python_exe = resource_path.join("Embed").join("pythonw.exe");
         let script = resource_path.join("backend.py");
         (python_exe, script)
     }
@@ -75,7 +75,7 @@ fn wait_for_backend() -> bool {
 }
 
 fn main() {
-    let _ = std::fs::remove_file("debug.log");
+    let _ = std::fs::remove_file("debug.txt");
     log_to_file("=== APP STARTING ===");
     
     tauri::Builder::default()
@@ -127,8 +127,8 @@ fn main() {
                 
                 log_to_file(&format!("Working directory: {:?}", resource_dir));
                 
-                let stdout_log = resource_dir.join("python_stdout.log");
-                let stderr_log = resource_dir.join("python_stderr.log");
+                let stdout_log = resource_dir.join("python_stdout.txt");
+                let stderr_log = resource_dir.join("python_stderr.txt");
                 
                 log_to_file(&format!("Python stdout will be in: {:?}", stdout_log));
                 log_to_file(&format!("Python stderr will be in: {:?}", stderr_log));
@@ -163,7 +163,7 @@ fn main() {
                 log_to_file("PANIC: Backend didn't start in time");
                 
                 let resource_dir = app.path().resource_dir().unwrap();
-                let stderr_log = resource_dir.join("python_stderr.log");
+                let stderr_log = resource_dir.join("python_stderr.txt");
                 if let Ok(errors) = std::fs::read_to_string(&stderr_log) {
                     log_to_file(&format!("Python errors: {}", errors));
                 }

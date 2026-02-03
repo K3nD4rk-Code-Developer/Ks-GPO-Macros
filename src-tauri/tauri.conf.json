@@ -47,8 +47,9 @@
       "icons/icon.ico"
     ],
     "resources": [
-      "python-embed/**/*",
-      "backend.py"
+      "Embed/**/*",
+      "backend.py",
+      "Sounds/*"
     ]
   }
 }

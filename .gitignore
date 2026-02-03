@@ -24,4 +24,4 @@ dist-ssr
 *.sw?
 /src-tauri/build
 src-tauri/Auto Fish Settings.json
-/src-tauri/python-embed
+/src-tauri/Embed
