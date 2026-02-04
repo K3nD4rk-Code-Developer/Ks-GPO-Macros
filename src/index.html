@@ -1289,8 +1289,8 @@
           <h1>K's GPO Fishing Macro</h1>
           <div style="display: flex; align-items: center; gap: 8px;">
             <div class="version">Version 1.2.7</div>
-            <div style="color: #1797ff; opacity: 0.9; font-size: 0.75em;">Pre-Release</div>
-            <div style="color: #888; opacity: 0.2; font-size: 0.75em;">e4b37b655a7166f3536747a4b7a02edb</div>
+            <div style="color: #1797ff; opacity: 0.9; font-size: 0.75em;">Production</div>
+            <div style="color: #888; opacity: 0.2; font-size: 0.75em;">0c8f5963beb29ae43af46675bed20453</div>
           </div>
         </div>
       </div>
@@ -1391,7 +1391,14 @@
             <div class="tip-item">
               <div class="tip-icon"></div>
               <div class="tip-text">
-                <strong>Camera Zoom:</strong> Keep your camera zoomed enough to see the bar closely enough but not too much it's above other UI's.
+                <strong>Camera Zoom:</strong> Keep your camera zoomed enough to see the bar closely enough but not too
+                much it's above other UI's.
+              </div>
+            </div>
+            <div class="tip-item">
+              <div class="tip-icon"></div>
+              <div class="tip-text">
+                <strong>Cartoonize Your Gameplay:</strong> Set your graphics to 1, turn on fast mode in your GPO settings, and turn off shadows.
               </div>
             </div>
           </div>
@@ -1410,51 +1417,6 @@
           </div>
 
           <div class="card">
-            <div class="card-header">Feature Overview</div>
-            <div class="setup-grid">
-              <div class="setup-step">
-                <div class="step-title">Control Center</div>
-                <div class="step-description">
-                  Configure hotkeys, inventory slots, scan area, and basic application settings like always-on-top and
-                  debug overlay.
-                </div>
-              </div>
-              <div class="setup-step">
-                <div class="step-title">Locations</div>
-                <div class="step-description">
-                  Set all click points for water, bait shop, crafting interface, and devil fruit storage locations.
-                </div>
-              </div>
-              <div class="setup-step">
-                <div class="step-title">Automation</div>
-                <div class="step-description">
-                  Enable auto-buy bait, auto-craft bait, auto-store devil fruits, and configure automation frequencies.
-                </div>
-              </div>
-              <div class="setup-step">
-                <div class="step-title">Logging</div>
-                <div class="step-description">
-                  Set up Discord webhook notifications for devil fruit captures and other important events.
-                </div>
-              </div>
-              <div class="setup-step">
-                <div class="step-title">Tuning</div>
-                <div class="step-description">
-                  Fine-tune PD controller parameters, casting settings, and detection thresholds for optimal
-                  performance.
-                </div>
-              </div>
-              <div class="setup-step">
-                <div class="step-title">Timing</div>
-                <div class="step-description">
-                  Adjust all timing delays including window focus, inventory selection, crafting, and anti-detection
-                  measures.
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
             <div class="card-header">Troubleshooting</div>
             <div class="tip-item">
               <div class="tip-text">
@@ -1465,8 +1427,7 @@
               <div class="tip-text">
                 <strong>Missing fish games:</strong> Adjust the scan area so it fully covers the fishing bar (and a bit
                 beyond). Make sure Roblox is running at your
-                monitor’s refresh rate, the bar doesn’t overlap with others UI, and the app’s priority is set
-                to High in Task Manager.
+                monitor’s refresh rate, the bar doesn’t overlap with others UI, and run app as admin.
               </div>
             </div>
             <div class="tip-item">
@@ -1969,6 +1930,15 @@
           </div>
 
           <div class="card">
+            <div class="card-header">Active Sessions</div>
+            <div id="activeSessionsContainer">
+              <div style="text-align:center;padding:20px;color:#6b7280;">
+                Loading sessions...
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
             <div class="card-header">
               Connected Devices
               <span class="sync-status" id="syncStatus" style="float: right; display: none;">
@@ -2412,97 +2382,12 @@
   <script>
     const CURRENT_VERSION = '1.2.7';
     const GITHUB_REPO = 'K3nD4rk-Code-Developer/Grand-Piece-Online-Fishing';
+    const CLIENT_ID = getClientId();
 
-    function extractVersion(versionString) {
-      const match = versionString.match(/(\d+)\.(\d+)\.(\d+)/);
-      if (match) {
-        return match[0];
-      }
-      return versionString;
-    }
-
-    function compareVersions(v1, v2) {
-      const version1 = extractVersion(v1);
-      const version2 = extractVersion(v2);
-
-      const parts1 = version1.split('.').map(Number);
-      const parts2 = version2.split('.').map(Number);
-
-      for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-        const part1 = parts1[i] || 0;
-        const part2 = parts2[i] || 0;
-
-        if (part1 > part2) return 1;
-        if (part1 < part2) return -1;
-      }
-
-      return 0;
-    }
-
-    async function checkForUpdates() {
-      try {
-        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
-
-        if (!response.ok) {
-          return;
-        }
-
-        const data = await response.json();
-        const latestVersionRaw = data.tag_name;
-        const latestVersion = extractVersion(latestVersionRaw);
-
-        if (compareVersions(latestVersion, CURRENT_VERSION) > 0) {
-          showUpdateBanner(latestVersion, data.html_url);
-        }
-
-      } catch (error) {
-        console.error('Error checking for updates:', error);
-      }
-    }
-
-    function showUpdateBanner(newVersion, downloadUrl) {
-      const banner = document.getElementById('updateBanner');
-      const versionText = document.getElementById('newVersionText');
-
-      if (banner && versionText) {
-        versionText.textContent = `v${newVersion}`;
-        banner.style.display = 'block';
-        window.latestReleaseUrl = downloadUrl;
-      }
-    }
-
-    async function downloadUpdate() {
-      const url = window.latestReleaseUrl || `https://github.com/${GITHUB_REPO}/releases/latest`;
-
-      try {
-        await fetch('http://localhost:8765/command', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'open_browser',
-            payload: url,
-            clientId: CLIENT_ID
-          })
-        });
-      } catch (error) {
-        console.error('Failed to open browser:', error);
-        window.location.href = url;
-      }
-    }
-
-    function dismissBanner() {
-      const banner = document.getElementById('updateBanner');
-      if (banner) {
-        banner.style.animation = 'slideUp 0.3s ease-out';
-        setTimeout(() => {
-          banner.style.display = 'none';
-        }, 300);
-      }
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      checkForUpdates();
-    });
+    let activeCategoryIndex = 0;
+    let activeSlideIndex = 0;
+    let lastRenderedRecipes = null;
+    let pollInterval;
 
     const SLIDESHOW_DATA = [
       {
@@ -2617,6 +2502,159 @@
       }
     ];
 
+    function getClientId() {
+      let clientId = localStorage.getItem('macroClientId');
+      if (!clientId) {
+        clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        localStorage.setItem('macroClientId', clientId);
+      }
+      return clientId;
+    }
+
+    async function regenerateClientId() {
+      if (!confirm('This will generate a new Client ID and may disconnect this device from sync. Continue?')) {
+        return;
+      }
+
+      localStorage.removeItem('macroClientId');
+      const newClientId = getClientId();
+      document.getElementById('clientIdDisplay').textContent = newClientId;
+
+      try {
+        await sendToPython('set_client_id', newClientId);
+        showWarningNotification('Client ID regenerated. Please restart the macro.');
+      } catch (error) {
+        showErrorNotification('Failed to regenerate Client ID');
+      }
+    }
+
+    function extractVersion(versionString) {
+      const match = versionString.match(/(\d+)\.(\d+)\.(\d+)/);
+      if (match) {
+        return match[0];
+      }
+      return versionString;
+    }
+
+    function compareVersions(v1, v2) {
+      const version1 = extractVersion(v1);
+      const version2 = extractVersion(v2);
+
+      const parts1 = version1.split('.').map(Number);
+      const parts2 = version2.split('.').map(Number);
+
+      for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+        const part1 = parts1[i] || 0;
+        const part2 = parts2[i] || 0;
+
+        if (part1 > part2) return 1;
+        if (part1 < part2) return -1;
+      }
+
+      return 0;
+    }
+
+    async function checkForUpdates() {
+      try {
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = await response.json();
+        const latestVersionRaw = data.tag_name;
+        const latestVersion = extractVersion(latestVersionRaw);
+
+        if (compareVersions(latestVersion, CURRENT_VERSION) > 0) {
+          showUpdateBanner(latestVersion, data.html_url);
+        }
+
+      } catch (error) {
+        console.error('Error checking for updates:', error);
+      }
+    }
+
+    function showUpdateBanner(newVersion, downloadUrl) {
+      const banner = document.getElementById('updateBanner');
+      const versionText = document.getElementById('newVersionText');
+
+      if (banner && versionText) {
+        versionText.textContent = `v${newVersion}`;
+        banner.style.display = 'block';
+        window.latestReleaseUrl = downloadUrl;
+      }
+    }
+
+    async function downloadUpdate() {
+      const url = window.latestReleaseUrl || `https://github.com/${GITHUB_REPO}/releases/latest`;
+
+      try {
+        await fetch('http://localhost:8765/command', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'open_browser',
+            payload: url,
+            clientId: CLIENT_ID
+          })
+        });
+      } catch (error) {
+        console.error('Failed to open browser:', error);
+        window.location.href = url;
+      }
+    }
+
+    function dismissBanner() {
+      const banner = document.getElementById('updateBanner');
+      if (banner) {
+        banner.style.animation = 'slideUp 0.3s ease-out';
+        setTimeout(() => {
+          banner.style.display = 'none';
+        }, 300);
+      }
+    }
+
+    function checkDisclaimer() {
+      const hideDisclaimer = localStorage.getItem('hideDisclaimer');
+      const modal = document.getElementById('disclaimerModal');
+      if (hideDisclaimer === 'true') {
+        modal.style.display = 'none';
+      } else {
+        modal.style.display = 'flex';
+      }
+    }
+
+    function closeDisclaimer() {
+      const dontShowAgain = document.getElementById('dontShowAgain').checked;
+      if (dontShowAgain) {
+        localStorage.setItem('hideDisclaimer', 'true');
+      }
+      document.getElementById('disclaimerModal').style.display = 'none';
+    }
+
+    function showWarningNotification(message) {
+      const notification = document.createElement('div');
+      notification.style.cssText = 'position:fixed;top:80px;right:20px;background:linear-gradient(135deg,rgba(251,191,36,0.95),rgba(245,158,11,0.95));color:#111;padding:16px 24px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:0 8px 32px rgba(251,191,36,0.4);z-index:10000;animation:slideInRight 0.3s ease-out;border:1px solid rgba(255,255,255,0.2);max-width:400px;word-wrap:break-word;';
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+      }, 5000);
+    }
+
+    function showErrorNotification(message) {
+      const notification = document.createElement('div');
+      notification.style.cssText = 'position:fixed;top:80px;right:20px;background:linear-gradient(135deg,rgba(239,68,68,0.95),rgba(220,38,38,0.95));color:white;padding:16px 24px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:0 8px 32px rgba(239,68,68,0.4);z-index:10000;animation:slideInRight 0.3s ease-out;border:1px solid rgba(255,255,255,0.2);max-width:400px;word-wrap:break-word;';
+      notification.textContent = message;
+      document.body.appendChild(notification);
+      setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease-out';
+        setTimeout(() => notification.remove(), 300);
+      }, 5000);
+    }
+
     function updateRdpIndicator(isRdp, sessionState) {
       const indicator = document.getElementById('rdpIndicator');
       const text = document.getElementById('rdpText');
@@ -2639,6 +2677,12 @@
           sessionTypeText.textContent = 'Local Desktop';
         }
       }
+    }
+
+    function formatUptime(seconds) {
+      if (seconds < 60) return `${Math.floor(seconds)}s`;
+      if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
+      return `${Math.floor(seconds / 3600)}h`;
     }
 
     function renderConnectedDevices(devices) {
@@ -2687,32 +2731,6 @@
       });
     }
 
-    function formatUptime(seconds) {
-      if (seconds < 60) return `${Math.floor(seconds)}s`;
-      if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-      return `${Math.floor(seconds / 3600)}h`;
-    }
-
-    async function regenerateClientId() {
-      if (!confirm('This will generate a new Client ID and may disconnect this device from sync. Continue?')) {
-        return;
-      }
-
-      localStorage.removeItem('macroClientId');
-      const newClientId = getClientId();
-      document.getElementById('clientIdDisplay').textContent = newClientId;
-
-      try {
-        await sendToPython('set_client_id', newClientId);
-        showWarningNotification('Client ID regenerated. Please restart the macro.');
-      } catch (error) {
-        showErrorNotification('Failed to regenerate Client ID');
-      }
-    }
-
-    let activeCategoryIndex = 0;
-    let activeSlideIndex = 0;
-
     function buildSlideshow() {
       const tabsEl = document.getElementById('slideshowTabs');
       const viewEl = document.getElementById('slideshowViewport');
@@ -2738,8 +2756,6 @@
           div.className = 'slide';
           div.id = `slide-${ci}-${si}`;
           if (ci === 0 && si === 0) div.classList.add('visible');
-
-          const hasText = slide.title || slide.desc;
 
           div.innerHTML = `
           <img src="${slide.url}" alt="${slide.title || 'Guide image'}">
@@ -2807,49 +2823,12 @@
       }
     }
 
-    function showWarningNotification(message) {
-      const notification = document.createElement('div');
-      notification.style.cssText = 'position:fixed;top:80px;right:20px;background:linear-gradient(135deg,rgba(251,191,36,0.95),rgba(245,158,11,0.95));color:#111;padding:16px 24px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:0 8px 32px rgba(251,191,36,0.4);z-index:10000;animation:slideInRight 0.3s ease-out;border:1px solid rgba(255,255,255,0.2);max-width:400px;word-wrap:break-word;';
-      notification.textContent = message;
-      document.body.appendChild(notification);
-      setTimeout(() => {
-        notification.style.animation = 'slideOutRight 0.3s ease-out';
-        setTimeout(() => notification.remove(), 300);
-      }, 5000);
-    }
-
-    document.addEventListener('DOMContentLoaded', buildSlideshow);
-
-    function checkDisclaimer() {
-      const hideDisclaimer = localStorage.getItem('hideDisclaimer');
-      const modal = document.getElementById('disclaimerModal');
-      if (hideDisclaimer === 'true') {
-        modal.style.display = 'none';
-      } else {
-        modal.style.display = 'flex';
-      }
-    }
-
-    function closeDisclaimer() {
-      const dontShowAgain = document.getElementById('dontShowAgain').checked;
-      if (dontShowAgain) {
-        localStorage.setItem('hideDisclaimer', 'true');
-      }
-      document.getElementById('disclaimerModal').style.display = 'none';
-    }
-
-    document.querySelectorAll('.nav-item').forEach(nav => {
-      nav.addEventListener('click', () => {
-        document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-        document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-        nav.classList.add('active');
-        document.getElementById(nav.dataset.view).classList.add('active');
-      });
-    });
-
     function renderDevilFruitSlotSelector(selectedSlots) {
       const container = document.getElementById('devilFruitSlotSelector');
-      if (!container) { setTimeout(() => renderDevilFruitSlotSelector(selectedSlots), 100); return; }
+      if (!container) {
+        setTimeout(() => renderDevilFruitSlotSelector(selectedSlots), 100);
+        return;
+      }
       if (!selectedSlots || !Array.isArray(selectedSlots)) selectedSlots = ['3'];
       container.innerHTML = '';
       for (let i = 0; i <= 9; i++) {
@@ -2893,21 +2872,6 @@
       sendToPython('set_devil_fruit_hotkeys', currentSlots.join(','));
     }
 
-    function toggleExpandable(settingName, expandId) {
-      const toggle = document.getElementById(`${settingName}Toggle`);
-      const section = document.getElementById(expandId);
-      const willBeActive = !toggle.classList.contains('active');
-
-      toggle.classList.toggle('active');
-      const isActive = toggle.classList.contains('active');
-      if (isActive) {
-        section.classList.add('expanded');
-      } else {
-        section.classList.remove('expanded');
-      }
-      sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
-    }
-
     function validateAndSetRodSlot(value) {
       const secondarySlot = document.getElementById('anythingElseHotkey').value;
       const devilFruitSlots = window.currentDevilFruitSlots || ['3'];
@@ -2948,6 +2912,21 @@
       sendToPython('set_anything_else_hotkey', value);
     }
 
+    function toggleExpandable(settingName, expandId) {
+      const toggle = document.getElementById(`${settingName}Toggle`);
+      const section = document.getElementById(expandId);
+      const willBeActive = !toggle.classList.contains('active');
+
+      toggle.classList.toggle('active');
+      const isActive = toggle.classList.contains('active');
+      if (isActive) {
+        section.classList.add('expanded');
+      } else {
+        section.classList.remove('expanded');
+      }
+      sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
+    }
+
     function toggleSetting(settingName) {
       const toggle = document.getElementById(`${settingName}Toggle`);
       const willBeActive = !toggle.classList.contains('active');
@@ -2955,38 +2934,6 @@
       toggle.classList.toggle('active');
       const isActive = toggle.classList.contains('active');
       sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
-    }
-
-    async function sendToPython(action, payload) {
-      try {
-        console.log('Sending to Python:', action, payload);
-        const response = await fetch('http://localhost:8765/command', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action, payload })
-        });
-        const result = await response.json();
-        if (result.status === 'error') { showErrorNotification(`Error: ${result.message}`); }
-      } catch (error) {
-        console.error('Failed to send to Python:', error);
-        showErrorNotification(`Connection failed: ${error.message}`);
-      }
-    }
-
-    function confirmResetSettings() {
-      if (confirm('⚠️ WARNING: This will reset ALL settings to their default values.\n\nThis action cannot be undone. Are you sure you want to continue?')) {
-        if (confirm('Really reset everything? Click OK to confirm.')) {
-          sendToPython('reset_settings', 'confirm');
-        }
-      }
-    }
-
-    function showErrorNotification(message) {
-      const notification = document.createElement('div');
-      notification.style.cssText = 'position:fixed;top:80px;right:20px;background:linear-gradient(135deg,rgba(239,68,68,0.95),rgba(220,38,38,0.95));color:white;padding:16px 24px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:0 8px 32px rgba(239,68,68,0.4);z-index:10000;animation:slideInRight 0.3s ease-out;border:1px solid rgba(255,255,255,0.2);max-width:400px;word-wrap:break-word;';
-      notification.textContent = message;
-      document.body.appendChild(notification);
-      setTimeout(() => { notification.style.animation = 'slideOutRight 0.3s ease-out'; setTimeout(() => notification.remove(), 300); }, 5000);
     }
 
     function checkRequirements(settingName) {
@@ -3083,22 +3030,143 @@
       document.getElementById('locations').classList.add('active');
     }
 
-    function getClientId() {
-      let clientId = localStorage.getItem('macroClientId');
-      if (!clientId) {
-        clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        localStorage.setItem('macroClientId', clientId);
+    async function addNewRecipe() {
+      try {
+        const response = await fetch('http://localhost:8765/add_recipe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' }
+        });
+        const result = await response.json();
+        if (result.status === 'success') {
+          lastRenderedRecipes = null;
+          await pollPythonState();
+        }
+      } catch (error) {
+        console.error('Failed to add recipe:', error);
       }
-      return clientId;
     }
 
-    const CLIENT_ID = getClientId();
+    async function removeRecipe(recipeIndex) {
+      try {
+        await fetch('http://localhost:8765/remove_recipe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ index: recipeIndex })
+        });
+        await pollPythonState();
+      } catch (error) {
+        console.error('Failed to remove recipe:', error);
+      }
+    }
+
+    async function setRecipePoint(recipeIndex, pointType) {
+      try {
+        await fetch('http://localhost:8765/set_recipe_point', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ recipeIndex: recipeIndex, pointType: pointType })
+        });
+      } catch (error) {
+        console.error('Failed to set recipe point:', error);
+      }
+    }
+
+    async function updateRecipeValue(recipeIndex, fieldName, value) {
+      try {
+        await fetch('http://localhost:8765/update_recipe_value', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            recipeIndex: recipeIndex,
+            fieldName: fieldName,
+            value: parseInt(value)
+          })
+        });
+      } catch (error) {
+        console.error('Failed to update recipe value:', error);
+      }
+    }
+
+    function renderRecipes(recipes) {
+      const container = document.getElementById('RecipesContainer');
+      if (!container) return;
+      if (JSON.stringify(recipes) === JSON.stringify(lastRenderedRecipes)) return;
+      lastRenderedRecipes = JSON.parse(JSON.stringify(recipes));
+      container.innerHTML = '';
+      if (recipes.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:20px;color:#6b7280;">No recipes configured. Click "+ Add Recipe" to get started.</div>';
+        return;
+      }
+      recipes.forEach((recipe, index) => {
+        const recipeDiv = document.createElement('div');
+        recipeDiv.className = 'recipe-item';
+        recipeDiv.style.cssText = 'border:1px solid rgba(0,212,255,0.2);border-radius:8px;padding:16px;margin-bottom:12px;background:rgba(17,24,39,0.3);';
+        recipeDiv.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <strong style="color:#00d4ff;">Recipe ${index + 1}</strong>
+        <button class="btn btn-sm btn-secondary" onclick="removeRecipe(${index})">Remove</button>
+      </div>
+      <div class="control-group">
+        <span class="control-label">Bait Recipe Selection</span>
+        <div class="control-input">
+          <span class="point-indicator ${recipe.BaitRecipePoint ? 'set' : 'unset'}">
+            ${recipe.BaitRecipePoint ? `X: ${recipe.BaitRecipePoint.x}, Y: ${recipe.BaitRecipePoint.y}` : 'Not Configured'}
+          </span>
+          <button class="btn btn-sm" onclick="setRecipePoint(${index}, 'BaitRecipePoint')">Configure</button>
+        </div>
+      </div>
+      <div class="control-group">
+        <span class="control-label">Amount of Crafts</span>
+        <div class="control-input">
+          <input type="number" class="input" value="${recipe.CraftsPerCycle || 40}" step="1" onchange="updateRecipeValue(${index}, 'CraftsPerCycle', this.value)">
+        </div>
+      </div>
+      <div class="control-group">
+        <span class="control-label">Switch Fish Cycle</span>
+        <div class="control-input">
+          <input type="number" class="input" value="${recipe.SwitchFishCycle || 5}" step="1" onchange="updateRecipeValue(${index}, 'SwitchFishCycle', this.value)">
+        </div>
+      </div>`;
+        container.appendChild(recipeDiv);
+      });
+    }
+
+    async function sendToPython(action, payload) {
+      try {
+        console.log('Sending to Python:', action, payload);
+        const response = await fetch('http://localhost:8765/command', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action, payload })
+        });
+        const result = await response.json();
+        if (result.status === 'error') {
+          showErrorNotification(`Error: ${result.message}`);
+        }
+      } catch (error) {
+        console.error('Failed to send to Python:', error);
+        showErrorNotification(`Connection failed: ${error.message}`);
+      }
+    }
+
+    function confirmResetSettings() {
+      if (confirm('⚠️ WARNING: This will reset ALL settings to their default values.\n\nThis action cannot be undone. Are you sure you want to continue?')) {
+        if (confirm('Really reset everything? Click OK to confirm.')) {
+          sendToPython('reset_settings', 'confirm');
+        }
+      }
+    }
 
     function updateStatus(isRunning) {
       const dot = document.getElementById('statusDot');
       const text = document.getElementById('statusText');
-      if (isRunning) { dot.classList.add('active'); text.textContent = 'Active'; }
-      else { dot.classList.remove('active'); text.textContent = 'Inactive'; }
+      if (isRunning) {
+        dot.classList.add('active');
+        text.textContent = 'Active';
+      } else {
+        dot.classList.remove('active');
+        text.textContent = 'Inactive';
+      }
     }
 
     function updateHotkey(key, value) {
@@ -3108,149 +3176,133 @@
 
     function updatePointStatus(pointName, x, y) {
       const status = document.getElementById(`${pointName}Status`);
-      if (!status) { console.warn(`Point status element not found: ${pointName}Status`); return; }
+      if (!status) {
+        console.warn(`Point status element not found: ${pointName}Status`);
+        return;
+      }
       if (x !== null && y !== null && x !== undefined && y !== undefined) {
         status.textContent = `X: ${x}, Y: ${y}`;
-        status.classList.remove('unset'); status.classList.add('set');
+        status.classList.remove('unset');
+        status.classList.add('set');
       } else {
         status.textContent = 'Not Configured';
-        status.classList.remove('set'); status.classList.add('unset');
+        status.classList.remove('set');
+        status.classList.add('unset');
       }
     }
 
     function setInputValue(elementId, value) {
       const element = document.getElementById(elementId);
-      if (!element) { console.warn(`Element not found: ${elementId}`); return; }
-      if (element.type === 'number' || element.tagName === 'INPUT') { element.value = value; }
-      else if (element.tagName === 'SELECT') { element.value = value; }
+      if (!element) {
+        console.warn(`Element not found: ${elementId}`);
+        return;
+      }
+
+      if (document.activeElement === element) {
+        return;
+      }
+
+      if (element.type === 'number' || element.tagName === 'INPUT') {
+        element.value = value;
+      } else if (element.tagName === 'SELECT') {
+        element.value = value;
+      }
     }
 
     function setToggleState(elementId, isActive) {
       const element = document.getElementById(elementId);
-      if (!element) { console.warn(`Toggle element not found: ${elementId}`); return; }
-      if (isActive) { element.classList.add('active'); } else { element.classList.remove('active'); }
+      if (!element) {
+        console.warn(`Toggle element not found: ${elementId}`);
+        return;
+      }
+      if (isActive) {
+        element.classList.add('active');
+      } else {
+        element.classList.remove('active');
+      }
     }
 
     function setExpandableSection(toggleId, expandId, isActive) {
       const toggle = document.getElementById(toggleId);
       const section = document.getElementById(expandId);
-      if (!toggle || !section) { console.warn(`Expandable section not found: ${toggleId} or ${expandId}`); return; }
-      if (isActive) { toggle.classList.add('active'); section.classList.add('expanded'); }
-      else { toggle.classList.remove('active'); section.classList.remove('expanded'); }
-    }
-
-    async function AddNewRecipe() {
-      try {
-        const Response = await fetch('http://localhost:8765/add_recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
-        const Result = await Response.json();
-        if (Result.status === 'success') { LastRenderedRecipes = null; await pollPythonState(); }
-      } catch (Error) { console.error('Failed to add recipe:', Error); }
-    }
-
-    async function RemoveRecipe(RecipeIndex) {
-      try {
-        await fetch('http://localhost:8765/remove_recipe', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ index: RecipeIndex }) });
-        await pollPythonState();
-      } catch (Error) { console.error('Failed to remove recipe:', Error); }
-    }
-
-    async function SetRecipePoint(RecipeIndex, PointType) {
-      try {
-        await fetch('http://localhost:8765/set_recipe_point', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipeIndex: RecipeIndex, pointType: PointType }) });
-      } catch (Error) { console.error('Failed to set recipe point:', Error); }
-    }
-
-    let LastRenderedRecipes = null;
-
-    function RenderRecipes(Recipes) {
-      const Container = document.getElementById('RecipesContainer');
-      if (!Container) return;
-      if (JSON.stringify(Recipes) === JSON.stringify(LastRenderedRecipes)) return;
-      LastRenderedRecipes = JSON.parse(JSON.stringify(Recipes));
-      Container.innerHTML = '';
-      if (Recipes.length === 0) {
-        Container.innerHTML = '<div style="text-align:center;padding:20px;color:#6b7280;">No recipes configured. Click "+ Add Recipe" to get started.</div>';
+      if (!toggle || !section) {
+        console.warn(`Expandable section not found: ${toggleId} or ${expandId}`);
         return;
       }
-      Recipes.forEach((Recipe, Index) => {
-        const RecipeDiv = document.createElement('div');
-        RecipeDiv.className = 'recipe-item';
-        RecipeDiv.style.cssText = 'border:1px solid rgba(0,212,255,0.2);border-radius:8px;padding:16px;margin-bottom:12px;background:rgba(17,24,39,0.3);';
-        RecipeDiv.innerHTML = `
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <strong style="color:#00d4ff;">Recipe ${Index + 1}</strong>
-            <button class="btn btn-sm btn-secondary" onclick="RemoveRecipe(${Index})">Remove</button>
-          </div>
-          <div class="control-group">
-            <span class="control-label">Bait Recipe Selection</span>
-            <div class="control-input">
-              <span class="point-indicator ${Recipe.BaitRecipePoint ? 'set' : 'unset'}">
-                ${Recipe.BaitRecipePoint ? `X: ${Recipe.BaitRecipePoint.x}, Y: ${Recipe.BaitRecipePoint.y}` : 'Not Configured'}
-              </span>
-              <button class="btn btn-sm" onclick="SetRecipePoint(${Index}, 'BaitRecipePoint')">Configure</button>
-            </div>
-          </div>
-          <div class="control-group">
-            <span class="control-label">Amount of Crafts</span>
-            <div class="control-input">
-              <input type="number" class="input" value="${Recipe.CraftsPerCycle || 40}" step="1" onchange="UpdateRecipeValue(${Index}, 'CraftsPerCycle', this.value)">
-            </div>
-          </div>
-          <div class="control-group">
-            <span class="control-label">Switch Fish Cycle</span>
-            <div class="control-input">
-              <input type="number" class="input" value="${Recipe.SwitchFishCycle || 5}" step="1" onchange="UpdateRecipeValue(${Index}, 'SwitchFishCycle', this.value)">
-            </div>
-          </div>`;
-        Container.appendChild(RecipeDiv);
-      });
-    }
-
-    async function UpdateRecipeValue(RecipeIndex, FieldName, Value) {
-      try {
-        await fetch('http://localhost:8765/update_recipe_value', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ recipeIndex: RecipeIndex, fieldName: FieldName, value: parseInt(Value) }) });
-      } catch (Error) { console.error('Failed to update recipe value:', Error); }
+      if (isActive) {
+        toggle.classList.add('active');
+        section.classList.add('expanded');
+      } else {
+        toggle.classList.remove('active');
+        section.classList.remove('expanded');
+      }
     }
 
     function loadAllSettings(state) {
       console.log('Loading all settings from state:', state);
+
       if (state.hotkeys) {
         updateHotkey('start', state.hotkeys.start_stop || 'f1');
         updateHotkey('exit', state.hotkeys.exit || 'f3');
       }
+
       setInputValue('rodHotkey', state.rodHotkey || '1');
       setInputValue('anythingElseHotkey', state.anythingElseHotkey || '2');
+
       let dfSlots = state.devilFruitHotkeys || state.devilFruitHotkey || ['3'];
       if (!Array.isArray(dfSlots)) dfSlots = [dfSlots];
       window.currentDevilFruitSlots = dfSlots;
       setTimeout(() => renderDevilFruitSlotSelector(dfSlots), 100);
+
       setToggleState('alwaysOnTopToggle', state.alwaysOnTop);
       setToggleState('debugOverlayToggle', state.showDebugOverlay);
       setToggleState('megalodonSoundToggle', state.megalodonSoundEnabled);
       setInputValue('soundSensitivity', state.soundSensitivity || 0.7);
+
       setExpandableSection('autoBuyBaitToggle', 'autoBuyExpand', state.autoBuyCommonBait);
       setExpandableSection('autoCraftBaitToggle', 'autoCraftExpand', state.autoCraftBait);
       setExpandableSection('autoStoreFruitToggle', 'autoStoreExpand', state.autoStoreDevilFruit);
       setToggleState('autoSelectBaitToggle', state.autoSelectTopBait);
       setToggleState('storeToBackpackToggle', state.storeToBackpack);
-      setInputValue('kp', state.kp); setInputValue('kd', state.kd); setInputValue('pdClamp', state.pdClamp);
-      setInputValue('pdApproaching', state.pdApproachingDamping); setInputValue('pdChasing', state.pdChasingDamping);
+
+      setInputValue('kp', state.kp);
+      setInputValue('kd', state.kd);
+      setInputValue('pdClamp', state.pdClamp);
+      setInputValue('pdApproaching', state.pdApproachingDamping);
+      setInputValue('pdChasing', state.pdChasingDamping);
       setInputValue('gapTolerance', state.gapToleranceMultiplier);
-      setInputValue('castHold', state.castHoldDuration); setInputValue('recastTimeout', state.recastTimeout);
-      setInputValue('fishEndDelay', state.fishEndDelay); setInputValue('stateResend', state.stateResendInterval);
-      setInputValue('loopsPerPurchase', state.loopsPerPurchase); setInputValue('loopsPerStore', state.loopsPerStore);
-      setInputValue('craftsPerCycle', state.craftsPerCycle); setInputValue('loopsPerCraft', state.loopsPerCraft);
-      setInputValue('moveDuration', state.moveDuration); setInputValue('fishCountPerCraft', state.fishCountPerCraft);
-      setInputValue('focusDelay', state.robloxFocusDelay); setInputValue('postFocusDelay', state.robloxPostFocusDelay);
-      setInputValue('preCastE', state.preCastEDelay); setInputValue('preCastClick', state.preCastClickDelay);
-      setInputValue('preCastType', state.preCastTypeDelay); setInputValue('antiDetect', state.preCastAntiDetectDelay);
-      setInputValue('fruitHotkey', state.storeFruitHotkeyDelay); setInputValue('fruitClick', state.storeFruitClickDelay);
-      setInputValue('fruitShift', state.storeFruitShiftDelay); setInputValue('fruitBackspace', state.storeFruitBackspaceDelay);
-      setInputValue('rodDelay', state.rodSelectDelay); setInputValue('baitDelay', state.autoSelectBaitDelay);
-      setInputValue('cursorDelay', state.cursorAntiDetectDelay); setInputValue('scanDelay', state.scanLoopDelay);
-      setInputValue('blackThreshold', state.blackScreenThreshold); setInputValue('spamDelay', state.antiMacroSpamDelay);
-      setInputValue('craftMenuDelay', state.craftMenuOpenDelay); setInputValue('craftClickDelay', state.craftClickDelay);
+
+      setInputValue('castHold', state.castHoldDuration);
+      setInputValue('recastTimeout', state.recastTimeout);
+      setInputValue('fishEndDelay', state.fishEndDelay);
+      setInputValue('stateResend', state.stateResendInterval);
+      setInputValue('loopsPerPurchase', state.loopsPerPurchase);
+      setInputValue('loopsPerStore', state.loopsPerStore);
+      setInputValue('craftsPerCycle', state.craftsPerCycle);
+      setInputValue('loopsPerCraft', state.loopsPerCraft);
+      setInputValue('moveDuration', state.moveDuration);
+      setInputValue('fishCountPerCraft', state.fishCountPerCraft);
+
+      setInputValue('focusDelay', state.robloxFocusDelay);
+      setInputValue('postFocusDelay', state.robloxPostFocusDelay);
+      setInputValue('preCastE', state.preCastEDelay);
+      setInputValue('preCastClick', state.preCastClickDelay);
+      setInputValue('preCastType', state.preCastTypeDelay);
+      setInputValue('antiDetect', state.preCastAntiDetectDelay);
+      setInputValue('fruitHotkey', state.storeFruitHotkeyDelay);
+      setInputValue('fruitClick', state.storeFruitClickDelay);
+      setInputValue('fruitShift', state.storeFruitShiftDelay);
+      setInputValue('fruitBackspace', state.storeFruitBackspaceDelay);
+      setInputValue('rodDelay', state.rodSelectDelay);
+      setInputValue('baitDelay', state.autoSelectBaitDelay);
+      setInputValue('cursorDelay', state.cursorAntiDetectDelay);
+      setInputValue('scanDelay', state.scanLoopDelay);
+      setInputValue('blackThreshold', state.blackScreenThreshold);
+      setInputValue('spamDelay', state.antiMacroSpamDelay);
+      setInputValue('craftMenuDelay', state.craftMenuOpenDelay);
+      setInputValue('craftClickDelay', state.craftClickDelay);
       setInputValue('craftRecipeDelay', state.craftRecipeSelectDelay);
+
       updatePointStatus('waterPoint', state.waterPoint?.x, state.waterPoint?.y);
       updatePointStatus('leftPoint', state.leftPoint?.x, state.leftPoint?.y);
       updatePointStatus('middlePoint', state.middlePoint?.x, state.middlePoint?.y);
@@ -3265,34 +3317,90 @@
       updatePointStatus('closeMenuPoint', state.closeMenuPoint?.x, state.closeMenuPoint?.y);
       updatePointStatus('addRecipePoint', state.addRecipePoint?.x, state.addRecipePoint?.y);
       updatePointStatus('devilFruitLocationPoint', state.devilFruitLocationPoint?.x, state.devilFruitLocationPoint?.y);
+
       setInputValue('webhookUrl', state.webhookUrl || '');
       setToggleState('logDevilFruitToggle', state.logDevilFruit || false);
       setToggleState('logRecastTimeoutsToggle', state.logRecastTimeouts);
       setToggleState('logPeriodicStatsToggle', state.logPeriodicStats);
       setToggleState('logGeneralUpdatesToggle', state.logGeneralUpdates);
       setInputValue('periodicStatsInterval', state.periodicStatsInterval || 5);
-      if (state.baitRecipes !== undefined) RenderRecipes(state.baitRecipes);
+
+      if (state.baitRecipes !== undefined) renderRecipes(state.baitRecipes);
+
       console.log('All settings loaded successfully');
     }
 
-    window.addEventListener('DOMContentLoaded', async () => {
-      checkDisclaimer();
-      await loadInitialSettings();
-      setTimeout(() => {
-        const container = document.getElementById('devilFruitSlotSelector');
-        if (container && container.children.length === 0) {
-          renderDevilFruitSlotSelector(window.currentDevilFruitSlots || ['3']);
-        }
-      }, 500);
-      startPolling();
-    });
+    async function loadInitialSettings() {
+      try {
+        const response = await fetch('http://localhost:8765/state');
+        const state = await response.json();
+        console.log('Loaded initial state:', state);
+        loadAllSettings(state);
+      } catch (error) {
+        console.error('Failed to load initial settings:', error);
+      }
+    }
+
+    function renderActiveSessions(sessions) {
+      const container = document.getElementById('activeSessionsContainer');
+      if (!container) return;
+
+      if (!sessions || sessions.length === 0) {
+        container.innerHTML = '<div style="text-align:center;padding:20px;color:#6b7280;">No active sessions detected</div>';
+        return;
+      }
+
+      container.innerHTML = '';
+      sessions.forEach(session => {
+        const isCurrentClient = session.client_id === CLIENT_ID;
+        const sessionCard = document.createElement('div');
+        sessionCard.className = 'device-card';
+        sessionCard.style.borderColor = isCurrentClient ? 'rgba(0, 212, 255, 0.5)' : 'rgba(0, 212, 255, 0.15)';
+
+        sessionCard.innerHTML = `
+          <div class="device-header">
+              <div class="device-name">
+                  ${isCurrentClient ? '<strong>This Device</strong>' : `Session ${session.session_id}`}
+              </div>
+              <div class="device-status ${session.is_running ? '' : 'offline'}">
+                  <div style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></div>
+                  ${session.is_running ? 'Running' : 'Idle'}
+              </div>
+          </div>
+          <div style="font-size: 11px; color: #6b7280; margin-top: 8px;">
+              Client ID: ${session.client_id.substring(0, 16)}...
+          </div>
+          ${session.rdp_detected ? `
+              <div style="margin-top: 8px;">
+                  <div class="rdp-indicator active">
+                      <div class="rdp-dot"></div>
+                      <span>RDP ${session.rdp_state}</span>
+                  </div>
+              </div>
+          ` : ''}
+      `;
+        container.appendChild(sessionCard);
+      });
+    }
 
     async function pollPythonState() {
       try {
         const response = await fetch(`http://localhost:8765/state?clientId=${CLIENT_ID}`);
         const state = await response.json();
 
-        updateStatus(state.isRunning);
+        console.log('DEBUG:', {
+          myClientId: CLIENT_ID,
+          activeClientId: state.currentActiveClientId,
+          isRunning: state.isRunning,
+          match: state.currentActiveClientId === CLIENT_ID
+        });
+
+        const isThisClientActive = state.currentActiveClientId === CLIENT_ID && state.isRunning;
+        updateStatus(isThisClientActive);
+
+        if (state.activeSessions) {
+          renderActiveSessions(state.activeSessions);
+        }
 
         if (state.rdp_detected !== undefined) {
           updateRdpIndicator(state.rdp_detected, state.rdp_session_state);
@@ -3314,6 +3422,13 @@
           document.getElementById('deviceName').value = state.device_name;
         }
 
+        if (state.megalodonSoundEnabled !== undefined) {
+          setToggleState('megalodonSoundToggle', state.megalodonSoundEnabled);
+        }
+        if (state.soundSensitivity !== undefined) {
+          setInputValue('soundSensitivity', state.soundSensitivity);
+        }
+
         if (document.getElementById('clientIdDisplay')) {
           document.getElementById('clientIdDisplay').textContent = CLIENT_ID;
         }
@@ -3333,7 +3448,8 @@
           document.getElementById('syncInterval').value = state.sync_interval;
         }
 
-        if (state.baitRecipes !== undefined) RenderRecipes(state.baitRecipes);
+        if (state.baitRecipes !== undefined) renderRecipes(state.baitRecipes);
+
         updatePointStatus('waterPoint', state.waterPoint?.x, state.waterPoint?.y);
         updatePointStatus('leftPoint', state.leftPoint?.x, state.leftPoint?.y);
         updatePointStatus('middlePoint', state.middlePoint?.x, state.middlePoint?.y);
@@ -3347,6 +3463,7 @@
         updatePointStatus('craftButtonPoint', state.craftButtonPoint?.x, state.craftButtonPoint?.y);
         updatePointStatus('addRecipePoint', state.addRecipePoint?.x, state.addRecipePoint?.y);
         updatePointStatus('topRecipePoint', state.topRecipePoint?.x, state.topRecipePoint?.y);
+
         setToggleState('logRecastTimeoutsToggle', state.logRecastTimeouts);
         setToggleState('logPeriodicStatsToggle', state.logPeriodicStats);
         setToggleState('logGeneralUpdatesToggle', state.logGeneralUpdates);
@@ -3362,40 +3479,42 @@
       }
     }
 
-    async function loadInitialSettings() {
-      try {
-        const response = await fetch('http://localhost:8765/state');
-        const state = await response.json();
-        console.log('Loaded initial state:', state);
-        loadAllSettings(state);
-      } catch (error) { console.error('Failed to load initial settings:', error); }
-    }
-
-    let pollInterval;
     function startPolling() {
       if (pollInterval) clearInterval(pollInterval);
       pollInterval = setInterval(pollPythonState, 500);
     }
 
     window.addEventListener('DOMContentLoaded', () => {
+      checkForUpdates();
       checkDisclaimer();
+      buildSlideshow();
       loadInitialSettings();
+
+      setTimeout(() => {
+        const container = document.getElementById('devilFruitSlotSelector');
+        if (container && container.children.length === 0) {
+          renderDevilFruitSlotSelector(window.currentDevilFruitSlots || ['3']);
+        }
+      }, 500);
+
       startPolling();
+
+      document.querySelectorAll('.nav-item').forEach(nav => {
+        nav.addEventListener('click', () => {
+          document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+          document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+          nav.classList.add('active');
+          document.getElementById(nav.dataset.view).classList.add('active');
+          setTimeout(() => lucide.createIcons(), 100);
+        });
+      });
+
+      lucide.createIcons();
     });
 
     window.updateStatus = updateStatus;
     window.updateHotkey = updateHotkey;
     window.updatePointStatus = updatePointStatus;
-
-    document.addEventListener('DOMContentLoaded', () => {
-      lucide.createIcons();
-
-      document.querySelectorAll('.nav-item').forEach(nav => {
-        nav.addEventListener('click', () => {
-          setTimeout(() => lucide.createIcons(), 100);
-        });
-      });
-    });
   </script>
 </body>
 

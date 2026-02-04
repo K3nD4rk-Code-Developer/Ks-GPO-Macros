@@ -23,3 +23,5 @@ dist-ssr
 *.sw?
 /src-tauri/build
 src-tauri/Auto Fish Settings.json
+/src-tauri/Python314
+src-tauri/debug_ocr_scan.png

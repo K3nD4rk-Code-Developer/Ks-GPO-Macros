@@ -4,13 +4,13 @@
         "exit": "f3"
     },
     "WindowSettings": {
-        "AlwaysOnTop": true,
-        "ShowDebugOverlay": true
+        "AlwaysOnTop": false,
+        "ShowDebugOverlay": false
     },
     "ScanArea": {
         "x1": 1258,
         "y1": 492,
-        "x2": 1655,
+        "x2": 1575,
         "y2": 1074
     },
     "ClickPoints": {
@@ -99,7 +99,7 @@
         ]
     },
     "AutomationFeatures": {
-        "AutoBuyCommonBait": true,
+        "AutoBuyCommonBait": false,
         "AutoStoreDevilFruit": true,
         "AutoSelectTopBait": false,
         "AutoCraftBait": false
@@ -120,7 +120,7 @@
         "LogRecastTimeouts": true,
         "LogPeriodicStats": true,
         "LogGeneralUpdates": true,
-        "PeriodicStatsIntervalMinutes": 5
+        "PeriodicStatsIntervalMinutes": 3
     },
     "FishingModes": {
         "MegalodonSound": false,

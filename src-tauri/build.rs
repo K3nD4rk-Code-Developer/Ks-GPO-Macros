@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use std::path::PathBuf;
 use std::fs;
 use std::env;

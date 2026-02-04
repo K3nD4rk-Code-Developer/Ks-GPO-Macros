@@ -1,34 +1,43 @@
+import os
+import sys
+import time
+import json
+import threading
+from threading import Lock
+import subprocess
+import platform
+import re
+import shutil
+import uuid
+import hashlib
+from datetime import datetime, timezone
+import traceback
+import webbrowser
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import keyboard
-import threading
-import json
-import os
-import time
-import mss
 import numpy as np
-import ctypes
+import mss
 import pyautogui
+import keyboard
 from pynput import mouse
-import win32gui
-import win32con
-import tkinter as tk
-from tkinter import ttk, filedialog, messagebox
+from PIL import Image as PILImage
 import requests
-from datetime import datetime, timezone
 from difflib import get_close_matches
-import re
-import sys
-from ctypes import wintypes
-import webbrowser
-import win32api
-import tkinter as tk
-import shutil
-import traceback
 from scipy.fft import fft
-import pyaudiowpatch as pyaudio
 import librosa
 import sounddevice as sd
+import pyaudiowpatch as pyaudio
+
+import ctypes
+from ctypes import wintypes
+import win32gui
+import win32con
+import win32api
+import win32ts
+
+import tkinter as tk
+from tkinter import ttk, filedialog, messagebox
 
 FlaskApplication = Flask(__name__)
 CORS(FlaskApplication)
@@ -152,6 +161,10 @@ class AutomatedFishingSystem:
             "ActiveClients": 0
         }
 
+        self.CurrentClientId = str(uuid.uuid4())
+        self.SessionLock = Lock()
+        self.AllActiveSessions = {}
+
         self.ProportionalGainCoefficient = 1.4
         self.DerivativeGainCoefficient = 0.6
         self.ControlSignalMaximumClamp = 1.0
@@ -241,39 +254,36 @@ class AutomatedFishingSystem:
         self.LoadConfigurationFromDisk()
         self.RegisterAllHotkeyBindings()
     
-
     def DetectRDPSession(self):
         try:
-            import win32ts
-            import win32api
-            
-            session_id = win32ts.WTSGetActiveConsoleSessionId()
-            
-            server_handle = win32ts.WTS_CURRENT_SERVER_HANDLE
-            session_info = win32ts.WTSQuerySessionInformation(
-                server_handle, 
-                session_id, 
+            SessionId = win32ts.WTSGetActiveConsoleSessionId()
+            ServerHandle = win32ts.WTS_CURRENT_SERVER_HANDLE
+            SessionInfo = win32ts.WTSQuerySessionInformation(
+                ServerHandle, 
+                SessionId, 
                 win32ts.WTSClientProtocolType
             )
-            
-            is_rdp = (session_info == 2)
-            
-            connection_state = win32ts.WTSQuerySessionInformation(
-                server_handle,
-                session_id,
+            IsRdp = (SessionInfo == 2)
+            ConnectionState = win32ts.WTSQuerySessionInformation(
+                ServerHandle,
+                SessionId,
                 win32ts.WTSConnectState
             )
+            RdpState = 'connected' if ConnectionState == 0 else 'disconnected'
             
-            rdp_state = 'connected' if connection_state == 0 else 'disconnected'
+            SessionName = win32ts.WTSQuerySessionInformation(
+                ServerHandle,
+                SessionId,
+                win32ts.WTSSessionInfo
+            )
             
-            return is_rdp, rdp_state
-        
-        except Exception as e:
-            print(f"RDP detection error: {e}")
-            return False, 'unknown'
+            return IsRdp, RdpState, SessionId, SessionName
+        except Exception as E:
+            print(f"RDP detection error: {E}")
+            return False, 'unknown', -1, 'unknown'
 
-    def UpdateStatus(self, status_message):
-        self.CurrentMacroStatus = status_message
+    def UpdateStatus(self, StatusMessage):
+        self.CurrentMacroStatus = StatusMessage
     
     def LoadConfigurationFromDisk(self):
         if not os.path.exists(self.ConfigurationFilePath):
@@ -671,10 +681,9 @@ class AutomatedFishingSystem:
                 Image = np.array(ScreenshotData)
 
             try:
-                from PIL import Image as PILImage
                 DebugImage = PILImage.frombytes('RGB', ScreenshotData.size, ScreenshotData.rgb)
             except Exception as SaveError:
-                print(f"Could Not Save Debug Image: {SaveError}")
+                pass
 
             ImageRGB = Image[:, :, [2, 1, 0]]
             
@@ -686,24 +695,39 @@ class AutomatedFishingSystem:
                     FullText += Text + " "
             
             FullText = FullText.strip()
+            FullTextLower = FullText.lower()
+            
+            HasNewKeyword = any(Keyword in FullTextLower for Keyword in [
+                'new', 'nev', 'ncv', 'ncw', 'naw', 'ner'
+            ])
+            
+            HasItemKeyword = 'item' in FullTextLower or 'ltem' in FullTextLower
 
-            if FullText and ("new" in FullText.lower() or "nev" in FullText.lower()):
-                if "item" in FullText.lower():
+            if FullText and HasNewKeyword and HasItemKeyword:
+                BracketMatch = re.search(r'<([^>?]+)', FullText, re.IGNORECASE)
+                if BracketMatch:
+                    ItemName = BracketMatch.group(1).strip()
+                    ItemName = ItemName.rstrip('?>')
                     
-                    BracketMatch = re.search(r'<([^>]+)>', FullText, re.IGNORECASE)
-                    if BracketMatch:
-                        ItemName = BracketMatch.group(1).strip()
+                    ClosestMatch = self.GetClosestFruit(ItemName, Cutoff=0.5)
+                    if ClosestMatch:
+                        return ClosestMatch
+                    else:
                         return ItemName
-                    
-                    AfterItemMatch = re.search(r'item\s+(.+)', FullText, re.IGNORECASE)
-                    if AfterItemMatch:
-                        ItemName = AfterItemMatch.group(1).strip()
-                        ItemName = ItemName.replace('<', '').replace('>', '').strip()
-                        if ItemName:
+                
+                AfterItemMatch = re.search(r'(?:item|ltem)\s+(.+)', FullText, re.IGNORECASE)
+                if AfterItemMatch:
+                    ItemName = AfterItemMatch.group(1).strip()
+                    ItemName = ItemName.replace('<', '').replace('>', '').replace('?', '').strip()
+                    if ItemName:
+                        ClosestMatch = self.GetClosestFruit(ItemName, Cutoff=0.5)
+                        if ClosestMatch:
+                            return ClosestMatch
+                        else:
                             return ItemName
-                    
-                    return FullText
-                            
+                
+                return FullText
+                        
             return None
             
         except Exception as OCRCheckError:
@@ -720,6 +744,15 @@ class AutomatedFishingSystem:
     
     def ToggleMacroExecution(self):
         self.MacroCurrentlyExecuting = not self.MacroCurrentlyExecuting
+        
+        with self.SessionLock:
+            self.AllActiveSessions[self.CurrentClientId] = {
+                'is_running': self.MacroCurrentlyExecuting,
+                'last_updated': time.time(),
+                'session_id': getattr(self, 'RDPSessionId', -1),
+                'rdp_detected': getattr(self, 'RDPDetected', False),
+                'rdp_state': getattr(self, 'RDPSessionState', 'unknown')
+            }
         
         if self.MacroCurrentlyExecuting:
             self.UpdateStatus("Starting macro...")
@@ -809,25 +842,52 @@ class AutomatedFishingSystem:
         self.LastPeriodicStatsTimestamp = time.time()
         self.FishCaughtAtLastPeriodicStats = self.TotalFishSuccessfullyCaught
 
-    def SendWebhookNotification(self, message, color=0x00d4ff):
+    def SendWebhookNotification(self, Message, Color=None, Title=None):
         if not self.WebhookUrl:
             return
         
         try:
-            if "successfully" in message.lower():
-                emoji = "✅"
-                color = 0x00ff00
-            elif "could not" in message.lower() or "failed" in message.lower():
-                emoji = "❌"
-                color = 0xff0000
-            else:
-                emoji = "🎣"
-                color = 0x00d4ff
+            WebhookColorInfo = 0x00d4ff
+            WebhookColorSuccess = 0x10b981
+            WebhookColorWarning = 0xf59e0b
+            WebhookColorError = 0xef4444
+            WebhookColorCraft = 0x8b5cf6
+            WebhookColorFruit = 0xbf40bf
+            WebhookColorStats = 0x3b82f6
+            WebhookColorMega = 0xfbbf24
             
-            embed = {
-                "title": f"{emoji} GPO Fishing Macro",
-                "description": f"**{message}**",
-                "color": color,
+            if Color is None or Title is None:
+                MessageLower = Message.lower()
+                
+                if "megalodon" in MessageLower:
+                    Color = WebhookColorMega
+                    Title = "🎣 Megalodon Detected"
+                elif "crash" in MessageLower or "error" in MessageLower or "failed" in MessageLower or "blocked" in MessageLower or "10 consecutive" in MessageLower:
+                    Color = WebhookColorError
+                    Title = "🎣 Error" if "crash" in MessageLower or "error" in MessageLower else ("Storage Failed" if "failed" in MessageLower else ("RDP Blocked" if "blocked" in MessageLower else "Warning"))
+                elif "started" in MessageLower or "reconnected" in MessageLower:
+                    Color = WebhookColorSuccess
+                    Title = "🎣 Success" if "started" in MessageLower else "RDP Status"
+                elif "devil fruit" in MessageLower and "stored successfully" in MessageLower:
+                    Color = WebhookColorFruit
+                    Title = "🎣 Devil Fruit Found"
+                elif "craft" in MessageLower:
+                    Color = WebhookColorCraft
+                    Title = "🎣 Crafting Update"
+                elif "stats" in MessageLower or "caught:" in MessageLower or "total:" in MessageLower:
+                    Color = WebhookColorStats
+                    Title = "🎣 Fishing Statistics"
+                elif "stopped" in MessageLower or "timeout" in MessageLower or "disconnected" in MessageLower or "paused" in MessageLower:
+                    Color = WebhookColorWarning
+                    Title = "🎣 Warning" if "timeout" in MessageLower else ("RDP Status" if "rdp" in MessageLower else "Notice")
+                else:
+                    Color = WebhookColorInfo
+                    Title = "🎣 GPO Fishing Macro"
+            
+            EmbedData = {
+                "title": Title,
+                "description": f"**{Message}**",
+                "color": Color,
                 "timestamp": datetime.now(timezone.utc).isoformat(),
                 "footer": {
                     "text": "Macro Notification System",
@@ -835,22 +895,22 @@ class AutomatedFishingSystem:
                 },
                 "fields": [
                     {
-                        "name": "🕒 Time",
+                        "name": "Time",
                         "value": f"<t:{int(time.time())}:R>",
                         "inline": True
                     }
                 ],
             }
             
-            payload = {
-                "username": "GPO Macro Bot",
-                "embeds": [embed]
+            PayloadData = {
+                "username": "K's GPO Macro Bot",
+                "embeds": [EmbedData]
             }
             
-            requests.post(self.WebhookUrl, json=payload, timeout=5)
-        except Exception as e:
-            print(f"Webhook error: {e}")
-    
+            requests.post(self.WebhookUrl, json=PayloadData, timeout=5)
+        except Exception as ErrorDetails:
+            print(f"Webhook error: {ErrorDetails}")
+
     def InitiatePointSelectionMode(self, AttributeNameToSet):
         if self.MouseEventListenerInstance:
             self.MouseEventListenerInstance.stop()
@@ -871,34 +931,29 @@ class AutomatedFishingSystem:
         self.MouseEventListenerInstance = mouse.Listener(on_click=ProcessMouseClickEvent)
         self.MouseEventListenerInstance.start()
     
+    def GetClosestFruit(self, Name, Cutoff=0.6):
+        KnownFruits = {
+            "Soul", "Dragon", "Mochi", "Ope", "Tori", "Buddha",
+            "Pika", "Kage", "Magu", "Gura", "Yuki", "Smoke",
+            "Goru", "Suna", "Mera", "Goro", "Ito", "Paw",
+            "Yami", "Zushi", "Kira", "Spring", "Yomi",
+            "Bomu", "Bari", "Mero", "Horo", "Gomu", "Suke", "Heal",
+            "Kilo", "Spin", "Hie", "Venom", "Pteranodon",
+        }
+
+        Matches = get_close_matches(Name, KnownFruits, n=1, cutoff=Cutoff)
+        return Matches[0] if Matches else None
+    
     def ExecutePrimaryMacroLoop(self):
         while self.MacroCurrentlyExecuting:
             try:
                 if self.AutoDetectRDP:
-                    self.RDPDetected, self.RDPSessionState = self.DetectRDPSession()
+                    self.RDPDetected, self.RDPSessionState, self.RDPSessionId, self.RDPSessionName = self.DetectRDPSession()
                     
-                    if self.RDPDetected and self.RDPSessionState == 'disconnected':
-                        if self.PauseOnRDPDisconnect:
-                            self.UpdateStatus("RDP disconnected - pausing")
-                            if self.WebhookUrl and self.LogGeneralUpdates:
-                                self.SendWebhookNotification("RDP session disconnected - macro paused")
-                            
-                            while self.RDPSessionState == 'disconnected' and self.MacroCurrentlyExecuting:
-                                time.sleep(1)
-                                self.RDPDetected, self.RDPSessionState = self.DetectRDPSession()
-                            
-                            if self.ResumeOnRDPReconnect and self.RDPSessionState == 'connected':
-                                self.UpdateStatus("RDP reconnected - resuming")
-                                if self.WebhookUrl and self.LogGeneralUpdates:
-                                    self.SendWebhookNotification("RDP session reconnected - macro resumed")
-                            else:
-                                break
-                    
-                    if self.RDPDetected and not self.AllowRDPExecution:
-                        self.UpdateStatus("RDP detected - execution blocked")
-                        if self.WebhookUrl and self.LogGeneralUpdates:
-                            self.SendWebhookNotification("Macro blocked: RDP execution not allowed")
-                        break
+                    with self.SessionLock:
+                        self.AllActiveSessions[self.CurrentClientId]['rdp_detected'] = self.RDPDetected
+                        self.AllActiveSessions[self.CurrentClientId]['rdp_state'] = self.RDPSessionState
+                        self.AllActiveSessions[self.CurrentClientId]['session_id'] = self.RDPSessionId
 
                 self.UpdateStatus("Starting new fishing cycle")
                 self.PreviousControlLoopErrorValue = None
@@ -1253,16 +1308,6 @@ class AutomatedFishingSystem:
                         
                         keyboard.press_and_release('`')
                         time.sleep(self.FruitStorageHotkeyActivationDelay)
-                    
-                        if InitGreenDetected and self.WebhookUrl:
-                            time.sleep(1.0)
-                            if not self.MacroCurrentlyExecuting: return False
-                            if not self.DetectGreenishColor(self.FruitStorageButtonLocation):
-                                self.UpdateStatus("Fruit stored successfully")
-                                self.SendWebhookNotification("Devil Fruit stored successfully!")
-                            else:
-                                self.UpdateStatus("Fruit storage failed")
-                                self.SendWebhookNotification("Devil Fruit could not be stored.")
                                 
                 elif self.FruitStorageButtonLocation:
                     for Slot in self.DevilFruitInventorySlots:
@@ -1293,29 +1338,18 @@ class AutomatedFishingSystem:
                         if not self.MacroCurrentlyExecuting: return False
                         
                         if InitGreenDetected:
-                            time.sleep(self.FruitStorageClickConfirmationDelay)
-                            if not self.DetectGreenishColor(self.FruitStorageButtonLocation) and self.WebhookUrl:
+                            time.sleep(self.FruitStorageClickConfirmationDelay + 0.5)
+                            print("now")
+                            if self.WebhookUrl and not self.DetectGreenishColor(self.FruitStorageButtonLocation):
                                 DetectedFruitName = None
                                 if self.TextDetectionEnabled:
                                     DetectedFruitName = self.DetectNewItemNotification()
-                                    
-                                def GetClosestFruit(Name, Cutoff=0.6):
-                                    KnownFruits = {
-                                        "Soul", "Dragon", "Mochi", "Ope", "Tori", "Buddha",
-                                        "Pika", "Kage", "Magu", "Gura", "Yuki", "Smoke",
-                                        "Goru", "Suna", "Mera", "Goro", "Ito", "Paw",
-                                        "Yami", "Zushi", "Kira", "Spring", "Yomi",
-                                        "Bomu", "Bari", "Mero", "Horo", "Gomu", "Suke", "Heal",
-                                        "Kilo", "Spin", "Hie", "Venom", "Pteranodon",
-                                    }
 
-                                    Matches = get_close_matches(Name, KnownFruits, n=1, cutoff=Cutoff)
-                                    return Matches[0] if Matches else None
-
+                                print(DetectedFruitName)
                                 if DetectedFruitName:
-                                    ClosestMatch = GetClosestFruit(DetectedFruitName)
+                                    ClosestMatch = self.GetClosestFruit(DetectedFruitName)
                                     self.UpdateStatus("Fruit stored successfully")
-                                    self.SendWebhookNotification(f"Devil Fruit{ClosestMatch or ""} stored successfully!")
+                                    self.SendWebhookNotification(f"Devil Fruit {ClosestMatch or ""} stored successfully!")
                                 else:
                                     self.UpdateStatus("Fruit stored successfully")
                                     self.SendWebhookNotification("Devil Fruit stored successfully!")
@@ -1395,11 +1429,14 @@ class AutomatedFishingSystem:
         BobberBlueColor = np.array([85, 170, 255])
         BobberWhiteColor = np.array([255, 255, 255])
         BobberDarkGrayColor = np.array([25, 25, 25])
-        
+        BobberGreenColor = np.array([127, 255, 170])
+        GreenColorTolerance = 15
+
         while self.MacroCurrentlyExecuting:
             ElapsedWaitTime = time.time() - CastingStartTime
             
             if ElapsedWaitTime >= self.MaximumWaitTimeBeforeRecast:
+                self.UpdateStatus(f"Bobber wait timeout after {ElapsedWaitTime:.1f}s")
                 return False
             
             with mss.mss() as ScreenCapture:
@@ -1413,9 +1450,11 @@ class AutomatedFishingSystem:
                 ScreenImageArray = np.array(CapturedScreen)
             
             if self.DetectBlackScreenCondition(ScreenImageArray):
-                self.UpdateStatus("Checking for anti-macro...")
+                self.UpdateStatus("Black screen during bobber wait - checking anti-macro...")
                 if not self.HandleAntiMacroDetection():
+                    self.UpdateStatus("Anti-macro clear failed during bobber wait")
                     return False
+                self.UpdateStatus("Anti-macro cleared, resuming bobber wait")
                 continue
             
             BluePixelMask = ((ScreenImageArray[:, :, 2] == BobberBlueColor[0]) & 
@@ -1427,22 +1466,39 @@ class AutomatedFishingSystem:
             DarkGrayPixelMask = ((ScreenImageArray[:, :, 2] == BobberDarkGrayColor[0]) & 
                         (ScreenImageArray[:, :, 1] == BobberDarkGrayColor[1]) & 
                         (ScreenImageArray[:, :, 0] == BobberDarkGrayColor[2]))
+            GreenPixelMask = ((np.abs(ScreenImageArray[:, :, 2].astype(int) - BobberGreenColor[0]) <= GreenColorTolerance) & 
+                        (np.abs(ScreenImageArray[:, :, 1].astype(int) - BobberGreenColor[1]) <= GreenColorTolerance) & 
+                        (np.abs(ScreenImageArray[:, :, 0].astype(int) - BobberGreenColor[2]) <= GreenColorTolerance))
             
             BlueColorDetected = np.any(BluePixelMask)
             WhiteColorDetected = np.any(WhitePixelMask)
             DarkGrayColorDetected = np.any(DarkGrayPixelMask)
+            GreenColorDetected = np.any(GreenPixelMask)
+            
+            if ElapsedWaitTime % 2 < 0.5:
+                DetectedColors = []
+                if BlueColorDetected: DetectedColors.append("Blue")
+                if WhiteColorDetected: DetectedColors.append("White")
+                if DarkGrayColorDetected: DetectedColors.append("DarkGray")
+                if GreenColorDetected: DetectedColors.append("Green")
+                if DetectedColors:
+                    self.UpdateStatus(f"Waiting for bobber ({ElapsedWaitTime:.1f}s) - detected: {', '.join(DetectedColors)}")
+                else:
+                    self.UpdateStatus(f"Waiting for bobber ({ElapsedWaitTime:.1f}s) - no colors detected")
             
             if BlueColorDetected and WhiteColorDetected and DarkGrayColorDetected:
-                self.UpdateStatus("Bobber detected!")
+                self.UpdateStatus("Bobber detected! All colors present")
 
                 if not self.ListenForMegalodonSound():
-                    self.UpdateStatus("Megalodon not detected - recasting")
+                    self.UpdateStatus("Megalodon sound check failed - recasting")
                     return False
                 
+                self.UpdateStatus("Megalodon sound check passed - starting minigame")
                 return True
             
             time.sleep(self.ImageProcessingLoopDelay)
-        
+
+        self.UpdateStatus("Bobber wait interrupted - macro stopped")
         return False
     
     def ListenForMegalodonSound(self, TimeoutDuration=5.0):
@@ -1830,7 +1886,23 @@ class AutomatedFishingSystem:
             FormattedElapsedTime = f"{TotalHours}:{TotalMinutes:02d}:{TotalSeconds:02d}"
             CalculatedFishPerHour = (self.TotalFishSuccessfullyCaught / AccumulatedTime) * 3600
         
+        with self.SessionLock:
+            ActiveSessions = [
+                {
+                    'client_id': cid,
+                    'is_running': sess.get('is_running', False),
+                    'rdp_detected': sess.get('rdp_detected', False),
+                    'rdp_state': sess.get('rdp_state', 'unknown'),
+                    'session_id': sess.get('session_id', -1),
+                    'last_updated': sess.get('last_updated', 0)
+                }
+                for cid, sess in self.AllActiveSessions.items()
+                if time.time() - sess.get('last_updated', 0) < 10
+            ]
+        
         return {
+            "clientId": self.CurrentClientId,
+            "activeSessions": ActiveSessions,
             "storeToBackpack": self.StoreToBackpackEnabled,
             "devilFruitLocationPoint": self.DevilFruitLocationPoint,
             "loopsPerStore": self.DevilFruitStorageFrequencyCounter,
@@ -2157,7 +2229,12 @@ def RetrieveSystemState():
         }
     
     MacroSystemInstance.ClientStats[ClientId]["last_seen"] = time.time()
-    MacroSystemInstance.ClientStats[ClientId]["is_running"] = MacroSystemInstance.MacroCurrentlyExecuting
+    if ClientId != 'unknown' and not MacroSystemInstance.MacroCurrentlyExecuting:
+        MacroSystemInstance.CurrentClientId = ClientId
+    
+    IsThisClientRunning = (ClientId == MacroSystemInstance.CurrentClientId and MacroSystemInstance.MacroCurrentlyExecuting)
+    
+    MacroSystemInstance.ClientStats[ClientId]["is_running"] = IsThisClientRunning
     MacroSystemInstance.ClientStats[ClientId]["fish_caught"] = MacroSystemInstance.TotalFishSuccessfullyCaught
     
     TotalFish = sum(C["fish_caught"] for C in MacroSystemInstance.ClientStats.values())
@@ -2184,8 +2261,24 @@ def RetrieveSystemState():
         FormattedElapsedTime = f"{TotalHours}:{TotalMinutes:02d}:{TotalSeconds:02d}"
         CalculatedFishPerHour = (MacroSystemInstance.TotalFishSuccessfullyCaught / AccumulatedTime) * 3600
     
+    with MacroSystemInstance.SessionLock:
+        ActiveSessions = [
+            {
+                'client_id': cid,
+                'is_running': sess.get('is_running', False),
+                'rdp_detected': sess.get('rdp_detected', False),
+                'rdp_state': sess.get('rdp_state', 'unknown'),
+                'session_id': sess.get('session_id', -1),
+                'last_updated': sess.get('last_updated', 0)
+            }
+            for cid, sess in MacroSystemInstance.AllActiveSessions.items()
+            if time.time() - sess.get('last_updated', 0) < 10
+        ]
+    
     return jsonify({
         "clientId": ClientId,
+        "currentActiveClientId": MacroSystemInstance.CurrentClientId,
+        "activeSessions": ActiveSessions,
         "clientFishCaught": MacroSystemInstance.ClientStats[ClientId]["fish_caught"],
         "globalFishCaught": TotalFish,
         "globalFishPerHour": round(GlobalFishPerHour, 1),
@@ -2193,7 +2286,7 @@ def RetrieveSystemState():
         "storeToBackpack": MacroSystemInstance.StoreToBackpackEnabled,
         "devilFruitLocationPoint": MacroSystemInstance.DevilFruitLocationPoint,
         "loopsPerStore": MacroSystemInstance.DevilFruitStorageFrequencyCounter,
-        "isRunning": MacroSystemInstance.MacroCurrentlyExecuting,
+        "isRunning": IsThisClientRunning,
         "fishCaught": MacroSystemInstance.TotalFishSuccessfullyCaught,
         "timeElapsed": FormattedElapsedTime,
         "moveDuration": MacroSystemInstance.MoveDurationSeconds,
@@ -2267,7 +2360,27 @@ def RetrieveSystemState():
         "baitRecipes": MacroSystemInstance.BaitRecipes,
         "currentRecipeIndex": MacroSystemInstance.CurrentRecipeIndex,
         "currentStatus": MacroSystemInstance.CurrentMacroStatus,
+        "megalodonSoundEnabled": MacroSystemInstance.MegalodonSoundRecognitionEnabled,
+        "soundSensitivity": MacroSystemInstance.SoundMatchSensitivity,
+        "rdp_detected": MacroSystemInstance.RDPDetected,
+        "rdp_session_state": MacroSystemInstance.RDPSessionState,
+        "auto_detect_rdp": MacroSystemInstance.AutoDetectRDP,
+        "allow_rdp_execution": MacroSystemInstance.AllowRDPExecution,
+        "pause_on_rdp_disconnect": MacroSystemInstance.PauseOnRDPDisconnect,
+        "resume_on_rdp_reconnect": MacroSystemInstance.ResumeOnRDPReconnect,
+        "enable_device_sync": MacroSystemInstance.EnableDeviceSync,
+        "sync_settings": MacroSystemInstance.SyncSettings,
+        "sync_stats": MacroSystemInstance.SyncStats,
+        "share_fish_count": MacroSystemInstance.ShareFishCount,
+        "sync_interval": MacroSystemInstance.SyncIntervalSeconds,
+        "device_name": MacroSystemInstance.DeviceName,
+        "connected_devices": MacroSystemInstance.ConnectedDevices,
+        "is_syncing": MacroSystemInstance.IsSyncing,
     })
+
+@FlaskApplication.route('/health', methods=['GET'])
+def PerformHealthCheck():
+    return jsonify({"status": "ok", "message": "Backend running"})
 
 @FlaskApplication.route('/set_window_property', methods=['POST'])
 def ConfigureWindowProperty():
@@ -2298,104 +2411,105 @@ def ProcessIncomingCommand():
         if not RequestedAction:
             return jsonify({"status": "error", "message": "Missing action parameter"}), 400
         
-        action_handlers = {
-            'set_water_point': lambda: handle_point_selection('WaterCastingTargetLocation'),
-            'set_devil_fruit_location_point': lambda: handle_point_selection('DevilFruitLocationPoint'),
-            'set_left_point': lambda: handle_point_selection('ShopLeftButtonLocation'),
-            'set_middle_point': lambda: handle_point_selection('ShopCenterButtonLocation'),
-            'set_right_point': lambda: handle_point_selection('ShopRightButtonLocation'),
-            'set_store_fruit_point': lambda: handle_point_selection('FruitStorageButtonLocation'),
-            'set_bait_point': lambda: handle_point_selection('BaitSelectionButtonLocation'),
-            'set_craft_left_point': lambda: handle_point_selection('CraftLeftButtonLocation'),
-            'set_craft_middle_point': lambda: handle_point_selection('CraftMiddleButtonLocation'),
-            'set_bait_recipe_point': lambda: handle_point_selection('BaitRecipeButtonLocation'),
-            'set_add_recipe_point': lambda: handle_point_selection('AddRecipeButtonLocation'),
-            'set_top_recipe_point': lambda: handle_point_selection('TopRecipeSlotLocation'),
-            'set_craft_button_point': lambda: handle_point_selection('CraftButtonLocation'),
-            'set_close_menu_point': lambda: handle_point_selection('CloseMenuButtonLocation'),
-            'toggle_store_to_backpack': lambda: handle_boolean_toggle('StoreToBackpackEnabled'),
-            'toggle_always_on_top': lambda: handle_boolean_toggle('WindowAlwaysOnTopEnabled'),
-            'toggle_debug_overlay': lambda: handle_boolean_toggle('DebugOverlayVisible'),
-            'toggle_auto_buy_bait': lambda: handle_boolean_toggle('AutomaticBaitPurchaseEnabled'),
-            'toggle_auto_store_fruit': lambda: handle_boolean_toggle('AutomaticFruitStorageEnabled'),
-            'toggle_auto_select_bait': lambda: handle_boolean_toggle('AutomaticTopBaitSelectionEnabled'),
-            'toggle_auto_craft_bait': lambda: handle_boolean_toggle('AutomaticBaitCraftingEnabled'),
-            'set_rod_hotkey': lambda: handle_string_value('FishingRodInventorySlot'),
-            'set_anything_else_hotkey': lambda: handle_string_value('AlternateInventorySlot'),
-            'set_devil_fruit_hotkeys': lambda: handle_devil_fruit_slots(ActionPayload),
-            'set_loops_per_store': lambda: handle_integer_value('DevilFruitStorageFrequencyCounter'),
-            'set_loops_per_purchase': lambda: handle_integer_value('BaitPurchaseFrequencyCounter'),
-            'set_fish_count_per_craft': lambda: handle_integer_value('FishCountPerCraft'),
-            'set_crafts_per_cycle': lambda: handle_integer_value('CraftsPerCycleCount'),
-            'set_loops_per_craft': lambda: handle_integer_value('BaitCraftFrequencyCounter'),
-            'set_kp': lambda: handle_float_value('ProportionalGainCoefficient'),
-            'set_kd': lambda: handle_float_value('DerivativeGainCoefficient'),
-            'set_pd_clamp': lambda: handle_float_value('ControlSignalMaximumClamp'),
-            'set_pd_approaching': lambda: handle_float_value('PDControllerApproachingStateDamping'),
-            'set_pd_chasing': lambda: handle_float_value('PDControllerChasingStateDamping'),
-            'set_gap_tolerance': lambda: handle_float_value('BarGroupingGapToleranceMultiplier'),
-            'set_cast_hold': lambda: handle_float_value('MouseHoldDurationForCast'),
-            'set_recast_timeout': lambda: handle_float_value('MaximumWaitTimeBeforeRecast'),
-            'set_fish_end_delay': lambda: handle_float_value('DelayAfterFishCaptured'),
-            'set_state_resend': lambda: handle_float_value('InputStateResendFrequency'),
-            'set_focus_delay': lambda: handle_float_value('RobloxWindowFocusInitialDelay'),
-            'set_post_focus_delay': lambda: handle_float_value('RobloxWindowFocusFollowupDelay'),
-            'set_precast_e_delay': lambda: handle_float_value('PreCastDialogOpenDelay'),
-            'set_precast_click_delay': lambda: handle_float_value('PreCastMouseClickDelay'),
-            'set_precast_type_delay': lambda: handle_float_value('PreCastKeyboardInputDelay'),
-            'set_anti_detect_delay': lambda: handle_float_value('PreCastAntiDetectionDelay'),
-            'set_fruit_hotkey_delay': lambda: handle_float_value('FruitStorageHotkeyActivationDelay'),
-            'set_fruit_click_delay': lambda: handle_float_value('FruitStorageClickConfirmationDelay'),
-            'set_fruit_shift_delay': lambda: handle_float_value('FruitStorageShiftKeyPressDelay'),
-            'set_fruit_backspace_delay': lambda: handle_float_value('FruitStorageBackspaceDeletionDelay'),
-            'set_rod_delay': lambda: handle_float_value('InventorySlotSwitchingDelay'),
-            'set_bait_delay': lambda: handle_float_value('BaitSelectionConfirmationDelay'),
-            'set_cursor_delay': lambda: handle_float_value('MouseMovementAntiDetectionDelay'),
-            'set_scan_delay': lambda: handle_float_value('ImageProcessingLoopDelay'),
-            'set_black_threshold': lambda: handle_float_value('BlackScreenDetectionRatioThreshold'),
-            'set_spam_delay': lambda: handle_float_value('AntiMacroDialogSpamDelay'),
-            'set_move_duration': lambda: handle_float_value('MoveDurationSeconds'),
-            'set_craft_menu_delay': lambda: handle_float_value('CraftMenuOpenDelay'),
-            'set_craft_click_delay': lambda: handle_float_value('CraftClickDelay'),
-            'set_craft_recipe_delay': lambda: handle_float_value('CraftRecipeSelectDelay'),
-            'set_craft_add_delay': lambda: handle_float_value('CraftAddRecipeDelay'),
-            'set_craft_top_delay': lambda: handle_float_value('CraftTopRecipeDelay'),
-            'set_craft_button_delay': lambda: handle_float_value('CraftButtonClickDelay'),
-            'set_craft_close_delay': lambda: handle_float_value('CraftCloseMenuDelay'),
-            'set_webhook_url': lambda: handle_string_value('WebhookUrl'),
-            'toggle_log_recast_timeouts': lambda: handle_boolean_toggle('LogRecastTimeouts'),
-            'toggle_log_periodic_stats': lambda: handle_boolean_toggle('LogPeriodicStats'),
-            'toggle_log_general_updates': lambda: handle_boolean_toggle('LogGeneralUpdates'),
-            'set_periodic_stats_interval': lambda: handle_integer_value('PeriodicStatsIntervalMinutes'),
-            'toggle_log_devil_fruit': lambda: handle_boolean_toggle('LogDevilFruitEnabled'),
-            'open_area_selector': lambda: handle_area_selector(),
-            'open_browser': lambda: handle_open_browser(ActionPayload),
-            'toggle_megalodon_sound': lambda: handle_boolean_toggle('MegalodonSoundRecognitionEnabled'),
-            'set_sound_sensitivity': lambda: handle_float_value('SoundMatchSensitivity'),
-            'toggle_auto_detect_rdp': lambda: handle_boolean_toggle('AutoDetectRDP'),
-            'toggle_allow_rdp_execution': lambda: handle_boolean_toggle('AllowRDPExecution'),
-            'toggle_pause_on_rdp_disconnect': lambda: handle_boolean_toggle('PauseOnRDPDisconnect'),
-            'toggle_resume_on_rdp_reconnect': lambda: handle_boolean_toggle('ResumeOnRDPReconnect'),
-            'toggle_enable_device_sync': lambda: handle_boolean_toggle('EnableDeviceSync'),
-            'toggle_sync_settings': lambda: handle_boolean_toggle('SyncSettings'),
-            'toggle_sync_stats': lambda: handle_boolean_toggle('SyncStats'),
-            'toggle_share_fish_count': lambda: handle_boolean_toggle('ShareFishCount'),
-            'set_sync_interval': lambda: handle_integer_value('SyncIntervalSeconds'),
-            'set_device_name': lambda: handle_string_value('DeviceName'),
-            'set_client_id': lambda: handle_string_value('CurrentClientId'),
-            'export_settings': lambda: handle_export_settings(),
-            'import_settings': lambda: handle_import_settings(),
-            'reset_settings': lambda: handle_reset_settings(ActionPayload),
-            'open_config_folder': lambda: handle_open_config_folder(),
-            'view_config': lambda: handle_view_config(),
-            'clear_cache': lambda: handle_clear_cache(),
+        ActionHandlers = {
+            'set_water_point': lambda: HandlePointSelection('WaterCastingTargetLocation'),
+            'set_devil_fruit_location_point': lambda: HandlePointSelection('DevilFruitLocationPoint'),
+            'set_left_point': lambda: HandlePointSelection('ShopLeftButtonLocation'),
+            'set_middle_point': lambda: HandlePointSelection('ShopCenterButtonLocation'),
+            'set_right_point': lambda: HandlePointSelection('ShopRightButtonLocation'),
+            'set_store_fruit_point': lambda: HandlePointSelection('FruitStorageButtonLocation'),
+            'set_bait_point': lambda: HandlePointSelection('BaitSelectionButtonLocation'),
+            'set_craft_left_point': lambda: HandlePointSelection('CraftLeftButtonLocation'),
+            'set_craft_middle_point': lambda: HandlePointSelection('CraftMiddleButtonLocation'),
+            'set_bait_recipe_point': lambda: HandlePointSelection('BaitRecipeButtonLocation'),
+            'set_add_recipe_point': lambda: HandlePointSelection('AddRecipeButtonLocation'),
+            'set_top_recipe_point': lambda: HandlePointSelection('TopRecipeSlotLocation'),
+            'set_craft_button_point': lambda: HandlePointSelection('CraftButtonLocation'),
+            'set_close_menu_point': lambda: HandlePointSelection('CloseMenuButtonLocation'),
+            'toggle_store_to_backpack': lambda: HandleBooleanToggle('StoreToBackpackEnabled'),
+            'toggle_always_on_top': lambda: HandleBooleanToggle('WindowAlwaysOnTopEnabled'),
+            'toggle_debug_overlay': lambda: HandleBooleanToggle('DebugOverlayVisible'),
+            'toggle_auto_buy_bait': lambda: HandleBooleanToggle('AutomaticBaitPurchaseEnabled'),
+            'toggle_auto_store_fruit': lambda: HandleBooleanToggle('AutomaticFruitStorageEnabled'),
+            'toggle_auto_select_bait': lambda: HandleBooleanToggle('AutomaticTopBaitSelectionEnabled'),
+            'toggle_auto_craft_bait': lambda: HandleBooleanToggle('AutomaticBaitCraftingEnabled'),
+            'set_rod_hotkey': lambda: HandleStringValue('FishingRodInventorySlot'),
+            'set_anything_else_hotkey': lambda: HandleStringValue('AlternateInventorySlot'),
+            'set_devil_fruit_hotkeys': lambda: HandleDevilFruitSlots(ActionPayload),
+            'set_loops_per_store': lambda: HandleIntegerValue('DevilFruitStorageFrequencyCounter'),
+            'set_loops_per_purchase': lambda: HandleIntegerValue('BaitPurchaseFrequencyCounter'),
+            'set_fish_count_per_craft': lambda: HandleIntegerValue('FishCountPerCraft'),
+            'set_crafts_per_cycle': lambda: HandleIntegerValue('CraftsPerCycleCount'),
+            'set_loops_per_craft': lambda: HandleIntegerValue('BaitCraftFrequencyCounter'),
+            'set_periodic_stats_interval': lambda: HandleIntegerValue('PeriodicStatsIntervalMinutes'),
+            'set_kp': lambda: HandleFloatValue('ProportionalGainCoefficient'),
+            'set_kd': lambda: HandleFloatValue('DerivativeGainCoefficient'),
+            'set_pd_clamp': lambda: HandleFloatValue('ControlSignalMaximumClamp'),
+            'set_pd_approaching': lambda: HandleFloatValue('PDControllerApproachingStateDamping'),
+            'set_pd_chasing': lambda: HandleFloatValue('PDControllerChasingStateDamping'),
+            'set_gap_tolerance': lambda: HandleFloatValue('BarGroupingGapToleranceMultiplier'),
+            'set_cast_hold': lambda: HandleFloatValue('MouseHoldDurationForCast'),
+            'set_recast_timeout': lambda: HandleFloatValue('MaximumWaitTimeBeforeRecast'),
+            'set_fish_end_delay': lambda: HandleFloatValue('DelayAfterFishCaptured'),
+            'set_state_resend': lambda: HandleFloatValue('InputStateResendFrequency'),
+            'set_focus_delay': lambda: HandleFloatValue('RobloxWindowFocusInitialDelay'),
+            'set_post_focus_delay': lambda: HandleFloatValue('RobloxWindowFocusFollowupDelay'),
+            'set_precast_e_delay': lambda: HandleFloatValue('PreCastDialogOpenDelay'),
+            'set_precast_click_delay': lambda: HandleFloatValue('PreCastMouseClickDelay'),
+            'set_precast_type_delay': lambda: HandleFloatValue('PreCastKeyboardInputDelay'),
+            'set_anti_detect_delay': lambda: HandleFloatValue('PreCastAntiDetectionDelay'),
+            'set_fruit_hotkey_delay': lambda: HandleFloatValue('FruitStorageHotkeyActivationDelay'),
+            'set_fruit_click_delay': lambda: HandleFloatValue('FruitStorageClickConfirmationDelay'),
+            'set_fruit_shift_delay': lambda: HandleFloatValue('FruitStorageShiftKeyPressDelay'),
+            'set_fruit_backspace_delay': lambda: HandleFloatValue('FruitStorageBackspaceDeletionDelay'),
+            'set_rod_delay': lambda: HandleFloatValue('InventorySlotSwitchingDelay'),
+            'set_bait_delay': lambda: HandleFloatValue('BaitSelectionConfirmationDelay'),
+            'set_cursor_delay': lambda: HandleFloatValue('MouseMovementAntiDetectionDelay'),
+            'set_scan_delay': lambda: HandleFloatValue('ImageProcessingLoopDelay'),
+            'set_black_threshold': lambda: HandleFloatValue('BlackScreenDetectionRatioThreshold'),
+            'set_spam_delay': lambda: HandleFloatValue('AntiMacroDialogSpamDelay'),
+            'set_move_duration': lambda: HandleFloatValue('MoveDurationSeconds'),
+            'set_craft_menu_delay': lambda: HandleFloatValue('CraftMenuOpenDelay'),
+            'set_craft_click_delay': lambda: HandleFloatValue('CraftClickDelay'),
+            'set_craft_recipe_delay': lambda: HandleFloatValue('CraftRecipeSelectDelay'),
+            'set_craft_add_delay': lambda: HandleFloatValue('CraftAddRecipeDelay'),
+            'set_craft_top_delay': lambda: HandleFloatValue('CraftTopRecipeDelay'),
+            'set_craft_button_delay': lambda: HandleFloatValue('CraftButtonClickDelay'),
+            'set_craft_close_delay': lambda: HandleFloatValue('CraftCloseMenuDelay'),
+            'set_webhook_url': lambda: HandleStringValue('WebhookUrl'),
+            'toggle_log_recast_timeouts': lambda: HandleBooleanToggle('LogRecastTimeouts'),
+            'toggle_log_periodic_stats': lambda: HandleBooleanToggle('LogPeriodicStats'),
+            'toggle_log_general_updates': lambda: HandleBooleanToggle('LogGeneralUpdates'),
+            'set_periodic_stats_interval': lambda: HandleIntegerValue('PeriodicStatsIntervalMinutes'),
+            'toggle_log_devil_fruit': lambda: HandleBooleanToggle('LogDevilFruitEnabled'),
+            'open_area_selector': lambda: HandleAreaSelector(),
+            'open_browser': lambda: HandleOpenBrowser(ActionPayload),
+            'toggle_megalodon_sound': lambda: HandleBooleanToggle('MegalodonSoundRecognitionEnabled'),
+            'set_sound_sensitivity': lambda: HandleFloatValue('SoundMatchSensitivity'),
+            'toggle_auto_detect_rdp': lambda: HandleBooleanToggle('AutoDetectRDP'),
+            'toggle_allow_rdp_execution': lambda: HandleBooleanToggle('AllowRDPExecution'),
+            'toggle_pause_on_rdp_disconnect': lambda: HandleBooleanToggle('PauseOnRDPDisconnect'),
+            'toggle_resume_on_rdp_reconnect': lambda: HandleBooleanToggle('ResumeOnRDPReconnect'),
+            'toggle_enable_device_sync': lambda: HandleBooleanToggle('EnableDeviceSync'),
+            'toggle_sync_settings': lambda: HandleBooleanToggle('SyncSettings'),
+            'toggle_sync_stats': lambda: HandleBooleanToggle('SyncStats'),
+            'toggle_share_fish_count': lambda: HandleBooleanToggle('ShareFishCount'),
+            'set_sync_interval': lambda: HandleIntegerValue('SyncIntervalSeconds'),
+            'set_device_name': lambda: HandleStringValue('DeviceName'),
+            'set_client_id': lambda: HandleStringValue('CurrentClientId'),
+            'export_settings': lambda: HandleExportSettings(),
+            'import_settings': lambda: HandleImportSettings(),
+            'reset_settings': lambda: HandleResetSettings(ActionPayload),
+            'open_config_folder': lambda: HandleOpenConfigFolder(),
+            'view_config': lambda: HandleViewConfig(),
+            'clear_cache': lambda: HandleClearCache(),
         }
-        
+
         if RequestedAction == 'rebind_hotkey':
-            return handle_hotkey_rebind(ActionPayload)
-        
-        if RequestedAction in action_handlers:
-            return action_handlers[RequestedAction]()
+            return HandleHotkeyRebind(ActionPayload)
+
+        if RequestedAction in ActionHandlers:
+            return ActionHandlers[RequestedAction]()
         else:
             return jsonify({"status": "error", "message": f"Unknown action: {RequestedAction}"}), 400
     
@@ -2474,146 +2588,143 @@ def SetRecipePoint():
         return jsonify({"status": "waiting_for_click"})
     except Exception as ErrorDetails:
         return jsonify({"status": "error", "message": str(ErrorDetails)}), 500
-
-def handle_devil_fruit_slots(ActionPayload):
+    
+def HandleDevilFruitSlots(ActionPayload):
     if ActionPayload is None:
         return jsonify({"status": "error", "message": "Missing payload"}), 400
     
     try:
-        slots = [s.strip() for s in ActionPayload.split(',') if s.strip()]
-        MacroSystemInstance.DevilFruitInventorySlots = slots
+        Slots = [S.strip() for S in ActionPayload.split(',') if S.strip()]
+        MacroSystemInstance.DevilFruitInventorySlots = Slots
         MacroSystemInstance.SaveConfigurationToDisk()
-        return jsonify({"status": "success", "slots": slots})
-    except Exception as e:
-        return jsonify({"status": "error", "message": f"Invalid slots: {str(e)}"}), 400
+        return jsonify({"status": "success", "slots": Slots})
+    except Exception as E:
+        return jsonify({"status": "error", "message": f"Invalid slots: {str(E)}"}), 400
 
-def handle_export_settings():
+def HandleExportSettings():
     try:
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes('-topmost', True)
+        Root = tk.Tk()
+        Root.withdraw()
+        Root.attributes('-topmost', True)
         
-        default_filename = f"fishing_macro_settings_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+        DefaultFilename = f"fishing_macro_settings_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
         
-        file_path = filedialog.asksaveasfilename(
+        FilePath = filedialog.asksaveasfilename(
             title="Export Settings",
             defaultextension=".json",
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")],
-            initialfile=default_filename
+            initialfile=DefaultFilename
         )
         
-        root.destroy()
+        Root.destroy()
         
-        if file_path:
-            shutil.copy(MacroSystemInstance.ConfigurationFilePath, file_path)
-            messagebox.showinfo("Export Successful", f"Settings exported to:\n{file_path}")
-            return jsonify({"status": "success", "path": file_path})
+        if FilePath:
+            shutil.copy(MacroSystemInstance.ConfigurationFilePath, FilePath)
+            messagebox.showinfo("Export Successful", f"Settings exported to:\n{FilePath}")
+            return jsonify({"status": "success", "path": FilePath})
         
         return jsonify({"status": "cancelled"})
-    except Exception as e:
-        messagebox.showerror("Export Failed", f"Failed to export settings:\n{str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+    except Exception as E:
+        messagebox.showerror("Export Failed", f"Failed to export settings:\n{str(E)}")
+        return jsonify({"status": "error", "message": str(E)}), 500
 
-def handle_import_settings():
+def HandleImportSettings():
     try:
-        root = tk.Tk()
-        root.withdraw()
-        root.attributes('-topmost', True)
+        Root = tk.Tk()
+        Root.withdraw()
+        Root.attributes('-topmost', True)
         
-        file_path = filedialog.askopenfilename(
+        FilePath = filedialog.askopenfilename(
             title="Import Settings",
             filetypes=[("JSON files", "*.json"), ("All files", "*.*")]
         )
         
-        root.destroy()
+        Root.destroy()
         
-        if file_path:
-            backup_path = MacroSystemInstance.ConfigurationFilePath + ".backup"
-            shutil.copy(MacroSystemInstance.ConfigurationFilePath, backup_path)
+        if FilePath:
+            BackupPath = MacroSystemInstance.ConfigurationFilePath + ".backup"
+            shutil.copy(MacroSystemInstance.ConfigurationFilePath, BackupPath)
             
             try:
-                shutil.copy(file_path, MacroSystemInstance.ConfigurationFilePath)
+                shutil.copy(FilePath, MacroSystemInstance.ConfigurationFilePath)
                 MacroSystemInstance.LoadConfigurationFromDisk()
-                messagebox.showinfo("Import Successful", "Settings imported successfully!\n\nOld settings backed up to:\n" + backup_path)
+                messagebox.showinfo("Import Successful", "Settings imported successfully!\n\nOld settings backed up to:\n" + BackupPath)
                 return jsonify({"status": "success"})
-            except Exception as import_error:
-                shutil.copy(backup_path, MacroSystemInstance.ConfigurationFilePath)
-                raise import_error
+            except Exception as ImportError:
+                shutil.copy(BackupPath, MacroSystemInstance.ConfigurationFilePath)
+                raise ImportError
         
         return jsonify({"status": "cancelled"})
-    except Exception as e:
-        messagebox.showerror("Import Failed", f"Failed to import settings:\n{str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+    except Exception as E:
+        messagebox.showerror("Import Failed", f"Failed to import settings:\n{str(E)}")
+        return jsonify({"status": "error", "message": str(E)}), 500
 
-def handle_reset_settings(payload):
-    if payload != "confirm":
+def HandleResetSettings(Payload):
+    if Payload != "confirm":
         return jsonify({"status": "error", "message": "Reset not confirmed"}), 400
     
     try:
-        backup_path = MacroSystemInstance.ConfigurationFilePath + f".backup_{int(time.time())}"
+        BackupPath = MacroSystemInstance.ConfigurationFilePath + f".backup_{int(time.time())}"
         if os.path.exists(MacroSystemInstance.ConfigurationFilePath):
-            shutil.copy(MacroSystemInstance.ConfigurationFilePath, backup_path)
+            shutil.copy(MacroSystemInstance.ConfigurationFilePath, BackupPath)
         
         if os.path.exists(MacroSystemInstance.ConfigurationFilePath):
             os.remove(MacroSystemInstance.ConfigurationFilePath)
         
         MacroSystemInstance.__init__()
         
-        messagebox.showinfo("Reset Successful", f"Settings reset to defaults!\n\nBackup saved to:\n{backup_path}")
+        messagebox.showinfo("Reset Successful", f"Settings reset to defaults!\n\nBackup saved to:\n{BackupPath}")
         return jsonify({"status": "success"})
-    except Exception as e:
-        messagebox.showerror("Reset Failed", f"Failed to reset settings:\n{str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+    except Exception as E:
+        messagebox.showerror("Reset Failed", f"Failed to reset settings:\n{str(E)}")
+        return jsonify({"status": "error", "message": str(E)}), 500
 
-def handle_open_config_folder():
+def HandleOpenConfigFolder():
     try:
-        import subprocess
-        import platform
-        
-        folder_path = os.path.dirname(MacroSystemInstance.ConfigurationFilePath)
+        FolderPath = os.path.dirname(MacroSystemInstance.ConfigurationFilePath)
         
         if platform.system() == "Windows":
-            os.startfile(folder_path)
+            os.startfile(FolderPath)
         elif platform.system() == "Darwin":
-            subprocess.Popen(["open", folder_path])
+            subprocess.Popen(["open", FolderPath])
         else:
-            subprocess.Popen(["xdg-open", folder_path])
+            subprocess.Popen(["xdg-open", FolderPath])
         
         return jsonify({"status": "success"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+    except Exception as E:
+        return jsonify({"status": "error", "message": str(E)}), 500
 
-def handle_view_config():
+def HandleViewConfig():
     try:
         if os.path.exists(MacroSystemInstance.ConfigurationFilePath):
-            with open(MacroSystemInstance.ConfigurationFilePath, 'r') as f:
-                config_content = f.read()
+            with open(MacroSystemInstance.ConfigurationFilePath, 'r') as F:
+                ConfigContent = F.read()
             
-            root = tk.Tk()
-            root.title("Configuration File Viewer")
-            root.geometry("800x600")
+            Root = tk.Tk()
+            Root.title("Configuration File Viewer")
+            Root.geometry("800x600")
             
-            text_widget = tk.Text(root, wrap=tk.WORD, font=("Consolas", 10))
-            text_widget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
-            text_widget.insert(1.0, config_content)
-            text_widget.config(state=tk.DISABLED)
+            TextWidget = tk.Text(Root, wrap=tk.WORD, font=("Consolas", 10))
+            TextWidget.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+            TextWidget.insert(1.0, ConfigContent)
+            TextWidget.config(state=tk.DISABLED)
             
-            scrollbar = tk.Scrollbar(text_widget)
-            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-            text_widget.config(yscrollcommand=scrollbar.set)
-            scrollbar.config(command=text_widget.yview)
+            Scrollbar = tk.Scrollbar(TextWidget)
+            Scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            TextWidget.config(yscrollcommand=Scrollbar.set)
+            Scrollbar.config(command=TextWidget.yview)
             
-            root.mainloop()
+            Root.mainloop()
             
             return jsonify({"status": "success"})
         else:
             messagebox.showwarning("File Not Found", "Configuration file does not exist yet.")
             return jsonify({"status": "error", "message": "Config file not found"}), 404
-    except Exception as e:
-        messagebox.showerror("View Failed", f"Failed to view config:\n{str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+    except Exception as E:
+        messagebox.showerror("View Failed", f"Failed to view config:\n{str(E)}")
+        return jsonify({"status": "error", "message": str(E)}), 500
 
-def handle_clear_cache():
+def HandleClearCache():
     try:
         MacroSystemInstance.BaitPurchaseIterationCounter = 0
         MacroSystemInstance.DevilFruitStorageIterationCounter = 0
@@ -2624,78 +2735,74 @@ def handle_clear_cache():
         
         messagebox.showinfo("Cache Cleared", "Runtime cache and counters have been reset.")
         return jsonify({"status": "success"})
-    except Exception as e:
-        messagebox.showerror("Clear Failed", f"Failed to clear cache:\n{str(e)}")
-        return jsonify({"status": "error", "message": str(e)}), 500
+    except Exception as E:
+        messagebox.showerror("Clear Failed", f"Failed to clear cache:\n{str(E)}")
+        return jsonify({"status": "error", "message": str(E)}), 500
     
-def handle_point_selection(point_name):
-    MacroSystemInstance.InitiatePointSelectionMode(point_name)
+def HandlePointSelection(PointName):
+    MacroSystemInstance.InitiatePointSelectionMode(PointName)
     return jsonify({"status": "waiting_for_click"})
 
-def handle_area_selector():
+def HandleAreaSelector():
     MacroSystemInstance.ModifyScanningRegion()
     return jsonify({"status": "opening_selector"})
 
-def handle_open_browser(url):
-    if not url:
+def HandleOpenBrowser(Url):
+    if not Url:
         return jsonify({"status": "error", "message": "Missing URL"}), 400
     
     try:
-        webbrowser.open(url)
+        webbrowser.open(Url)
         return jsonify({"status": "success"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
+    except Exception as E:
+        return jsonify({"status": "error", "message": str(E)}), 500
 
-def handle_boolean_toggle(attribute_name):
+def HandleBooleanToggle(AttributeName):
     ActionPayload = request.json.get('payload')
     if ActionPayload is None:
         return jsonify({"status": "error", "message": "Missing payload"}), 400
     
-    boolean_value = ActionPayload.lower() == 'true'
-    setattr(MacroSystemInstance, attribute_name, boolean_value)
+    BooleanValue = ActionPayload.lower() == 'true'
+    setattr(MacroSystemInstance, AttributeName, BooleanValue)
     MacroSystemInstance.SaveConfigurationToDisk()
-    return jsonify({"status": "success", "value": boolean_value})
+    return jsonify({"status": "success", "value": BooleanValue})
 
-
-def handle_string_value(attribute_name):
+def HandleStringValue(AttributeName):
     ActionPayload = request.json.get('payload')
     if ActionPayload is None:
         return jsonify({"status": "error", "message": "Missing payload"}), 400
     
-    setattr(MacroSystemInstance, attribute_name, ActionPayload)
+    setattr(MacroSystemInstance, AttributeName, ActionPayload)
     MacroSystemInstance.SaveConfigurationToDisk()
     return jsonify({"status": "success"})
 
-
-def handle_integer_value(attribute_name):
+def HandleIntegerValue(AttributeName):
     ActionPayload = request.json.get('payload')
     if ActionPayload is None:
         return jsonify({"status": "error", "message": "Missing payload"}), 400
     
     try:
-        integer_value = int(ActionPayload)
-        setattr(MacroSystemInstance, attribute_name, integer_value)
+        IntegerValue = int(ActionPayload)
+        setattr(MacroSystemInstance, AttributeName, IntegerValue)
         MacroSystemInstance.SaveConfigurationToDisk()
         return jsonify({"status": "success"})
-    except (ValueError, TypeError) as e:
-        return jsonify({"status": "error", "message": f"Invalid integer value: {str(e)}"}), 400
+    except (ValueError, TypeError) as E:
+        return jsonify({"status": "error", "message": f"Invalid integer value: {str(E)}"}), 400
 
-
-def handle_float_value(attribute_name):
+def HandleFloatValue(AttributeName):
     ActionPayload = request.json.get('payload')
     if ActionPayload is None:
         return jsonify({"status": "error", "message": "Missing payload"}), 400
     
     try:
-        float_value = float(ActionPayload)
-        setattr(MacroSystemInstance, attribute_name, float_value)
+        FloatValue = float(ActionPayload)
+        setattr(MacroSystemInstance, AttributeName, FloatValue)
         MacroSystemInstance.SaveConfigurationToDisk()
         return jsonify({"status": "success"})
-    except (ValueError, TypeError) as e:
-        return jsonify({"status": "error", "message": f"Invalid float value: {str(e)}"}), 400
+    except (ValueError, TypeError) as E:
+        return jsonify({"status": "error", "message": f"Invalid float value: {str(E)}"}), 400
 
-
-def handle_hotkey_rebind(ActionPayload):
+def HandleHotkeyRebind(ActionPayload):
     if ActionPayload is None:
         return jsonify({"status": "error", "message": "Missing payload"}), 400
     
@@ -2713,13 +2820,9 @@ def handle_hotkey_rebind(ActionPayload):
     keyboard.on_release(HandleKeyboardEvent, suppress=False)
     return jsonify({"status": "waiting_for_key"})
 
-@FlaskApplication.route('/health', methods=['GET'])
-def PerformHealthCheck():
-    return jsonify({"status": "ok", "message": "Backend running"})
-
 def ExecuteFlaskServer():
     FlaskApplication.run(host='0.0.0.0', port=8765, debug=False, use_reloader=False)
-    
+
 if __name__ == "__main__":
     FlaskServerThread = threading.Thread(target=ExecuteFlaskServer, daemon=True)
     FlaskServerThread.start()

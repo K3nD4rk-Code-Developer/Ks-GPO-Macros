@@ -44,6 +44,7 @@ fn send_to_python(action: String, payload: String) -> Result<String, String> {
     }
 }
 
+#[allow(unused_variables)]
 fn get_python_and_script(app: &tauri::AppHandle) -> (PathBuf, PathBuf) {
     #[cfg(debug_assertions)]
     {
@@ -310,6 +311,6 @@ fn main() {
         })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![send_to_python])
-        .run(tauri::generate_context!())
+        .run(tauri::generate_context!()) // silently ignore
         .expect("error while running tauri application");
 }
