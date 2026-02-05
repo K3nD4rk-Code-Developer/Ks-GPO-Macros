@@ -112,12 +112,6 @@
                 document.getElementById('timeElapsed').textContent = state.timeElapsed || '0:00:00';
                 document.getElementById('fishPerHour').textContent = (state.fishPerHour || 0).toFixed(1);
                 document.getElementById('currentStatus').textContent = state.currentStatus || 'Idle';
-
-                if (state.isRunning && state.showDebugOverlay) {
-                    await appWindow.show();
-                } else {
-                    await appWindow.hide();
-                }
             } catch (error) {
                 console.error('Failed to poll stats:', error);
             }

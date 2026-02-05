@@ -230,7 +230,7 @@ class AutomatedFishingSystem:
         self.CurrentClientId = "unknown"
 
         self.MegalodonSoundRecognitionEnabled = False
-        self.SoundMatchSensitivity = 0.05
+        self.SoundMatchSensitivity = 0.1
         self.MegalodonSoundPath = os.path.join(ApplicationPath, "Sounds", "Megalodon.wav")
         
         self.AutoDetectRDP = True
@@ -274,7 +274,7 @@ class AutomatedFishingSystem:
             SessionName = win32ts.WTSQuerySessionInformation(
                 ServerHandle,
                 SessionId,
-                win32ts.WTSSessionInfo
+                win32ts.WTSWinStationName
             )
             
             return IsRdp, RdpState, SessionId, SessionName
@@ -745,13 +745,17 @@ class AutomatedFishingSystem:
     def ToggleMacroExecution(self):
         self.MacroCurrentlyExecuting = not self.MacroCurrentlyExecuting
         
+        if self.AutoDetectRDP:
+            self.RDPDetected, self.RDPSessionState, self.RDPSessionId, self.RDPSessionName = self.DetectRDPSession()
+        
         with self.SessionLock:
             self.AllActiveSessions[self.CurrentClientId] = {
                 'is_running': self.MacroCurrentlyExecuting,
                 'last_updated': time.time(),
                 'session_id': getattr(self, 'RDPSessionId', -1),
                 'rdp_detected': getattr(self, 'RDPDetected', False),
-                'rdp_state': getattr(self, 'RDPSessionState', 'unknown')
+                'rdp_state': getattr(self, 'RDPSessionState', 'unknown'),
+                'client_id': self.CurrentClientId
             }
         
         if self.MacroCurrentlyExecuting:
@@ -1886,10 +1890,18 @@ class AutomatedFishingSystem:
             FormattedElapsedTime = f"{TotalHours}:{TotalMinutes:02d}:{TotalSeconds:02d}"
             CalculatedFishPerHour = (self.TotalFishSuccessfullyCaught / AccumulatedTime) * 3600
         
+        current_time = time.time()
         with self.SessionLock:
+            stale_sessions = [
+                cid for cid, sess in self.AllActiveSessions.items()
+                if current_time - sess.get('last_updated', 0) > 30
+            ]
+            for cid in stale_sessions:
+                del self.AllActiveSessions[cid]
+            
             ActiveSessions = [
                 {
-                    'client_id': cid,
+                    'client_id': sess.get('client_id', cid),
                     'is_running': sess.get('is_running', False),
                     'rdp_detected': sess.get('rdp_detected', False),
                     'rdp_state': sess.get('rdp_state', 'unknown'),
@@ -1897,7 +1909,6 @@ class AutomatedFishingSystem:
                     'last_updated': sess.get('last_updated', 0)
                 }
                 for cid, sess in self.AllActiveSessions.items()
-                if time.time() - sess.get('last_updated', 0) < 10
             ]
         
         return {
@@ -2229,7 +2240,8 @@ def RetrieveSystemState():
         }
     
     MacroSystemInstance.ClientStats[ClientId]["last_seen"] = time.time()
-    if ClientId != 'unknown' and not MacroSystemInstance.MacroCurrentlyExecuting:
+    
+    if ClientId != 'unknown':
         MacroSystemInstance.CurrentClientId = ClientId
     
     IsThisClientRunning = (ClientId == MacroSystemInstance.CurrentClientId and MacroSystemInstance.MacroCurrentlyExecuting)
@@ -2237,8 +2249,22 @@ def RetrieveSystemState():
     MacroSystemInstance.ClientStats[ClientId]["is_running"] = IsThisClientRunning
     MacroSystemInstance.ClientStats[ClientId]["fish_caught"] = MacroSystemInstance.TotalFishSuccessfullyCaught
     
-    TotalFish = sum(C["fish_caught"] for C in MacroSystemInstance.ClientStats.values())
-    ActiveCount = sum(1 for C in MacroSystemInstance.ClientStats.values() if C["is_running"])
+    with MacroSystemInstance.SessionLock:
+        MacroSystemInstance.AllActiveSessions[ClientId] = {
+            'client_id': ClientId,
+            'is_running': IsThisClientRunning,
+            'last_updated': time.time(),
+            'session_id': getattr(MacroSystemInstance, 'RDPSessionId', -1),
+            'rdp_detected': getattr(MacroSystemInstance, 'RDPDetected', False),
+            'rdp_state': getattr(MacroSystemInstance, 'RDPSessionState', 'unknown')
+        }
+    
+    TotalFish = MacroSystemInstance.TotalFishSuccessfullyCaught
+    ActiveCount = 1 if IsThisClientRunning else 0
+    
+    if MacroSystemInstance.EnableDeviceSync and MacroSystemInstance.ShareFishCount:
+        TotalFish = sum(C["fish_caught"] for C in MacroSystemInstance.ClientStats.values())
+        ActiveCount = sum(1 for C in MacroSystemInstance.ClientStats.values() if C["is_running"])
     
     TotalUptime = MacroSystemInstance.CumulativeRunningTimeSeconds
     if MacroSystemInstance.CurrentSessionBeginTimestamp:
@@ -2261,10 +2287,18 @@ def RetrieveSystemState():
         FormattedElapsedTime = f"{TotalHours}:{TotalMinutes:02d}:{TotalSeconds:02d}"
         CalculatedFishPerHour = (MacroSystemInstance.TotalFishSuccessfullyCaught / AccumulatedTime) * 3600
     
+    current_time = time.time()
     with MacroSystemInstance.SessionLock:
+        stale_sessions = [
+            cid for cid, sess in MacroSystemInstance.AllActiveSessions.items()
+            if current_time - sess.get('last_updated', 0) > 30
+        ]
+        for cid in stale_sessions:
+            del MacroSystemInstance.AllActiveSessions[cid]
+        
         ActiveSessions = [
             {
-                'client_id': cid,
+                'client_id': sess.get('client_id', cid),
                 'is_running': sess.get('is_running', False),
                 'rdp_detected': sess.get('rdp_detected', False),
                 'rdp_state': sess.get('rdp_state', 'unknown'),
@@ -2272,111 +2306,130 @@ def RetrieveSystemState():
                 'last_updated': sess.get('last_updated', 0)
             }
             for cid, sess in MacroSystemInstance.AllActiveSessions.items()
-            if time.time() - sess.get('last_updated', 0) < 10
         ]
     
-    return jsonify({
+    BaseResponse = {
         "clientId": ClientId,
         "currentActiveClientId": MacroSystemInstance.CurrentClientId,
         "activeSessions": ActiveSessions,
-        "clientFishCaught": MacroSystemInstance.ClientStats[ClientId]["fish_caught"],
-        "globalFishCaught": TotalFish,
-        "globalFishPerHour": round(GlobalFishPerHour, 1),
-        "activeClients": ActiveCount,
-        "storeToBackpack": MacroSystemInstance.StoreToBackpackEnabled,
-        "devilFruitLocationPoint": MacroSystemInstance.DevilFruitLocationPoint,
-        "loopsPerStore": MacroSystemInstance.DevilFruitStorageFrequencyCounter,
         "isRunning": IsThisClientRunning,
         "fishCaught": MacroSystemInstance.TotalFishSuccessfullyCaught,
         "timeElapsed": FormattedElapsedTime,
-        "moveDuration": MacroSystemInstance.MoveDurationSeconds,
         "fishPerHour": round(CalculatedFishPerHour, 1),
-        "waterPoint": MacroSystemInstance.WaterCastingTargetLocation,
-        "leftPoint": MacroSystemInstance.ShopLeftButtonLocation,
-        "middlePoint": MacroSystemInstance.ShopCenterButtonLocation,
-        "rightPoint": MacroSystemInstance.ShopRightButtonLocation,
-        "storeFruitPoint": MacroSystemInstance.FruitStorageButtonLocation,
-        "baitPoint": MacroSystemInstance.BaitSelectionButtonLocation,
-        "topRecipePoint": MacroSystemInstance.TopRecipeSlotLocation,
-        "addRecipePoint": MacroSystemInstance.AddRecipeButtonLocation,
-        "hotkeys": MacroSystemInstance.GlobalHotkeyBindings,
-        "rodHotkey": MacroSystemInstance.FishingRodInventorySlot,
-        "anythingElseHotkey": MacroSystemInstance.AlternateInventorySlot,
-        "devilFruitHotkeys": MacroSystemInstance.DevilFruitInventorySlots,
-        "alwaysOnTop": MacroSystemInstance.WindowAlwaysOnTopEnabled,
-        "showDebugOverlay": MacroSystemInstance.DebugOverlayVisible,
-        "autoBuyCommonBait": MacroSystemInstance.AutomaticBaitPurchaseEnabled,
-        "autoStoreDevilFruit": MacroSystemInstance.AutomaticFruitStorageEnabled,
-        "autoSelectTopBait": MacroSystemInstance.AutomaticTopBaitSelectionEnabled,
-        "kp": MacroSystemInstance.ProportionalGainCoefficient,
-        "kd": MacroSystemInstance.DerivativeGainCoefficient,
-        "pdClamp": MacroSystemInstance.ControlSignalMaximumClamp,
-        "castHoldDuration": MacroSystemInstance.MouseHoldDurationForCast,
-        "recastTimeout": MacroSystemInstance.MaximumWaitTimeBeforeRecast,
-        "fishEndDelay": MacroSystemInstance.DelayAfterFishCaptured,
-        "loopsPerPurchase": MacroSystemInstance.BaitPurchaseFrequencyCounter,
-        "pdApproachingDamping": MacroSystemInstance.PDControllerApproachingStateDamping,
-        "pdChasingDamping": MacroSystemInstance.PDControllerChasingStateDamping,
-        "gapToleranceMultiplier": MacroSystemInstance.BarGroupingGapToleranceMultiplier,
-        "stateResendInterval": MacroSystemInstance.InputStateResendFrequency,
-        "robloxFocusDelay": MacroSystemInstance.RobloxWindowFocusInitialDelay,
-        "robloxPostFocusDelay": MacroSystemInstance.RobloxWindowFocusFollowupDelay,
-        "preCastEDelay": MacroSystemInstance.PreCastDialogOpenDelay,
-        "preCastClickDelay": MacroSystemInstance.PreCastMouseClickDelay,
-        "preCastTypeDelay": MacroSystemInstance.PreCastKeyboardInputDelay,
-        "preCastAntiDetectDelay": MacroSystemInstance.PreCastAntiDetectionDelay,
-        "storeFruitHotkeyDelay": MacroSystemInstance.FruitStorageHotkeyActivationDelay,
-        "storeFruitClickDelay": MacroSystemInstance.FruitStorageClickConfirmationDelay,
-        "storeFruitShiftDelay": MacroSystemInstance.FruitStorageShiftKeyPressDelay,
-        "storeFruitBackspaceDelay": MacroSystemInstance.FruitStorageBackspaceDeletionDelay,
-        "autoSelectBaitDelay": MacroSystemInstance.BaitSelectionConfirmationDelay,
-        "blackScreenThreshold": MacroSystemInstance.BlackScreenDetectionRatioThreshold,
-        "antiMacroSpamDelay": MacroSystemInstance.AntiMacroDialogSpamDelay,
-        "rodSelectDelay": MacroSystemInstance.InventorySlotSwitchingDelay,
-        "cursorAntiDetectDelay": MacroSystemInstance.MouseMovementAntiDetectionDelay,
-        "scanLoopDelay": MacroSystemInstance.ImageProcessingLoopDelay,
-        "autoCraftBait": MacroSystemInstance.AutomaticBaitCraftingEnabled,
-        "craftLeftPoint": MacroSystemInstance.CraftLeftButtonLocation,
-        "craftMiddlePoint": MacroSystemInstance.CraftMiddleButtonLocation,
-        "craftButtonPoint": MacroSystemInstance.CraftButtonLocation,
-        "closeMenuPoint": MacroSystemInstance.CloseMenuButtonLocation,
-        "craftsPerCycle": MacroSystemInstance.CraftsPerCycleCount,
-        "loopsPerCraft": MacroSystemInstance.BaitCraftFrequencyCounter,
-        "fishCountPerCraft": MacroSystemInstance.FishCountPerCraft,
-        "craftMenuOpenDelay": MacroSystemInstance.CraftMenuOpenDelay,
-        "craftClickDelay": MacroSystemInstance.CraftClickDelay,
-        "craftRecipeSelectDelay": MacroSystemInstance.CraftRecipeSelectDelay,
-        "craftAddRecipeDelay": MacroSystemInstance.CraftAddRecipeDelay,
-        "craftTopRecipeDelay": MacroSystemInstance.CraftTopRecipeDelay,
-        "craftButtonClickDelay": MacroSystemInstance.CraftButtonClickDelay,
-        "craftCloseMenuDelay": MacroSystemInstance.CraftCloseMenuDelay,
-        "webhookUrl": MacroSystemInstance.WebhookUrl,
-        "logRecastTimeouts": MacroSystemInstance.LogRecastTimeouts,
-        "logPeriodicStats": MacroSystemInstance.LogPeriodicStats,
-        "logGeneralUpdates": MacroSystemInstance.LogGeneralUpdates,
-        "periodicStatsInterval": MacroSystemInstance.PeriodicStatsIntervalMinutes,
-        "totalRecastTimeouts": MacroSystemInstance.TotalRecastTimeouts,
-        "logDevilFruit": MacroSystemInstance.LogDevilFruitEnabled,
-        "baitRecipes": MacroSystemInstance.BaitRecipes,
-        "currentRecipeIndex": MacroSystemInstance.CurrentRecipeIndex,
         "currentStatus": MacroSystemInstance.CurrentMacroStatus,
-        "megalodonSoundEnabled": MacroSystemInstance.MegalodonSoundRecognitionEnabled,
-        "soundSensitivity": MacroSystemInstance.SoundMatchSensitivity,
         "rdp_detected": MacroSystemInstance.RDPDetected,
         "rdp_session_state": MacroSystemInstance.RDPSessionState,
-        "auto_detect_rdp": MacroSystemInstance.AutoDetectRDP,
-        "allow_rdp_execution": MacroSystemInstance.AllowRDPExecution,
-        "pause_on_rdp_disconnect": MacroSystemInstance.PauseOnRDPDisconnect,
-        "resume_on_rdp_reconnect": MacroSystemInstance.ResumeOnRDPReconnect,
+        
+        # ALWAYS INCLUDE THESE - THEY CONTROL UI STATE
+        "alwaysOnTop": MacroSystemInstance.WindowAlwaysOnTopEnabled,
+        "showDebugOverlay": MacroSystemInstance.DebugOverlayVisible,
+        
         "enable_device_sync": MacroSystemInstance.EnableDeviceSync,
         "sync_settings": MacroSystemInstance.SyncSettings,
         "sync_stats": MacroSystemInstance.SyncStats,
         "share_fish_count": MacroSystemInstance.ShareFishCount,
         "sync_interval": MacroSystemInstance.SyncIntervalSeconds,
         "device_name": MacroSystemInstance.DeviceName,
-        "connected_devices": MacroSystemInstance.ConnectedDevices,
         "is_syncing": MacroSystemInstance.IsSyncing,
-    })
+    }
+    
+    ShouldIncludeSettings = (
+        not MacroSystemInstance.EnableDeviceSync or 
+        not MacroSystemInstance.SyncSettings or
+        ClientId == MacroSystemInstance.CurrentClientId
+    )
+    
+    if ShouldIncludeSettings:
+        BaseResponse.update({
+            "clientFishCaught": MacroSystemInstance.ClientStats[ClientId]["fish_caught"],
+            "globalFishCaught": TotalFish,
+            "globalFishPerHour": round(GlobalFishPerHour, 1),
+            "activeClients": ActiveCount,
+            "storeToBackpack": MacroSystemInstance.StoreToBackpackEnabled,
+            "devilFruitLocationPoint": MacroSystemInstance.DevilFruitLocationPoint,
+            "loopsPerStore": MacroSystemInstance.DevilFruitStorageFrequencyCounter,
+            "moveDuration": MacroSystemInstance.MoveDurationSeconds,
+            "waterPoint": MacroSystemInstance.WaterCastingTargetLocation,
+            "leftPoint": MacroSystemInstance.ShopLeftButtonLocation,
+            "middlePoint": MacroSystemInstance.ShopCenterButtonLocation,
+            "rightPoint": MacroSystemInstance.ShopRightButtonLocation,
+            "storeFruitPoint": MacroSystemInstance.FruitStorageButtonLocation,
+            "baitPoint": MacroSystemInstance.BaitSelectionButtonLocation,
+            "topRecipePoint": MacroSystemInstance.TopRecipeSlotLocation,
+            "addRecipePoint": MacroSystemInstance.AddRecipeButtonLocation,
+            "hotkeys": MacroSystemInstance.GlobalHotkeyBindings,
+            "rodHotkey": MacroSystemInstance.FishingRodInventorySlot,
+            "anythingElseHotkey": MacroSystemInstance.AlternateInventorySlot,
+            "devilFruitHotkeys": MacroSystemInstance.DevilFruitInventorySlots,
+            "autoBuyCommonBait": MacroSystemInstance.AutomaticBaitPurchaseEnabled,
+            "autoStoreDevilFruit": MacroSystemInstance.AutomaticFruitStorageEnabled,
+            "autoSelectTopBait": MacroSystemInstance.AutomaticTopBaitSelectionEnabled,
+            "kp": MacroSystemInstance.ProportionalGainCoefficient,
+            "kd": MacroSystemInstance.DerivativeGainCoefficient,
+            "pdClamp": MacroSystemInstance.ControlSignalMaximumClamp,
+            "castHoldDuration": MacroSystemInstance.MouseHoldDurationForCast,
+            "recastTimeout": MacroSystemInstance.MaximumWaitTimeBeforeRecast,
+            "fishEndDelay": MacroSystemInstance.DelayAfterFishCaptured,
+            "loopsPerPurchase": MacroSystemInstance.BaitPurchaseFrequencyCounter,
+            "pdApproachingDamping": MacroSystemInstance.PDControllerApproachingStateDamping,
+            "pdChasingDamping": MacroSystemInstance.PDControllerChasingStateDamping,
+            "gapToleranceMultiplier": MacroSystemInstance.BarGroupingGapToleranceMultiplier,
+            "stateResendInterval": MacroSystemInstance.InputStateResendFrequency,
+            "robloxFocusDelay": MacroSystemInstance.RobloxWindowFocusInitialDelay,
+            "robloxPostFocusDelay": MacroSystemInstance.RobloxWindowFocusFollowupDelay,
+            "preCastEDelay": MacroSystemInstance.PreCastDialogOpenDelay,
+            "preCastClickDelay": MacroSystemInstance.PreCastMouseClickDelay,
+            "preCastTypeDelay": MacroSystemInstance.PreCastKeyboardInputDelay,
+            "preCastAntiDetectDelay": MacroSystemInstance.PreCastAntiDetectionDelay,
+            "storeFruitHotkeyDelay": MacroSystemInstance.FruitStorageHotkeyActivationDelay,
+            "storeFruitClickDelay": MacroSystemInstance.FruitStorageClickConfirmationDelay,
+            "storeFruitShiftDelay": MacroSystemInstance.FruitStorageShiftKeyPressDelay,
+            "storeFruitBackspaceDelay": MacroSystemInstance.FruitStorageBackspaceDeletionDelay,
+            "autoSelectBaitDelay": MacroSystemInstance.BaitSelectionConfirmationDelay,
+            "blackScreenThreshold": MacroSystemInstance.BlackScreenDetectionRatioThreshold,
+            "antiMacroSpamDelay": MacroSystemInstance.AntiMacroDialogSpamDelay,
+            "rodSelectDelay": MacroSystemInstance.InventorySlotSwitchingDelay,
+            "cursorAntiDetectDelay": MacroSystemInstance.MouseMovementAntiDetectionDelay,
+            "scanLoopDelay": MacroSystemInstance.ImageProcessingLoopDelay,
+            "autoCraftBait": MacroSystemInstance.AutomaticBaitCraftingEnabled,
+            "craftLeftPoint": MacroSystemInstance.CraftLeftButtonLocation,
+            "craftMiddlePoint": MacroSystemInstance.CraftMiddleButtonLocation,
+            "craftButtonPoint": MacroSystemInstance.CraftButtonLocation,
+            "closeMenuPoint": MacroSystemInstance.CloseMenuButtonLocation,
+            "craftsPerCycle": MacroSystemInstance.CraftsPerCycleCount,
+            "loopsPerCraft": MacroSystemInstance.BaitCraftFrequencyCounter,
+            "fishCountPerCraft": MacroSystemInstance.FishCountPerCraft,
+            "craftMenuOpenDelay": MacroSystemInstance.CraftMenuOpenDelay,
+            "craftClickDelay": MacroSystemInstance.CraftClickDelay,
+            "craftRecipeSelectDelay": MacroSystemInstance.CraftRecipeSelectDelay,
+            "craftAddRecipeDelay": MacroSystemInstance.CraftAddRecipeDelay,
+            "craftTopRecipeDelay": MacroSystemInstance.CraftTopRecipeDelay,
+            "craftButtonClickDelay": MacroSystemInstance.CraftButtonClickDelay,
+            "craftCloseMenuDelay": MacroSystemInstance.CraftCloseMenuDelay,
+            "webhookUrl": MacroSystemInstance.WebhookUrl,
+            "logRecastTimeouts": MacroSystemInstance.LogRecastTimeouts,
+            "logPeriodicStats": MacroSystemInstance.LogPeriodicStats,
+            "logGeneralUpdates": MacroSystemInstance.LogGeneralUpdates,
+            "periodicStatsInterval": MacroSystemInstance.PeriodicStatsIntervalMinutes,
+            "totalRecastTimeouts": MacroSystemInstance.TotalRecastTimeouts,
+            "logDevilFruit": MacroSystemInstance.LogDevilFruitEnabled,
+            "baitRecipes": MacroSystemInstance.BaitRecipes,
+            "currentRecipeIndex": MacroSystemInstance.CurrentRecipeIndex,
+            "megalodonSoundEnabled": MacroSystemInstance.MegalodonSoundRecognitionEnabled,
+            "soundSensitivity": MacroSystemInstance.SoundMatchSensitivity,
+            "auto_detect_rdp": MacroSystemInstance.AutoDetectRDP,
+            "allow_rdp_execution": MacroSystemInstance.AllowRDPExecution,
+            "pause_on_rdp_disconnect": MacroSystemInstance.PauseOnRDPDisconnect,
+            "resume_on_rdp_reconnect": MacroSystemInstance.ResumeOnRDPReconnect,
+            "connected_devices": MacroSystemInstance.ConnectedDevices,
+        })
+    
+    if MacroSystemInstance.EnableDeviceSync:
+        BaseResponse["connected_devices"] = MacroSystemInstance.ConnectedDevices
+    else:
+        BaseResponse["connected_devices"] = []
+    
+    return jsonify(BaseResponse)
 
 @FlaskApplication.route('/health', methods=['GET'])
 def PerformHealthCheck():

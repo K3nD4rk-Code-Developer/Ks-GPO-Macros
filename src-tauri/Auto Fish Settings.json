@@ -4,7 +4,7 @@
         "exit": "f3"
     },
     "WindowSettings": {
-        "AlwaysOnTop": false,
+        "AlwaysOnTop": true,
         "ShowDebugOverlay": false
     },
     "ScanArea": {
@@ -71,16 +71,7 @@
                 "x": 1846,
                 "y": 393
             },
-            "BaitRecipes": [
-                {
-                    "BaitRecipePoint": {
-                        "x": 1022,
-                        "y": 765
-                    },
-                    "CraftsPerCycle": 40,
-                    "SwitchFishCycle": 5
-                }
-            ],
+            "BaitRecipes": [],
             "CurrentRecipeIndex": 0
         }
     },
@@ -88,7 +79,6 @@
         "RodHotkey": "0",
         "AnythingElseHotkey": "1",
         "DevilFruitHotkeys": [
-            "2",
             "3",
             "4",
             "5",
@@ -99,7 +89,7 @@
         ]
     },
     "AutomationFeatures": {
-        "AutoBuyCommonBait": false,
+        "AutoBuyCommonBait": true,
         "AutoStoreDevilFruit": true,
         "AutoSelectTopBait": false,
         "AutoCraftBait": false
@@ -135,7 +125,7 @@
     "DeviceSyncSettings": {
         "EnableDeviceSync": true,
         "SyncSettings": true,
-        "SyncStats": true,
+        "SyncStats": false,
         "ShareFishCount": false,
         "SyncIntervalSeconds": 5,
         "DeviceName": ""

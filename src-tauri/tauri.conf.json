@@ -11,7 +11,7 @@
     "windows": [
       {
         "title": "GPO Fish Macro",
-        "width": 936,
+        "width": 940,
         "height": 675,
         "resizable": true,
         "label": "main"
@@ -19,17 +19,19 @@
       {
         "title": "Stats",
         "width": 300,
-        "height": 150,
+        "height": 200,
         "resizable": false,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,
         "skipTaskbar": true,
         "visible": false,
-        "focusable": false,
+        "focusable": true,
         "shadow": false,
         "label": "stats",
-        "url": "stats.html"
+        "url": "stats.html",
+        "x": 100,
+        "y": 100
       }
     ],
     "security": {
