@@ -25,7 +25,6 @@ from PIL import Image as PILImage
 import requests
 from difflib import get_close_matches
 from scipy.fft import fft
-import librosa
 import sounddevice as sd
 import pyaudiowpatch as pyaudio
 
@@ -126,8 +125,9 @@ class AutomatedFishingSystem:
 
         self.StoreToBackpackEnabled = False
         self.LogDevilFruitEnabled = False
+        self.WebhookPingEnabled = False
         self.WebhookUrl = ""
-
+        
         self.LogRecastTimeouts = True
         self.LogPeriodicStats = True
         self.LogGeneralUpdates = True
@@ -405,6 +405,7 @@ class AutomatedFishingSystem:
                 DfStorage = ParsedConfigurationData["DevilFruitStorage"]
                 self.StoreToBackpackEnabled = DfStorage.get("StoreToBackpack", self.StoreToBackpackEnabled)
                 self.LogDevilFruitEnabled = DfStorage.get("LogDevilFruit", self.LogDevilFruitEnabled)
+                self.WebhookPingEnabled = DfStorage.get("WebhookUrl", self.WebhookUrl)
                 self.WebhookUrl = DfStorage.get("WebhookUrl", self.WebhookUrl)
 
             if "FishingModes" in ParsedConfigurationData:
@@ -541,6 +542,7 @@ class AutomatedFishingSystem:
                     "DevilFruitStorage": {
                         "StoreToBackpack": self.StoreToBackpackEnabled,
                         "LogDevilFruit": self.LogDevilFruitEnabled,
+                        "WebhookPing": self.WebhookPingEnabled,
                         "WebhookUrl": self.WebhookUrl
                     },
                     "LoggingOptions": {
@@ -910,6 +912,9 @@ class AutomatedFishingSystem:
                 "username": "K's GPO Macro Bot",
                 "embeds": [EmbedData]
             }
+
+            if self.WebhookPingEnabled:
+                PayloadData["content"] = "@everyone"
             
             requests.post(self.WebhookUrl, json=PayloadData, timeout=5)
         except Exception as ErrorDetails:
@@ -1513,50 +1518,156 @@ class AutomatedFishingSystem:
             self.UpdateStatus("Listening for Megalodon...")
             
             AudioInterface = pyaudio.PyAudio()
+            AudioStream = None
             
             try:
-                WasapiInformation = AudioInterface.get_host_api_info_by_type(pyaudio.paWASAPI)
-                DefaultSpeakersDevice = AudioInterface.get_device_info_by_index(WasapiInformation["defaultOutputDevice"])
-                
-                if not DefaultSpeakersDevice["isLoopbackDevice"]:
-                    for LoopbackDevice in AudioInterface.get_loopback_device_info_generator():
-                        if DefaultSpeakersDevice["name"] in LoopbackDevice["name"]:
-                            DefaultSpeakersDevice = LoopbackDevice
-                            break
-                
-                
-                AudioSampleRate = int(DefaultSpeakersDevice['defaultSampleRate'])
-                
+                AudioSampleRate = 44100
                 RecordingDuration = 1.5
+                DeviceToUse = None
                 
-                AudioStream = AudioInterface.open(
-                    format=pyaudio.paFloat32,
-                    channels=1,
-                    rate=AudioSampleRate,
-                    input=True,
-                    frames_per_buffer=1024,
-                    input_device_index=DefaultSpeakersDevice["index"]
-                )
+                try:
+                    WasapiInformation = AudioInterface.get_host_api_info_by_type(pyaudio.paWASAPI)
+                    DefaultOutputIndex = WasapiInformation.get("defaultOutputDevice")
+                    
+                    if DefaultOutputIndex is not None and DefaultOutputIndex >= 0:
+                        try:
+                            DefaultSpeakersDevice = AudioInterface.get_device_info_by_index(DefaultOutputIndex)
+                            DefaultSpeakersName = DefaultSpeakersDevice.get("name", "")
+                            
+                            for LoopbackDevice in AudioInterface.get_loopback_device_info_generator():
+                                if DefaultSpeakersName in LoopbackDevice.get("name", ""):
+                                    if LoopbackDevice.get('maxInputChannels', 0) > 0:
+                                        DeviceToUse = LoopbackDevice
+                                        print(f"Found matching loopback device: {LoopbackDevice.get('name', 'Unknown')}")
+                                        break
+                        except Exception as e:
+                            print(f"Error matching default output device: {e}")
+                    
+                    if DeviceToUse is None:
+                        print("No matching loopback device found, trying any available loopback device...")
+                        try:
+                            for LoopbackDevice in AudioInterface.get_loopback_device_info_generator():
+                                if LoopbackDevice.get('maxInputChannels', 0) > 0:
+                                    DeviceToUse = LoopbackDevice
+                                    print(f"Using loopback device: {LoopbackDevice.get('name', 'Unknown')}")
+                                    break
+                        except Exception as e:
+                            print(f"Error finding any loopback device: {e}")
+                    
+                except Exception as e:
+                    print(f"WASAPI not available: {e}")
+                
+                if DeviceToUse is None:
+                    print("No loopback device found - Megalodon sound detection disabled")
+                    print("Make sure you have audio output devices enabled in Windows Sound settings")
+                    AudioInterface.terminate()
+                    return True
+                
+                DeviceIndex = DeviceToUse.get("index")
+                if DeviceIndex is None:
+                    print("Invalid device index - Megalodon sound detection disabled")
+                    AudioInterface.terminate()
+                    return True
+                
+                AudioSampleRate = int(DeviceToUse.get('defaultSampleRate', 44100))
+                if AudioSampleRate < 8000 or AudioSampleRate > 192000:
+                    AudioSampleRate = 44100
+                
+                MaxInputChannels = DeviceToUse.get('maxInputChannels', 0)
+                if MaxInputChannels < 1:
+                    print("Device has no input channels - Megalodon sound detection disabled")
+                    AudioInterface.terminate()
+                    return True
+                
+                ChannelsToUse = min(2, MaxInputChannels)
+                
+                FormatToUse = pyaudio.paFloat32
+                IsInt16Format = False
+                
+                try:
+                    AudioStream = AudioInterface.open(
+                        format=pyaudio.paFloat32,
+                        channels=ChannelsToUse,
+                        rate=AudioSampleRate,
+                        input=True,
+                        frames_per_buffer=1024,
+                        input_device_index=DeviceIndex
+                    )
+                except OSError as StreamError:
+                    print(f"paFloat32 failed, trying paInt16: {StreamError}")
+                    try:
+                        AudioStream = AudioInterface.open(
+                            format=pyaudio.paInt16,
+                            channels=ChannelsToUse,
+                            rate=AudioSampleRate,
+                            input=True,
+                            frames_per_buffer=1024,
+                            input_device_index=DeviceIndex
+                        )
+                        FormatToUse = pyaudio.paInt16
+                        IsInt16Format = True
+                        print("Using paInt16 format")
+                    except Exception as e2:
+                        print(f"paInt16 also failed, trying single channel: {e2}")
+                        try:
+                            AudioStream = AudioInterface.open(
+                                format=pyaudio.paFloat32,
+                                channels=1,
+                                rate=AudioSampleRate,
+                                input=True,
+                                frames_per_buffer=1024,
+                                input_device_index=DeviceIndex
+                            )
+                            ChannelsToUse = 1
+                            print("Using single channel")
+                        except Exception as e3:
+                            print(f"All formats failed: {e3}")
+                            AudioInterface.terminate()
+                            return True
                 
                 AudioFramesList = []
+                
                 for _ in range(int(AudioSampleRate * RecordingDuration / 1024)):
                     if not self.MacroCurrentlyExecuting:
-                        AudioStream.stop_stream()
-                        AudioStream.close()
+                        if AudioStream:
+                            AudioStream.stop_stream()
+                            AudioStream.close()
                         AudioInterface.terminate()
                         return False
-                    AudioFrameData = AudioStream.read(1024)
-                    AudioFramesList.append(AudioFrameData)
+                    
+                    try:
+                        AudioFrameData = AudioStream.read(1024, exception_on_overflow=False)
+                        AudioFramesList.append(AudioFrameData)
+                    except Exception as ReadError:
+                        print(f"Error reading audio data: {ReadError}")
+                        break
                 
-                AudioStream.stop_stream()
-                AudioStream.close()
+                if AudioStream:
+                    AudioStream.stop_stream()
+                    AudioStream.close()
                 AudioInterface.terminate()
                 
-                RecordedAudioData = np.frombuffer(b''.join(AudioFramesList), dtype=np.float32)
+                if not AudioFramesList:
+                    print("No audio data captured - skipping Megalodon detection")
+                    return True
+                
+                if IsInt16Format:
+                    RecordedAudioData = np.frombuffer(b''.join(AudioFramesList), dtype=np.int16).astype(np.float32) / 32768.0
+                else:
+                    RecordedAudioData = np.frombuffer(b''.join(AudioFramesList), dtype=np.float32)
+                
+                if ChannelsToUse == 2:
+                    RecordedAudioData = RecordedAudioData.reshape(-1, 2).mean(axis=1)
                 
             except Exception as AudioCaptureError:
                 print(f"PyAudioWPatch error: {AudioCaptureError}")
                 traceback.print_exc()
+                if AudioStream:
+                    try:
+                        AudioStream.stop_stream()
+                        AudioStream.close()
+                    except:
+                        pass
                 AudioInterface.terminate()
                 return True
             
@@ -1628,7 +1739,7 @@ class AutomatedFishingSystem:
             print(f"Sound recognition error: {SoundRecognitionError}")
             traceback.print_exc()
             return True
-    
+        
     def DetectBlackScreenCondition(self, ImageArrayToCheck=None):
         if ImageArrayToCheck is None:
             with mss.mss() as ScreenCapture:
@@ -2320,7 +2431,6 @@ def RetrieveSystemState():
         "rdp_detected": MacroSystemInstance.RDPDetected,
         "rdp_session_state": MacroSystemInstance.RDPSessionState,
         
-        # ALWAYS INCLUDE THESE - THEY CONTROL UI STATE
         "alwaysOnTop": MacroSystemInstance.WindowAlwaysOnTopEnabled,
         "showDebugOverlay": MacroSystemInstance.DebugOverlayVisible,
         
@@ -2408,6 +2518,7 @@ def RetrieveSystemState():
             "craftCloseMenuDelay": MacroSystemInstance.CraftCloseMenuDelay,
             "webhookUrl": MacroSystemInstance.WebhookUrl,
             "logRecastTimeouts": MacroSystemInstance.LogRecastTimeouts,
+            "webhookPing": MacroSystemInstance.WebhookPingEnabled,
             "logPeriodicStats": MacroSystemInstance.LogPeriodicStats,
             "logGeneralUpdates": MacroSystemInstance.LogGeneralUpdates,
             "periodicStatsInterval": MacroSystemInstance.PeriodicStatsIntervalMinutes,
@@ -2534,6 +2645,8 @@ def ProcessIncomingCommand():
             'toggle_log_periodic_stats': lambda: HandleBooleanToggle('LogPeriodicStats'),
             'toggle_log_general_updates': lambda: HandleBooleanToggle('LogGeneralUpdates'),
             'set_periodic_stats_interval': lambda: HandleIntegerValue('PeriodicStatsIntervalMinutes'),
+            'toggle_webhook_ping': lambda: HandleBooleanToggle('WebhookPingEnabled'),
+            'test_webhook': lambda: HandleTestWebhook(),
             'toggle_log_devil_fruit': lambda: HandleBooleanToggle('LogDevilFruitEnabled'),
             'open_area_selector': lambda: HandleAreaSelector(),
             'open_browser': lambda: HandleOpenBrowser(ActionPayload),
@@ -2873,6 +2986,20 @@ def HandleHotkeyRebind(ActionPayload):
     keyboard.on_release(HandleKeyboardEvent, suppress=False)
     return jsonify({"status": "waiting_for_key"})
 
+def HandleTestWebhook():
+    if not MacroSystemInstance.WebhookUrl:
+        return jsonify({"status": "error", "message": "No webhook URL configured"}), 400
+    
+    try:
+        MacroSystemInstance.SendWebhookNotification(
+            "Test webhook notification sent successfully! Your webhook is working correctly.",
+            Color=0x3b82f6,
+            Title="🎣 Webhook Test"
+        )
+        return jsonify({"status": "success"})
+    except Exception as E:
+        return jsonify({"status": "error", "message": str(E)}), 500
+    
 def ExecuteFlaskServer():
     FlaskApplication.run(host='0.0.0.0', port=8765, debug=False, use_reloader=False)
 

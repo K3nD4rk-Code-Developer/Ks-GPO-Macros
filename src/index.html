@@ -2033,9 +2033,22 @@
               </div>
             </div>
             <div class="help-hint">Paste your Discord webhook URL to receive notifications</div>
+            <div class="control-group">
+              <span class="control-label">Test Webhook</span>
+              <div class="control-input">
+                <button class="btn btn-sm" onclick="testWebhook()">Send Test Message</button>
+              </div>
+            </div>
           </div>
+
           <div class="card">
             <div class="card-header">Webhook Notifications</div>
+            <div class="control-group">
+              <span class="control-label">Enable Pinging</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="webhookPingToggle" onclick="toggleSetting('webhookPing')"></div>
+              </div>
+            </div>
             <div class="control-group">
               <span class="control-label">Log Devil Fruit Stored</span>
               <div class="control-input">
@@ -3273,6 +3286,33 @@
       }
     }
 
+    async function testWebhook() {
+      const webhookUrl = document.getElementById('webhookUrl').value;
+      if (!webhookUrl || !webhookUrl.trim()) {
+        showErrorNotification('Please enter a Webhook URL First.');
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:8765/command', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'test_webhook',
+            payload: '',
+            clientId: CLIENT_ID
+          })
+        });
+
+        const result = await response.json();
+        if (result.status != "success") {
+          showErrorNotification(`Webhook test failed: ${result.message}`);
+        }
+      } catch (error) {
+        showErrorNotification('Failed to send test webhook.');
+      }
+    }
+
     async function setRecipePoint(recipeIndex, pointType) {
       try {
         await fetch('http://localhost:8765/set_recipe_point', {
@@ -3537,6 +3577,7 @@
       setToggleState('logRecastTimeoutsToggle', state.logRecastTimeouts);
       setToggleState('logPeriodicStatsToggle', state.logPeriodicStats);
       setToggleState('logGeneralUpdatesToggle', state.logGeneralUpdates);
+      setToggleState('webhookPingToggle', state.webhookPing || false);
       setInputValue('periodicStatsInterval', state.periodicStatsInterval || 5);
 
       if (state.baitRecipes !== undefined) renderRecipes(state.baitRecipes);

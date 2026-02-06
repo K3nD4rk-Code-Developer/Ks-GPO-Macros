@@ -5,7 +5,7 @@
     },
     "WindowSettings": {
         "AlwaysOnTop": true,
-        "ShowDebugOverlay": false
+        "ShowDebugOverlay": true
     },
     "ScanArea": {
         "x1": 1258,
@@ -15,8 +15,8 @@
     },
     "ClickPoints": {
         "WaterPoint": {
-            "x": 1230,
-            "y": 478
+            "x": 1407,
+            "y": 44
         },
         "Shop": {
             "LeftPoint": {
@@ -33,8 +33,8 @@
             }
         },
         "BaitPoint": {
-            "x": 1283,
-            "y": 1107
+            "x": 1282,
+            "y": 1063
         },
         "DevilFruit": {
             "StoreFruitPoint": {
@@ -56,22 +56,47 @@
                 "y": 1305
             },
             "CraftButtonPoint": {
-                "x": 1485,
-                "y": 1024
+                "x": 1539,
+                "y": 1035
             },
             "CloseMenuPoint": {
-                "x": 1665,
-                "y": 348
+                "x": 1666,
+                "y": 346
             },
             "AddRecipePoint": {
-                "x": 1483,
-                "y": 490
+                "x": 1492,
+                "y": 494
             },
             "TopRecipePoint": {
-                "x": 1846,
-                "y": 393
+                "x": 1811,
+                "y": 401
             },
-            "BaitRecipes": [],
+            "BaitRecipes": [
+                {
+                    "BaitRecipePoint": {
+                        "x": 1117,
+                        "y": 802
+                    },
+                    "CraftsPerCycle": 40,
+                    "SwitchFishCycle": 5
+                },
+                {
+                    "BaitRecipePoint": {
+                        "x": 1137,
+                        "y": 840
+                    },
+                    "CraftsPerCycle": 40,
+                    "SwitchFishCycle": 5
+                },
+                {
+                    "BaitRecipePoint": {
+                        "x": 1115,
+                        "y": 885
+                    },
+                    "CraftsPerCycle": 40,
+                    "SwitchFishCycle": 5
+                }
+            ],
             "CurrentRecipeIndex": 0
         }
     },
@@ -85,25 +110,27 @@
             "6",
             "7",
             "8",
-            "9"
+            "9",
+            "2"
         ]
     },
     "AutomationFeatures": {
-        "AutoBuyCommonBait": true,
+        "AutoBuyCommonBait": false,
         "AutoStoreDevilFruit": true,
-        "AutoSelectTopBait": false,
-        "AutoCraftBait": false
+        "AutoSelectTopBait": true,
+        "AutoCraftBait": true
     },
     "AutomationFrequencies": {
         "LoopsPerPurchase": 100,
-        "LoopsPerStore": 100,
+        "LoopsPerStore": 10,
         "LoopsPerCraft": 5,
         "CraftsPerCycle": 40,
-        "FishCountPerCraft": 3
+        "FishCountPerCraft": 50
     },
     "DevilFruitStorage": {
         "StoreToBackpack": false,
         "LogDevilFruit": true,
+        "WebhookPing": "https://discord.com/api/webhooks/1467696258851541188/-hMxPzPDtpf8Li23zcF34FnWQcqj-N2_KQjH0DoIXqC2r6sYuIEnTFOTnzLAu4UfIaje",
         "WebhookUrl": "https://discord.com/api/webhooks/1467696258851541188/-hMxPzPDtpf8Li23zcF34FnWQcqj-N2_KQjH0DoIXqC2r6sYuIEnTFOTnzLAu4UfIaje"
     },
     "LoggingOptions": {

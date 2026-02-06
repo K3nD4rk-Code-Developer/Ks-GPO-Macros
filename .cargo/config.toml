@@ -1,0 +1,6 @@
+[build]
+incremental = true
+jobs = 8
+
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "link-arg=-fuse-ld=lld"]
