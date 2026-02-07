@@ -90,6 +90,9 @@ class AutomatedFishingSystem:
         self.WindowAlwaysOnTopEnabled = True
         self.DebugOverlayVisible = False
 
+        self.MegalodonCheckInProgress = False
+        self.MegalodonCheckResult = None
+
         self.ScanningRegionBounds = {
             "x1": int(MonitorWidth * 0.52461),
             "y1": int(MonitorHeight * 0.29167),
@@ -124,15 +127,22 @@ class AutomatedFishingSystem:
         self.AutomaticTopBaitSelectionEnabled = False
 
         self.StoreToBackpackEnabled = False
-        self.LogDevilFruitEnabled = False
-        self.WebhookPingEnabled = False
-        self.WebhookUrl = ""
-        
-        self.LogRecastTimeouts = True
-        self.LogPeriodicStats = True
-        self.LogGeneralUpdates = True
-        self.PeriodicStatsIntervalMinutes = 5
 
+        self.WebhookUrl = ""
+        self.LogDevilFruitEnabled = False
+        self.PingDevilFruitUserId = ""
+        self.LogRecastTimeouts = True
+        self.PingRecastTimeoutsUserId = ""
+        self.LogPeriodicStats = True
+        self.PingPeriodicStatsUserId = ""
+        self.LogGeneralUpdates = True
+        self.PingGeneralUpdatesUserId = ""
+        self.LogMacroStateEnabled = False
+        self.PingMacroStateUserId = ""
+        self.LogErrorsEnabled = True
+        self.PingErrorsUserId = ""
+        self.PeriodicStatsIntervalMinutes = 5
+        
         self.TotalRecastTimeouts = 0
         self.ConsecutiveRecastTimeouts = 0
         self.LastPeriodicStatsTimestamp = None
@@ -331,9 +341,16 @@ class AutomatedFishingSystem:
             if "LoggingOptions" in ParsedConfigurationData:
                 LogOpts = ParsedConfigurationData["LoggingOptions"]
                 self.LogRecastTimeouts = LogOpts.get("LogRecastTimeouts", self.LogRecastTimeouts)
+                self.PingRecastTimeoutsUserId = LogOpts.get("PingRecastTimeoutsUserId", "")
                 self.LogPeriodicStats = LogOpts.get("LogPeriodicStats", self.LogPeriodicStats)
+                self.PingPeriodicStatsUserId = LogOpts.get("PingPeriodicStatsUserId", "")
                 self.LogGeneralUpdates = LogOpts.get("LogGeneralUpdates", self.LogGeneralUpdates)
+                self.PingGeneralUpdatesUserId = LogOpts.get("PingGeneralUpdatesUserId", "")
                 self.PeriodicStatsIntervalMinutes = LogOpts.get("PeriodicStatsIntervalMinutes", self.PeriodicStatsIntervalMinutes)
+                self.LogMacroStateEnabled = LogOpts.get("LogMacroState", False)
+                self.PingMacroStateUserId = LogOpts.get("PingMacroStateUserId", "")
+                self.LogErrorsEnabled = LogOpts.get("LogErrors", True)
+                self.PingErrorsUserId = LogOpts.get("PingErrorsUserId", "")
             
             if "RDPSettings" in ParsedConfigurationData:
                 RDPSettings = ParsedConfigurationData["RDPSettings"]
@@ -405,7 +422,7 @@ class AutomatedFishingSystem:
                 DfStorage = ParsedConfigurationData["DevilFruitStorage"]
                 self.StoreToBackpackEnabled = DfStorage.get("StoreToBackpack", self.StoreToBackpackEnabled)
                 self.LogDevilFruitEnabled = DfStorage.get("LogDevilFruit", self.LogDevilFruitEnabled)
-                self.WebhookPingEnabled = DfStorage.get("WebhookUrl", self.WebhookUrl)
+                self.PingDevilFruitUserId = DfStorage.get("PingDevilFruitUserId", "")
                 self.WebhookUrl = DfStorage.get("WebhookUrl", self.WebhookUrl)
 
             if "FishingModes" in ParsedConfigurationData:
@@ -542,15 +559,23 @@ class AutomatedFishingSystem:
                     "DevilFruitStorage": {
                         "StoreToBackpack": self.StoreToBackpackEnabled,
                         "LogDevilFruit": self.LogDevilFruitEnabled,
-                        "WebhookPing": self.WebhookPingEnabled,
+                        "PingDevilFruitUserId": self.PingDevilFruitUserId,
                         "WebhookUrl": self.WebhookUrl
                     },
                     "LoggingOptions": {
                         "LogRecastTimeouts": self.LogRecastTimeouts,
+                        "PingRecastTimeoutsUserId": self.PingRecastTimeoutsUserId,
                         "LogPeriodicStats": self.LogPeriodicStats,
+                        "PingPeriodicStatsUserId": self.PingPeriodicStatsUserId,
                         "LogGeneralUpdates": self.LogGeneralUpdates,
-                        "PeriodicStatsIntervalMinutes": self.PeriodicStatsIntervalMinutes
+                        "PingGeneralUpdatesUserId": self.PingGeneralUpdatesUserId,
+                        "PeriodicStatsIntervalMinutes": self.PeriodicStatsIntervalMinutes,
+                        "LogMacroState": self.LogMacroStateEnabled,
+                        "PingMacroStateUserId": self.PingMacroStateUserId,
+                        "LogErrors": self.LogErrorsEnabled,
+                        "PingErrorsUserId": self.PingErrorsUserId
                     },
+
                     "FishingModes": {
                         "MegalodonSound": self.MegalodonSoundRecognitionEnabled,
                         "SoundSensitivity": self.SoundMatchSensitivity
@@ -848,7 +873,7 @@ class AutomatedFishingSystem:
         self.LastPeriodicStatsTimestamp = time.time()
         self.FishCaughtAtLastPeriodicStats = self.TotalFishSuccessfullyCaught
 
-    def SendWebhookNotification(self, Message, Color=None, Title=None):
+    def SendWebhookNotification(self, Message, Color=None, Title=None, Category=None):
         if not self.WebhookUrl:
             return
         
@@ -862,33 +887,65 @@ class AutomatedFishingSystem:
             WebhookColorStats = 0x3b82f6
             WebhookColorMega = 0xfbbf24
             
+            ping_user_id = ""
+            should_send = True
+            
             if Color is None or Title is None:
                 MessageLower = Message.lower()
                 
                 if "megalodon" in MessageLower:
                     Color = WebhookColorMega
                     Title = "🎣 Megalodon Detected"
-                elif "crash" in MessageLower or "error" in MessageLower or "failed" in MessageLower or "blocked" in MessageLower or "10 consecutive" in MessageLower:
-                    Color = WebhookColorError
-                    Title = "🎣 Error" if "crash" in MessageLower or "error" in MessageLower else ("Storage Failed" if "failed" in MessageLower else ("RDP Blocked" if "blocked" in MessageLower else "Warning"))
-                elif "started" in MessageLower or "reconnected" in MessageLower:
-                    Color = WebhookColorSuccess
-                    Title = "🎣 Success" if "started" in MessageLower else "RDP Status"
+                    Category = "general"
                 elif "devil fruit" in MessageLower and "stored successfully" in MessageLower:
                     Color = WebhookColorFruit
                     Title = "🎣 Devil Fruit Found"
+                    Category = "devil_fruit"
+                    should_send = self.LogDevilFruitEnabled
+                    ping_user_id = self.PingDevilFruitUserId
                 elif "craft" in MessageLower:
                     Color = WebhookColorCraft
                     Title = "🎣 Crafting Update"
+                    Category = "general"
                 elif "stats" in MessageLower or "caught:" in MessageLower or "total:" in MessageLower:
                     Color = WebhookColorStats
                     Title = "🎣 Fishing Statistics"
-                elif "stopped" in MessageLower or "timeout" in MessageLower or "disconnected" in MessageLower or "paused" in MessageLower:
+                    Category = "periodic_stats"
+                    should_send = self.LogPeriodicStats
+                    ping_user_id = self.PingPeriodicStatsUserId
+                elif "started" in MessageLower or "stopped" in MessageLower:
+                    Color = WebhookColorSuccess if "started" in MessageLower else WebhookColorWarning
+                    Title = "🎣 Macro State"
+                    Category = "macro_state"
+                    should_send = self.LogMacroStateEnabled
+                    ping_user_id = self.PingMacroStateUserId
+                elif "crash" in MessageLower or "error" in MessageLower or "failed" in MessageLower:
+                    Color = WebhookColorError
+                    Title = "🎣 Error"
+                    Category = "errors"
+                    should_send = self.LogErrorsEnabled
+                    ping_user_id = self.PingErrorsUserId
+                elif "timeout" in MessageLower and "consecutive" in MessageLower:
                     Color = WebhookColorWarning
-                    Title = "🎣 Warning" if "timeout" in MessageLower else ("RDP Status" if "rdp" in MessageLower else "Notice")
+                    Title = "🎣 Warning"
+                    Category = "recast_timeouts"
+                    should_send = self.LogRecastTimeouts
+                    ping_user_id = self.PingRecastTimeoutsUserId
+                elif "reconnected" in MessageLower or "disconnected" in MessageLower or "rdp" in MessageLower:
+                    Color = WebhookColorWarning
+                    Title = "🎣 RDP Status"
+                    Category = "general"
+                    should_send = self.LogGeneralUpdates
+                    ping_user_id = self.PingGeneralUpdatesUserId
                 else:
                     Color = WebhookColorInfo
                     Title = "🎣 GPO Fishing Macro"
+                    Category = "general"
+                    should_send = self.LogGeneralUpdates
+                    ping_user_id = self.PingGeneralUpdatesUserId
+            
+            if not should_send:
+                return
             
             EmbedData = {
                 "title": Title,
@@ -913,13 +970,13 @@ class AutomatedFishingSystem:
                 "embeds": [EmbedData]
             }
 
-            if self.WebhookPingEnabled:
-                PayloadData["content"] = "@everyone"
+            if ping_user_id and ping_user_id.strip():
+                PayloadData["content"] = f"<@{ping_user_id.strip()}>"
             
             requests.post(self.WebhookUrl, json=PayloadData, timeout=5)
         except Exception as ErrorDetails:
             print(f"Webhook error: {ErrorDetails}")
-
+            
     def InitiatePointSelectionMode(self, AttributeNameToSet):
         if self.MouseEventListenerInstance:
             self.MouseEventListenerInstance.stop()
@@ -1739,7 +1796,7 @@ class AutomatedFishingSystem:
             print(f"Sound recognition error: {SoundRecognitionError}")
             traceback.print_exc()
             return True
-        
+         
     def DetectBlackScreenCondition(self, ImageArrayToCheck=None):
         if ImageArrayToCheck is None:
             with mss.mss() as ScreenCapture:
@@ -2093,12 +2150,20 @@ class AutomatedFishingSystem:
             "craftButtonClickDelay": self.CraftButtonClickDelay,
             "craftCloseMenuDelay": self.CraftCloseMenuDelay,
             "webhookUrl": self.WebhookUrl,
-            "logRecastTimeouts": self.LogRecastTimeouts,
-            "logPeriodicStats": self.LogPeriodicStats,
-            "logGeneralUpdates": self.LogGeneralUpdates,
-            "periodicStatsInterval": self.PeriodicStatsIntervalMinutes,
-            "totalRecastTimeouts": self.TotalRecastTimeouts,
             "logDevilFruit": self.LogDevilFruitEnabled,
+            "pingDevilFruitUserId": self.PingDevilFruitUserId,
+            "logRecastTimeouts": self.LogRecastTimeouts,
+            "pingRecastTimeoutsUserId": self.PingRecastTimeoutsUserId,
+            "logPeriodicStats": self.LogPeriodicStats,
+            "pingPeriodicStatsUserId": self.PingPeriodicStatsUserId,
+            "logGeneralUpdates": self.LogGeneralUpdates,
+            "pingGeneralUpdatesUserId": self.PingGeneralUpdatesUserId,
+            "periodicStatsInterval": self.PeriodicStatsIntervalMinutes,
+            "logMacroState": self.LogMacroStateEnabled,
+            "pingMacroStateUserId": self.PingMacroStateUserId,
+            "logErrors": self.LogErrorsEnabled,
+            "pingErrorsUserId": self.PingErrorsUserId,
+            "totalRecastTimeouts": self.TotalRecastTimeouts,
             "baitRecipes": self.BaitRecipes,
             "currentRecipeIndex": self.CurrentRecipeIndex,
             "currentStatus": self.CurrentMacroStatus,
@@ -2518,7 +2583,6 @@ def RetrieveSystemState():
             "craftCloseMenuDelay": MacroSystemInstance.CraftCloseMenuDelay,
             "webhookUrl": MacroSystemInstance.WebhookUrl,
             "logRecastTimeouts": MacroSystemInstance.LogRecastTimeouts,
-            "webhookPing": MacroSystemInstance.WebhookPingEnabled,
             "logPeriodicStats": MacroSystemInstance.LogPeriodicStats,
             "logGeneralUpdates": MacroSystemInstance.LogGeneralUpdates,
             "periodicStatsInterval": MacroSystemInstance.PeriodicStatsIntervalMinutes,
@@ -2576,6 +2640,17 @@ def ProcessIncomingCommand():
             return jsonify({"status": "error", "message": "Missing action parameter"}), 400
         
         ActionHandlers = {
+            'set_ping_devil_fruit_user_id': lambda: HandleStringValue('PingDevilFruitUserId'),
+            'toggle_log_recast_timeouts': lambda: HandleBooleanToggle('LogRecastTimeouts'),
+            'set_ping_recast_timeouts_user_id': lambda: HandleStringValue('PingRecastTimeoutsUserId'),
+            'toggle_log_periodic_stats': lambda: HandleBooleanToggle('LogPeriodicStats'),
+            'set_ping_periodic_stats_user_id': lambda: HandleStringValue('PingPeriodicStatsUserId'),
+            'toggle_log_general_updates': lambda: HandleBooleanToggle('LogGeneralUpdates'),
+            'set_ping_general_updates_user_id': lambda: HandleStringValue('PingGeneralUpdatesUserId'),
+            'toggle_log_macro_state': lambda: HandleBooleanToggle('LogMacroStateEnabled'),
+            'set_ping_macro_state_user_id': lambda: HandleStringValue('PingMacroStateUserId'),
+            'toggle_log_errors': lambda: HandleBooleanToggle('LogErrorsEnabled'),
+            'set_ping_errors_user_id': lambda: HandleStringValue('PingErrorsUserId'),
             'set_water_point': lambda: HandlePointSelection('WaterCastingTargetLocation'),
             'set_devil_fruit_location_point': lambda: HandlePointSelection('DevilFruitLocationPoint'),
             'set_left_point': lambda: HandlePointSelection('ShopLeftButtonLocation'),
@@ -2641,11 +2716,6 @@ def ProcessIncomingCommand():
             'set_craft_button_delay': lambda: HandleFloatValue('CraftButtonClickDelay'),
             'set_craft_close_delay': lambda: HandleFloatValue('CraftCloseMenuDelay'),
             'set_webhook_url': lambda: HandleStringValue('WebhookUrl'),
-            'toggle_log_recast_timeouts': lambda: HandleBooleanToggle('LogRecastTimeouts'),
-            'toggle_log_periodic_stats': lambda: HandleBooleanToggle('LogPeriodicStats'),
-            'toggle_log_general_updates': lambda: HandleBooleanToggle('LogGeneralUpdates'),
-            'set_periodic_stats_interval': lambda: HandleIntegerValue('PeriodicStatsIntervalMinutes'),
-            'toggle_webhook_ping': lambda: HandleBooleanToggle('WebhookPingEnabled'),
             'test_webhook': lambda: HandleTestWebhook(),
             'toggle_log_devil_fruit': lambda: HandleBooleanToggle('LogDevilFruitEnabled'),
             'open_area_selector': lambda: HandleAreaSelector(),

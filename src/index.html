@@ -2027,12 +2027,12 @@
             <div class="control-group">
               <span class="control-label">Discord Webhook URL</span>
               <div class="control-input">
-                <input type="text" class="input input-wide" id="webhookUrl"
-                  placeholder="https://discord.com/api/webhooks/..."
+                <input type="text" class="input input-wide" id="webhookUrl" placeholder="https://discord.com/api/webhooks/..."
                   onchange="sendToPython('set_webhook_url', this.value)">
               </div>
             </div>
             <div class="help-hint">Paste your Discord webhook URL to receive notifications</div>
+        
             <div class="control-group">
               <span class="control-label">Test Webhook</span>
               <div class="control-input">
@@ -2040,42 +2040,123 @@
               </div>
             </div>
           </div>
-
+        
           <div class="card">
-            <div class="card-header">Webhook Notifications</div>
+            <div class="card-header">Notification Settings</div>
+        
             <div class="control-group">
-              <span class="control-label">Enable Pinging</span>
+              <span class="control-label">Devil Fruit Stored</span>
               <div class="control-input">
-                <div class="toggle-switch" id="webhookPingToggle" onclick="toggleSetting('webhookPing')"></div>
+                <div class="toggle-switch" id="logDevilFruitToggle"
+                  onclick="toggleLoggingExpandable('logDevilFruitToggle', 'logDevilFruitExpand')"></div>
               </div>
             </div>
-            <div class="control-group">
-              <span class="control-label">Log Devil Fruit Stored</span>
-              <div class="control-input">
-                <div class="toggle-switch" id="logDevilFruitToggle" onclick="toggleSetting('logDevilFruit')"></div>
-              </div>
-            </div>
-            <div class="control-group">
-              <span class="control-label">Log Recast Timeouts</span>
-              <div class="control-input">
-                <div class="toggle-switch" id="logRecastTimeoutsToggle" onclick="toggleSetting('logRecastTimeouts')">
+            <div class="expandable-section" id="logDevilFruitExpand">
+              <div class="control-group">
+                <span class="control-label">Discord User ID (for ping)</span>
+                <div class="control-input">
+                  <input type="text" class="input input-wide" id="pingDevilFruitUserId" placeholder="123456789012345678"
+                    onchange="sendToPython('set_ping_devil_fruit_user_id', this.value)">
                 </div>
               </div>
+              <div class="help-hint">Leave empty for no ping, or enter Discord User ID to enable mentions</div>
             </div>
+        
             <div class="control-group">
-              <span class="control-label">Log Periodic Stats</span>
+              <span class="control-label">Recast Timeouts</span>
               <div class="control-input">
-                <div class="toggle-switch" id="logPeriodicStatsToggle" onclick="toggleSetting('logPeriodicStats')">
-                </div>
+                <div class="toggle-switch" id="logRecastTimeoutsToggle"
+                  onclick="toggleLoggingExpandable('logRecastTimeoutsToggle', 'logRecastTimeoutsExpand')"></div>
               </div>
             </div>
-            <div class="control-group">
-              <span class="control-label">Log General Updates</span>
-              <div class="control-input">
-                <div class="toggle-switch" id="logGeneralUpdatesToggle" onclick="toggleSetting('logGeneralUpdates')">
+            <div class="expandable-section" id="logRecastTimeoutsExpand">
+              <div class="control-group">
+                <span class="control-label">Discord User ID (for ping)</span>
+                <div class="control-input">
+                  <input type="text" class="input input-wide" id="pingRecastTimeoutsUserId" placeholder="123456789012345678"
+                    onchange="sendToPython('set_ping_recast_timeouts_user_id', this.value)">
                 </div>
               </div>
+              <div class="help-hint">Leave empty for no ping, or enter Discord User ID to enable mentions</div>
             </div>
+        
+            <div class="control-group">
+              <span class="control-label">Periodic Statistics</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="logPeriodicStatsToggle"
+                  onclick="toggleLoggingExpandable('logPeriodicStatsToggle', 'logPeriodicStatsExpand')"></div>
+              </div>
+            </div>
+            <div class="expandable-section" id="logPeriodicStatsExpand">
+              <div class="control-group">
+                <span class="control-label">Discord User ID (for ping)</span>
+                <div class="control-input">
+                  <input type="text" class="input input-wide" id="pingPeriodicStatsUserId" placeholder="123456789012345678"
+                    onchange="sendToPython('set_ping_periodic_stats_user_id', this.value)">
+                </div>
+              </div>
+              <div class="help-hint">Leave empty for no ping, or enter Discord User ID to enable mentions</div>
+            </div>
+        
+            <div class="control-group">
+              <span class="control-label">General Updates</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="logGeneralUpdatesToggle"
+                  onclick="toggleLoggingExpandable('logGeneralUpdatesToggle', 'logGeneralUpdatesExpand')"></div>
+              </div>
+            </div>
+            <div class="expandable-section" id="logGeneralUpdatesExpand">
+              <div class="control-group">
+                <span class="control-label">Discord User ID (for ping)</span>
+                <div class="control-input">
+                  <input type="text" class="input input-wide" id="pingGeneralUpdatesUserId" placeholder="123456789012345678"
+                    onchange="sendToPython('set_ping_general_updates_user_id', this.value)">
+                </div>
+              </div>
+              <div class="help-hint">Leave empty for no ping, or enter Discord User ID to enable mentions</div>
+            </div>
+        
+            <div class="control-group">
+              <span class="control-label">Macro Start/Stop</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="logMacroStateToggle"
+                  onclick="toggleLoggingExpandable('logMacroStateToggle', 'logMacroStateExpand')"></div>
+              </div>
+            </div>
+            <div class="expandable-section" id="logMacroStateExpand">
+              <div class="control-group">
+                <span class="control-label">Discord User ID (for ping)</span>
+                <div class="control-input">
+                  <input type="text" class="input input-wide" id="pingMacroStateUserId" placeholder="123456789012345678"
+                    onchange="sendToPython('set_ping_macro_state_user_id', this.value)">
+                </div>
+              </div>
+              <div class="help-hint">Leave empty for no ping, or enter Discord User ID to enable mentions</div>
+            </div>
+        
+            <div class="control-group">
+              <span class="control-label">Errors & Warnings</span>
+              <div class="control-input">
+                <div class="toggle-switch active" id="logErrorsToggle"
+                  onclick="toggleLoggingExpandable('logErrorsToggle', 'logErrorsExpand')"></div>
+              </div>
+            </div>
+            <div class="expandable-section" id="logErrorsExpand">
+              <div class="control-group">
+                <span class="control-label">Discord User ID (for ping)</span>
+                <div class="control-input">
+                  <input type="text" class="input input-wide" id="pingErrorsUserId" placeholder="123456789012345678"
+                    onchange="sendToPython('set_ping_errors_user_id', this.value)">
+                </div>
+              </div>
+              <div class="help-hint">Leave empty for no ping, or enter Discord User ID to enable mentions</div>
+            </div>
+        
+            <div class="help-hint">Enable logging to expand options and configure Discord User ID for pings</div>
+          </div>
+        
+          <div class="card">
+            <div class="card-header">Reporting Intervals</div>
             <div class="control-group">
               <span class="control-label">Stats Report Interval</span>
               <div class="control-input">
@@ -2084,8 +2165,7 @@
                 <span class="unit">minutes</span>
               </div>
             </div>
-            <div class="help-hint">Configure which events and how frequently notifications are sent to your webhook
-            </div>
+            <div class="help-hint">How often to send periodic statistics reports to your webhook</div>
           </div>
         </div>
 
@@ -3034,6 +3114,34 @@
       rebuildDots();
     }
 
+    function toggleLoggingExpandable(toggleId, expandId) {
+      const toggle = document.getElementById(toggleId);
+      const section = document.getElementById(expandId);
+
+      toggle.classList.toggle('active');
+      const isActive = toggle.classList.contains('active');
+
+      if (isActive) {
+        section.classList.add('expanded');
+      } else {
+        section.classList.remove('expanded');
+      }
+
+      const settingNameMap = {
+        'logDevilFruitToggle': 'log_devil_fruit',
+        'logRecastTimeoutsToggle': 'log_recast_timeouts',
+        'logPeriodicStatsToggle': 'log_periodic_stats',
+        'logGeneralUpdatesToggle': 'log_general_updates',
+        'logMacroStateToggle': 'log_macro_state',
+        'logErrorsToggle': 'log_errors'
+      };
+
+      const settingName = settingNameMap[toggleId];
+      if (settingName) {
+        sendToPython(`toggle_${settingName}`, isActive.toString());
+      }
+    }
+
     function showCurrentSlide() {
       SLIDESHOW_DATA.forEach((cat, ci) => {
         cat.slides.forEach((slide, si) => {
@@ -3557,6 +3665,21 @@
       setInputValue('craftClickDelay', state.craftClickDelay);
       setInputValue('craftRecipeDelay', state.craftRecipeSelectDelay);
 
+      setInputValue('webhookUrl', state.webhookUrl || '');
+      setExpandableSection('logDevilFruitToggle', 'logDevilFruitExpand', state.logDevilFruit || false);
+      setInputValue('pingDevilFruitUserId', state.pingDevilFruitUserId || '');
+      setExpandableSection('logRecastTimeoutsToggle', 'logRecastTimeoutsExpand', state.logRecastTimeouts || false);
+      setInputValue('pingRecastTimeoutsUserId', state.pingRecastTimeoutsUserId || '');
+      setExpandableSection('logPeriodicStatsToggle', 'logPeriodicStatsExpand', state.logPeriodicStats || false);
+      setInputValue('pingPeriodicStatsUserId', state.pingPeriodicStatsUserId || '');
+      setExpandableSection('logGeneralUpdatesToggle', 'logGeneralUpdatesExpand', state.logGeneralUpdates || false);
+      setInputValue('pingGeneralUpdatesUserId', state.pingGeneralUpdatesUserId || '');
+      setExpandableSection('logMacroStateToggle', 'logMacroStateExpand', state.logMacroState || false);
+      setInputValue('pingMacroStateUserId', state.pingMacroStateUserId || '');
+      setExpandableSection('logErrorsToggle', 'logErrorsExpand', state.logErrors !== false);
+      setInputValue('pingErrorsUserId', state.pingErrorsUserId || '');
+      setInputValue('periodicStatsInterval', state.periodicStatsInterval || 5);
+
       updatePointStatus('waterPoint', state.waterPoint?.x, state.waterPoint?.y);
       updatePointStatus('leftPoint', state.leftPoint?.x, state.leftPoint?.y);
       updatePointStatus('middlePoint', state.middlePoint?.x, state.middlePoint?.y);
@@ -3577,7 +3700,6 @@
       setToggleState('logRecastTimeoutsToggle', state.logRecastTimeouts);
       setToggleState('logPeriodicStatsToggle', state.logPeriodicStats);
       setToggleState('logGeneralUpdatesToggle', state.logGeneralUpdates);
-      setToggleState('webhookPingToggle', state.webhookPing || false);
       setInputValue('periodicStatsInterval', state.periodicStatsInterval || 5);
 
       if (state.baitRecipes !== undefined) renderRecipes(state.baitRecipes);
