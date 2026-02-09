@@ -1048,7 +1048,7 @@ function loadAllSettings(state) {
     setToggleState('alwaysOnTopToggle', state.alwaysOnTop);
     setToggleState('debugOverlayToggle', state.showDebugOverlay);
     setToggleState('megalodonSoundToggle', state.megalodonSoundEnabled);
-    setInputValue('soundSensitivity', state.soundSensitivity || 0.7);
+    setToggleState('enableSpawnDetectionToggle', state.enableSpawnDetection || false);
 
     setExpandableSection('autoBuyBaitToggle', 'autoBuyExpand', state.autoBuyCommonBait);
     setExpandableSection('autoCraftBaitToggle', 'autoCraftExpand', state.autoCraftBait);
@@ -1096,6 +1096,8 @@ function loadAllSettings(state) {
 
     setInputValue('webhookUrl', state.webhookUrl || '');
     setInputValue('discordUserId', state.discordUserId || '');
+    setInputValue('soundSensitivity', state.soundSensitivity || 0.7);
+    setInputValue('spawnScanInterval', state.spawnScanInterval || 2.0);
 
     setExpandableSection('logDevilFruitToggle', 'logDevilFruitExpand', state.logDevilFruit || false);
     setToggleState('pingDevilFruitToggle', state.pingDevilFruit || false);
@@ -1156,6 +1158,11 @@ async function pollPythonState() {
         const isThisClientActive = state.currentActiveClientId === CLIENT_ID && state.isRunning;
         updateStatus(isThisClientActive);
 
+        if (state.hotkeys) {
+            updateHotkey('start', state.hotkeys.StartStop || state.hotkeys.start_stop || 'f1');
+            updateHotkey('exit', state.hotkeys.Exit || state.hotkeys.exit || 'f3');
+        }
+
         if (state.activeSessions) {
             renderActiveSessions(state.activeSessions);
         }
@@ -1166,6 +1173,13 @@ async function pollPythonState() {
 
         if (state.connected_devices) {
             renderConnectedDevices(state.connected_devices);
+        }
+
+        if (state.logSpawns !== undefined) {
+            setExpandableSection('logSpawnsToggle', 'logSpawnsExpand', state.logSpawns);
+        }
+        if (state.pingSpawns !== undefined) {
+            setToggleState('pingSpawnsToggle', state.pingSpawns);
         }
 
         if (state.is_syncing) {
@@ -1191,6 +1205,7 @@ async function pollPythonState() {
         if (clientIdDisplay) {
             clientIdDisplay.textContent = CLIENT_ID;
         }
+        
         setToggleState('autoDetectRdpToggle', state.auto_detect_rdp !== false);
 
         setToggleState('enableDeviceSyncToggle', state.enable_device_sync || false);

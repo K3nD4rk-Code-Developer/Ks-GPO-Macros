@@ -314,6 +314,25 @@
             </div>
           </div>
           <div class="card">
+            <div class="card-header">Devil Fruit Locations</div>
+            <div class="control-group">
+              <span class="control-label">Devil Fruit Store</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="storeFruitPointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_store_fruit_point', '')">Configure</button>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Devil Fruit Backpack</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="devilFruitLocationPointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_devil_fruit_location_point', '')">Configure</button>
+              </div>
+            </div>
+            <div class="help-hint">This feature is still a work in progress, don't mind it. Used for storing inside of
+              backpack instead of drop</div>
+          </div>
+          <div class="card">
             <div class="card-header">Crafting Interface Points</div>
             <div class="control-group">
               <span class="control-label">Left Dialog Option</span>
@@ -366,35 +385,16 @@
             <div id="RecipesContainer"></div>
           </div>
           <div class="card">
-            <div class="card-header">Devil Fruit Locations</div>
+            <div class="card-header">OCR Configuration</div>
             <div class="control-group">
-              <span class="control-label">Devil Fruit Store</span>
+              <span class="control-label">Devil Fruit Detection Area</span>
               <div class="control-input">
-                <span class="point-indicator unset" id="storeFruitPointStatus">Not Configured</span>
-                <button class="btn btn-sm" onclick="sendToPython('set_store_fruit_point', '')">Configure</button>
+                <button class="btn btn-sm" onclick="sendToPython('open_ocr_area_selector', '')">Configure OCR Region</button>
               </div>
             </div>
-            <div class="control-group">
-              <span class="control-label">Devil Fruit Backpack</span>
-              <div class="control-input">
-                <span class="point-indicator unset" id="devilFruitLocationPointStatus">Not Configured</span>
-                <button class="btn btn-sm"
-                  onclick="sendToPython('set_devil_fruit_location_point', '')">Configure</button>
-              </div>
-            </div>
-            <div class="help-hint">This feature is still a work in progress, don't mind it. Used for storing inside of
-              backpack instead of drop</div>
+            <div class="help-hint">Set the screen area where devil fruit notifications appear for OCR detection</div>
           </div>
-          <div class="card">
-            <div class="card-header">Bait Locations</div>
-            <div class="control-group">
-              <span class="control-label">Top Bait Point</span>
-              <div class="control-input">
-                <span class="point-indicator unset" id="baitPointStatus">Not Configured</span>
-                <button class="btn btn-sm" onclick="sendToPython('set_bait_point', '')">Configure</button>
-              </div>
-            </div>
-          </div>
+          
         </div>
 
         <div class="view" id="automation">
@@ -534,7 +534,7 @@
               </div>
             </div>
           </div>
-        
+          
           <div class="card">
             <div class="card-header">Notification Settings</div>
         
@@ -552,9 +552,24 @@
                   <div class="toggle-switch" id="pingDevilFruitToggle" onclick="toggleSetting('pingDevilFruit')"></div>
                 </div>
               </div>
-              <div class="help-hint">Ping me when a Devil Fruit is stored</div>
             </div>
-        
+
+            <div class="control-group">
+              <span class="control-label">Devil Fruit Spawns</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="logSpawnsToggle"
+                  onclick="toggleLoggingExpandable('logSpawnsToggle', 'logSpawnsExpand')"></div>
+              </div>
+            </div>
+            <div class="expandable-section" id="logSpawnsExpand">
+              <div class="control-group">
+                <span class="control-label">Enable Ping</span>
+                <div class="control-input">
+                  <div class="toggle-switch" id="pingSpawnsToggle" onclick="toggleSetting('pingSpawns')"></div>
+                </div>
+              </div>
+            
+            </div>
             <div class="control-group">
               <span class="control-label">Recast Timeouts</span>
               <div class="control-input">
@@ -569,7 +584,6 @@
                   <div class="toggle-switch" id="pingRecastTimeoutsToggle" onclick="toggleSetting('pingRecastTimeouts')"></div>
                 </div>
               </div>
-              <div class="help-hint">Ping me when recast timeouts occur</div>
             </div>
         
             <div class="control-group">
@@ -586,7 +600,6 @@
                   <div class="toggle-switch" id="pingPeriodicStatsToggle" onclick="toggleSetting('pingPeriodicStats')"></div>
                 </div>
               </div>
-              <div class="help-hint">Ping me with periodic statistics</div>
             </div>
         
             <div class="control-group">
@@ -603,7 +616,6 @@
                   <div class="toggle-switch" id="pingGeneralUpdatesToggle" onclick="toggleSetting('pingGeneralUpdates')"></div>
                 </div>
               </div>
-              <div class="help-hint">Ping me with general updates</div>
             </div>
         
             <div class="control-group">
@@ -620,7 +632,6 @@
                   <div class="toggle-switch" id="pingMacroStateToggle" onclick="toggleSetting('pingMacroState')"></div>
                 </div>
               </div>
-              <div class="help-hint">Ping me when macro starts or stops</div>
             </div>
         
             <div class="control-group">
@@ -637,12 +648,10 @@
                   <div class="toggle-switch" id="pingErrorsToggle" onclick="toggleSetting('pingErrors')"></div>
                 </div>
               </div>
-              <div class="help-hint">Ping me when errors occur</div>
             </div>
         
-            <div class="help-hint">Enable logging to expand options and configure ping settings</div>
           </div>
-        
+          
           <div class="card">
             <div class="card-header">Reporting Intervals</div>
             <div class="control-group">
@@ -769,6 +778,23 @@
         </div>
 
         <div class="view" id="tuning">
+          <div class="card">
+            <div class="card-header">Devil Fruit Spawn Detection</div>
+            <div class="control-group">
+              <span class="control-label">Enable Spawn Detection</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="enableSpawnDetectionToggle" onclick="toggleSetting('enableSpawnDetection')"></div>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Scan Interval</span>
+              <div class="control-input">
+                <input type="number" class="input" id="spawnScanInterval" value="2.0" step="0.5" min="0.5" max="10"
+                  onchange="sendToPython('set_spawn_scan_interval', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+          </div>
           <div class="card">
             <div class="card-header">PD Controller Settings</div>
             <div class="control-group">
@@ -1106,7 +1132,7 @@
               <span class="control-label">Build Hash</span>
               <div class="control-input">
                 <span class="hotkey-badge"
-                  style="font-size: 9px; letter-spacing: 0; background: rgba(22, 27, 38, 0.8);">c8f7408ca2498dcba43f73a72e4a138d</span>
+                  style="font-size: 9px; letter-spacing: 0; background: rgba(22, 27, 38, 0.8);">06a1b16287acc78892d5dd2ff57f26e8</span>
               </div>
             </div>
 

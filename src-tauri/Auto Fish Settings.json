@@ -1,9 +1,7 @@
 {
     "Hotkeys": {
         "StartStop": "f1",
-        "Exit": "f3",
-        "start_stop": "f1",
-        "exit": "f3"
+        "Exit": "f3"
     },
     "WindowSettings": {
         "AlwaysOnTop": true,
@@ -121,8 +119,8 @@
         ]
     },
     "AutomationFeatures": {
-        "AutoBuyCommonBait": true,
-        "AutoStoreDevilFruit": true,
+        "AutoBuyCommonBait": false,
+        "AutoStoreDevilFruit": false,
         "AutoSelectTopBait": false,
         "AutoCraftBait": false
     },
@@ -154,7 +152,7 @@
         "PeriodicStatsIntervalMinutes": 30
     },
     "FishingModes": {
-        "MegalodonSound": false,
+        "MegalodonSound": true,
         "SoundSensitivity": 0.05
     },
     "RDPSettings": {
@@ -226,5 +224,17 @@
             "CraftButtonClickDelay": 0.025,
             "CraftCloseMenuDelay": 0.2
         }
+    },
+    "SpawnDetection": {
+        "EnableSpawnDetection": false,
+        "ScanInterval": 2.0,
+        "LogSpawns": true,
+        "PingSpawns": true
+    },
+    "OCRSettings": {
+        "X1": 1017,
+        "Y1": 32,
+        "X2": 1529,
+        "Y2": 323
     }
 }

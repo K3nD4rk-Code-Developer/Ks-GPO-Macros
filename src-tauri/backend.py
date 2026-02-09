@@ -40,6 +40,7 @@ from tkinter import ttk, filedialog, messagebox
 
 
 class ConfigurationManager:
+
     def __init__(self, ConfigPath):
         self.ConfigPath = ConfigPath
         self.Settings = self.InitializeDefaults()
@@ -185,6 +186,18 @@ class ConfigurationManager:
                     'CraftCloseMenuDelay': 0.2
                 }
             },
+            'SpawnDetection': {
+                'EnableSpawnDetection': False,
+                'ScanInterval': 2.0,
+                'LogSpawns': True,
+                'PingSpawns': False
+            },
+            'OCRSettings': {
+                'X1': int(MonitorWidth * 0.40),
+                'Y1': 60,
+                'X2': int(MonitorWidth * 0.60),
+                'Y2': int(MonitorHeight * 0.20)
+            },
             'BaitRecipes': [],
             'CurrentRecipeIndex': 0
         }
@@ -312,6 +325,15 @@ class ConfigurationManager:
                 'PingErrors': Log.get("PingErrors", False)
             })
         
+        if "SpawnDetection" in LoadedData:
+            Spawn = LoadedData["SpawnDetection"]
+            self.Settings['SpawnDetection'].update({
+                'EnableSpawnDetection': Spawn.get("EnableSpawnDetection", False),
+                'ScanInterval': Spawn.get("ScanInterval", 2.0),
+                'LogSpawns': Spawn.get("LogSpawns", True),
+                'PingSpawns': Spawn.get("PingSpawns", False)
+            })
+
         if "FishingModes" in LoadedData:
             Modes = LoadedData["FishingModes"]
             self.Settings['FishingModes']['MegalodonSound'] = Modes.get("MegalodonSound", False)
@@ -351,6 +373,9 @@ class ConfigurationManager:
             for Category in ['RobloxWindow', 'PreCast', 'Inventory', 'DevilFruitStorage', 'AntiDetection', 'Crafting']:
                 if Category in Timing:
                     self.Settings['TimingDelays'][Category].update(Timing[Category])
+        
+        if "OCRSettings" in LoadedData:
+            self.Settings['OCRSettings'].update(LoadedData["OCRSettings"])
     
     def SaveToDisk(self):
         try:
@@ -399,7 +424,9 @@ class ConfigurationManager:
                 "RDPSettings": self.Settings['RDPSettings'],
                 "DeviceSyncSettings": self.Settings['DeviceSyncSettings'],
                 "FishingControl": self.Settings['FishingControl'],
-                "TimingDelays": self.Settings['TimingDelays']
+                "TimingDelays": self.Settings['TimingDelays'],
+                "SpawnDetection": self.Settings['SpawnDetection'],
+                "OCRSettings": self.Settings['OCRSettings'],
             }
             
             with open(self.ConfigPath, 'w') as ConfigFile:
@@ -558,8 +585,9 @@ class OCRManager:
 
 class DevilFruitDetector:
     
-    def __init__(self, OcrManager):
+    def __init__(self, OcrManager, Config):
         self.OcrManager = OcrManager
+        self.Config = Config
         self.KnownFruits = {
             "Soul", "Dragon", "Mochi", "Ope", "Tori", "Buddha",
             "Pika", "Kage", "Magu", "Gura", "Yuki", "Smoke",
@@ -584,10 +612,10 @@ class DevilFruitDetector:
             MonitorHeight = DisplayMetrics.GetSystemMetrics(1)
 
             ScanRegion = {
-                "top": 60,
-                "left": int(MonitorWidth * 0.40),
-                "width": int(MonitorWidth * 0.20),
-                "height": int(MonitorHeight * 0.20)
+                "top": self.Config.Settings['OCRSettings']['Y1'],
+                "left": self.Config.Settings['OCRSettings']['X1'],
+                "width": self.Config.Settings['OCRSettings']['X2'] - self.Config.Settings['OCRSettings']['X1'],
+                "height": self.Config.Settings['OCRSettings']['Y2'] - self.Config.Settings['OCRSettings']['Y1']
             }
 
             with mss.mss() as ScreenCapture:
@@ -641,6 +669,59 @@ class DevilFruitDetector:
             
         except Exception as E:
             print(f"OCR Check Error: {E}")
+            traceback.print_exc()
+            return None
+    
+    def DetectSpawn(self):
+        try:
+            if self.OcrManager.Reader is None:
+                if not self.OcrManager.Enabled:
+                    return None
+                
+                self.OcrManager.Initialize()
+                if not self.OcrManager.WaitForInitialization():
+                    return None
+            
+            ScanRegion = {
+                "top": self.Config.Settings['OCRSettings']['Y1'],
+                "left": self.Config.Settings['OCRSettings']['X1'],
+                "width": self.Config.Settings['OCRSettings']['X2'] - self.Config.Settings['OCRSettings']['X1'],
+                "height": self.Config.Settings['OCRSettings']['Y2'] - self.Config.Settings['OCRSettings']['Y1']
+            }
+
+            with mss.mss() as ScreenCapture:
+                Screenshot = ScreenCapture.grab(ScanRegion)
+                Image = np.array(Screenshot)
+
+            ImageRGB = Image[:, :, [2, 1, 0]]
+            
+            Results = self.OcrManager.Reader.readtext(ImageRGB, detail=1, paragraph=False)
+            
+            FullText = ""
+            for Index, (BBox, Text, Confidence) in enumerate(Results):
+                if Confidence > 0.2:
+                    FullText += Text + " "
+            
+            FullText = FullText.strip()
+            FullTextLower = FullText.lower()
+            
+            SpawnKeywords = ['spawned', 'has spawned', 'spawn', 'appeared', 'has appeared']
+            HasSpawnKeyword = any(keyword in FullTextLower for keyword in SpawnKeywords)
+            
+            if FullText and HasSpawnKeyword:
+                Words = FullText.split()
+                for Word in Words:
+                    CleanWord = Word.strip('.,!?<>[]{}()')
+                    ClosestMatch = self.GetClosestFruit(CleanWord, Cutoff=0.6)
+                    if ClosestMatch:
+                        return ClosestMatch
+                
+                return "Unknown Devil Fruit"
+                        
+            return None
+            
+        except Exception as E:
+            print(f"Spawn detection error: {E}")
             traceback.print_exc()
             return None
     
@@ -1584,7 +1665,7 @@ class AutomatedFishingSystem:
         self.State = MacroStateManager()
         
         self.OcrManager = OCRManager()
-        self.FruitDetector = DevilFruitDetector(self.OcrManager)
+        self.FruitDetector = DevilFruitDetector(self.OcrManager, self.Config)
         self.Notifier = WebhookNotifier(self.Config, self.State)
         self.SoundDetector = MegalodonSoundDetector(self.Config)
         self.InputController = InputController(self.Config)
@@ -1595,8 +1676,74 @@ class AutomatedFishingSystem:
         self.ActiveRegionSelector = None
         
         self.CurrentlyRebindingHotkey = None
+
+        self.SpawnDetectionRunning = False
+        self.LastSpawnCheck = time.time()
         
         self.RegisterHotkeys()
+
+        threading.Thread(target=self.SpawnDetectionLoop, daemon=True).start()
+
+    def SpawnDetectionLoop(self):
+        while True:
+            try:
+                if not self.Config.Settings['SpawnDetection']['EnableSpawnDetection']:
+                    time.sleep(1)
+                    continue
+                
+                CurrentTime = time.time()
+                if CurrentTime - self.LastSpawnCheck < self.Config.Settings['SpawnDetection']['ScanInterval']:
+                    time.sleep(0.5)
+                    continue
+                
+                self.LastSpawnCheck = CurrentTime
+                
+                DetectedFruit = self.FruitDetector.DetectSpawn()
+                if DetectedFruit:
+                    LogOpts = self.Config.Settings['SpawnDetection']
+                    if LogOpts['LogSpawns'] and self.Config.Settings['DevilFruitStorage']['WebhookUrl']:
+                        Message = f"Devil Fruit Spawned: {DetectedFruit}"
+                        
+                        PingUser = LogOpts['PingSpawns']
+                        
+                        EmbedData = {
+                            "title": "🍎 Devil Fruit Spawn Detected",
+                            "description": f"**{Message}**",
+                            "color": 0xbf40bf,
+                            "timestamp": datetime.now(timezone.utc).isoformat(),
+                            "footer": {
+                                "text": "Macro Notification System",
+                                "icon_url": "https://cdn.discordapp.com/avatars/1351127835175288893/208dc6bfcc148a0c3ad2482b12520f43.webp"
+                            },
+                            "fields": [
+                                {
+                                    "name": "Time",
+                                    "value": f"<t:{int(time.time())}:R>",
+                                    "inline": True
+                                }
+                            ],
+                        }
+                        
+                        PayloadData = {
+                            "username": "K's GPO Macro Bot",
+                            "embeds": [EmbedData]
+                        }
+
+                        DiscordUserId = self.Config.Settings['LoggingOptions']['DiscordUserId']
+                        if PingUser and DiscordUserId and DiscordUserId.strip():
+                            PayloadData["content"] = f"<@{DiscordUserId.strip()}>"
+                        
+                        try:
+                            requests.post(self.Config.Settings['DevilFruitStorage']['WebhookUrl'], json=PayloadData, timeout=5)
+                        except Exception as E:
+                            print(f"Webhook error: {E}")
+                    
+                    time.sleep(5)
+                
+            except Exception as E:
+                print(f"Spawn detection loop error: {E}")
+                traceback.print_exc()
+                time.sleep(1)
     
     def RegisterHotkeys(self):
         try:
@@ -1768,15 +1915,43 @@ class AutomatedFishingSystem:
                 self.State.ResetConsecutiveTimeouts()
                 self.State.UpdateStatus("Bobber ready - starting minigame")
                 
-                if not self.SoundDetector.Listen():
-                    self.State.UpdateStatus("Not megalodon - recasting")
-                    continue
-                
-                self.State.UpdateStatus("Entering minigame control loop")
-                while self.State.IsRunning:
-                    if not self.MinigameController.ControlMinigame():
-                        self.State.UpdateStatus("Minigame control loop ended")
-                        break
+                if self.Config.Settings['FishingModes']['MegalodonSound']:
+                    SoundDetectionComplete = threading.Event()
+                    IsMegalodon = [True]
+                    
+                    def CheckSound():
+                        if not self.SoundDetector.Listen():
+                            IsMegalodon[0] = False
+                        SoundDetectionComplete.set()
+                    
+                    SoundThread = threading.Thread(target=CheckSound, daemon=True)
+                    SoundThread.start()
+                    
+                    self.State.UpdateStatus("Entering minigame control loop (checking for megalodon)")
+                    while self.State.IsRunning:
+                        if not self.MinigameController.ControlMinigame():
+                            self.State.UpdateStatus("Minigame control loop ended")
+                            break
+                        
+                        if SoundDetectionComplete.is_set():
+                            if not IsMegalodon[0]:
+                                self.State.UpdateStatus("Not megalodon - recasting")
+                                if self.State.MousePressed:
+                                    pyautogui.mouseUp()
+                                    self.State.MousePressed = False
+                                break
+                            else:
+                                self.State.UpdateStatus("Megalodon detected - continuing minigame")
+                                SoundDetectionComplete.clear()
+                    
+                    if not IsMegalodon[0]:
+                        continue
+                else:
+                    self.State.UpdateStatus("Entering minigame control loop")
+                    while self.State.IsRunning:
+                        if not self.MinigameController.ControlMinigame():
+                            self.State.UpdateStatus("Minigame control loop ended")
+                            break
                 
                 if self.State.IsRunning:
                     self.State.UpdateStatus("Fish caught successfully!")
@@ -1801,7 +1976,7 @@ class AutomatedFishingSystem:
                 break
         
         self.State.UpdateStatus("Idle")
-        
+
     def ExecutePreCast(self):
         if not self.State.RobloxWindowFocused:
             self.State.UpdateStatus("Focusing Roblox window")
@@ -2258,6 +2433,10 @@ class AutomatedFishingSystem:
             "logErrors": self.Config.Settings['LoggingOptions']['LogErrors'],
             "pingErrors": self.Config.Settings['LoggingOptions']['PingErrors'],
             "totalRecastTimeouts": self.State.TotalRecastTimeouts,
+            "enableSpawnDetection": self.Config.Settings['SpawnDetection']['EnableSpawnDetection'],
+            "spawnScanInterval": self.Config.Settings['SpawnDetection']['ScanInterval'],
+            "logSpawns": self.Config.Settings['SpawnDetection']['LogSpawns'],
+            "pingSpawns": self.Config.Settings['SpawnDetection']['PingSpawns'],
             "baitRecipes": self.Config.Settings['BaitRecipes'],
             "currentRecipeIndex": self.Config.Settings['CurrentRecipeIndex'],
             "currentStatus": self.State.CurrentStatus,
@@ -2345,7 +2524,7 @@ def GetState():
         "clientId": MacroSystem.State.ClientId,
         "currentActiveClientId": MacroSystem.State.ClientId,
         "isRunning": IsThisClient,
-        "activeSessions": ActiveSessions,  # Use cleaned session list
+        "activeSessions": ActiveSessions,
         "clientFishCaught": MacroSystem.State.ClientStats[ClientId].get("fish_caught", 0),
         "globalFishCaught": TotalFish,
         "globalFishPerHour": round(GlobalFPH, 1),
@@ -2501,7 +2680,10 @@ def ProcessCommand():
             'toggle_sync_settings': lambda: HandleBoolToggle('DeviceSyncSettings.SyncSettings'),
             'toggle_sync_stats': lambda: HandleBoolToggle('DeviceSyncSettings.SyncStats'),
             'toggle_share_fish_count': lambda: HandleBoolToggle('DeviceSyncSettings.ShareFishCount'),
-            
+            'toggle_enable_spawn_detection': lambda: HandleBoolToggle('SpawnDetection.EnableSpawnDetection'),
+            'toggle_log_spawns': lambda: HandleBoolToggle('SpawnDetection.LogSpawns'),
+            'toggle_ping_spawns': lambda: HandleBoolToggle('SpawnDetection.PingSpawns'),
+
             'set_rod_hotkey': lambda: HandleStringValue('InventoryHotkeys.Rod'),
             'set_anything_else_hotkey': lambda: HandleStringValue('InventoryHotkeys.Alternate'),
             'set_webhook_url': lambda: HandleStringValue('DevilFruitStorage.WebhookUrl'),
@@ -2552,8 +2734,10 @@ def ProcessCommand():
             'set_craft_top_delay': lambda: HandleFloatValue('TimingDelays.Crafting.CraftTopRecipeDelay'),
             'set_craft_button_delay': lambda: HandleFloatValue('TimingDelays.Crafting.CraftButtonClickDelay'),
             'set_craft_close_delay': lambda: HandleFloatValue('TimingDelays.Crafting.CraftCloseMenuDelay'),
+            'set_spawn_scan_interval': lambda: HandleFloatValue('SpawnDetection.ScanInterval'),
             
             'test_webhook': lambda: HandleTestWebhook(),
+            'open_ocr_area_selector': lambda: HandleOCRAreaSelector(),
             'open_area_selector': lambda: HandleAreaSelector(),
             'open_browser': lambda: HandleOpenBrowser(Payload),
             'export_settings': lambda: HandleExportSettings(),
@@ -2828,9 +3012,10 @@ def HandleHotkeyRebind(Payload):
     def HandleKey(Event):
         if MacroSystem.CurrentlyRebindingHotkey == Payload:
             NewKey = Event.name.lower()
-            MacroSystem.Config.Settings['Hotkeys'][Payload] = NewKey
+            MacroSystem.Config.Settings['Hotkeys'][Payload.title().replace('_', '')] = NewKey
             MacroSystem.Config.SaveToDisk()
             MacroSystem.CurrentlyRebindingHotkey = None
+            keyboard.unhook_all()
             MacroSystem.RegisterHotkeys()
     
     keyboard.on_release(HandleKey, suppress=False)
@@ -2851,6 +3036,32 @@ def HandleTestWebhook():
     except Exception as E:
         return jsonify({"status": "error", "message": str(E)}), 500
 
+def HandleOCRAreaSelector():
+    def OnOCRRegionComplete(Coords):
+        MacroSystem.Config.Settings['OCRSettings'] = Coords
+        MacroSystem.Config.SaveToDisk()
+        MacroSystem.ActiveRegionSelector = None
+        MacroSystem.RegionSelectorActive = False
+    
+    if MacroSystem.RegionSelectorActive:
+        if MacroSystem.ActiveRegionSelector:
+            try:
+                MacroSystem.ActiveRegionSelector.RootWindow.after(10, MacroSystem.ActiveRegionSelector.CloseWindow)
+            except:
+                pass
+        return jsonify({"status": "already_open"})
+    
+    MacroSystem.RegionSelectorActive = True
+    
+    def RunSelector():
+        try:
+            MacroSystem.ActiveRegionSelector = RegionSelectionWindow(None, MacroSystem.Config.Settings['OCRSettings'], OnOCRRegionComplete)
+        finally:
+            MacroSystem.RegionSelectorActive = False
+            MacroSystem.ActiveRegionSelector = None
+    
+    threading.Thread(target=RunSelector, daemon=True).start()
+    return jsonify({"status": "opening_selector"})
 
 def RunFlaskServer():
     FlaskApp.run(host='0.0.0.0', port=8765, debug=False, use_reloader=False)
