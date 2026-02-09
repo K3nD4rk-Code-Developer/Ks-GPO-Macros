@@ -1,5 +1,7 @@
 {
     "Hotkeys": {
+        "StartStop": "f1",
+        "Exit": "f3",
         "start_stop": "f1",
         "exit": "f3"
     },
@@ -8,6 +10,10 @@
         "ShowDebugOverlay": true
     },
     "ScanArea": {
+        "X1": 1343,
+        "Y1": 420,
+        "X2": 1753,
+        "Y2": 1138,
         "x1": 1258,
         "y1": 492,
         "x2": 1575,
@@ -15,8 +21,8 @@
     },
     "ClickPoints": {
         "WaterPoint": {
-            "x": 1312,
-            "y": 318
+            "x": 1406,
+            "y": 49
         },
         "Shop": {
             "LeftPoint": {
@@ -74,24 +80,24 @@
             "BaitRecipes": [
                 {
                     "BaitRecipePoint": {
-                        "x": 1117,
-                        "y": 802
+                        "x": 1034,
+                        "y": 839
                     },
                     "CraftsPerCycle": 40,
                     "SwitchFishCycle": 5
                 },
                 {
                     "BaitRecipePoint": {
-                        "x": 1137,
-                        "y": 840
+                        "x": 1012,
+                        "y": 879
                     },
                     "CraftsPerCycle": 40,
                     "SwitchFishCycle": 5
                 },
                 {
                     "BaitRecipePoint": {
-                        "x": 1115,
-                        "y": 885
+                        "x": 1027,
+                        "y": 915
                     },
                     "CraftsPerCycle": 40,
                     "SwitchFishCycle": 5
@@ -107,12 +113,16 @@
             "3",
             "4",
             "5",
-            "2"
+            "2",
+            "6",
+            "7",
+            "8",
+            "9"
         ]
     },
     "AutomationFeatures": {
-        "AutoBuyCommonBait": true,
-        "AutoStoreDevilFruit": true,
+        "AutoBuyCommonBait": false,
+        "AutoStoreDevilFruit": false,
         "AutoSelectTopBait": false,
         "AutoCraftBait": false
     },
@@ -121,26 +131,27 @@
         "LoopsPerStore": 50,
         "LoopsPerCraft": 5,
         "CraftsPerCycle": 40,
-        "FishCountPerCraft": 50
+        "FishCountPerCraft": 1
     },
     "DevilFruitStorage": {
         "StoreToBackpack": false,
-        "LogDevilFruit": true,
-        "PingDevilFruitUserId": "1351127835175288893",
         "WebhookUrl": "https://discord.com/api/webhooks/1467696258851541188/-hMxPzPDtpf8Li23zcF34FnWQcqj-N2_KQjH0DoIXqC2r6sYuIEnTFOTnzLAu4UfIaje"
     },
     "LoggingOptions": {
+        "DiscordUserId": "1351127835175288893",
+        "LogDevilFruit": true,
+        "PingDevilFruit": true,
         "LogRecastTimeouts": true,
-        "PingRecastTimeoutsUserId": "1351127835175288893",
+        "PingRecastTimeouts": true,
         "LogPeriodicStats": true,
-        "PingPeriodicStatsUserId": "1351127835175288893",
+        "PingPeriodicStats": false,
         "LogGeneralUpdates": false,
-        "PingGeneralUpdatesUserId": "1351127835175288893",
-        "PeriodicStatsIntervalMinutes": 5,
-        "LogMacroState": true,
-        "PingMacroStateUserId": "1351127835175288893",
+        "PingGeneralUpdates": true,
+        "LogMacroState": false,
+        "PingMacroState": true,
         "LogErrors": false,
-        "PingErrorsUserId": "1351127835175288893"
+        "PingErrors": true,
+        "PeriodicStatsIntervalMinutes": 30
     },
     "FishingModes": {
         "MegalodonSound": false,
