@@ -390,50 +390,81 @@ function renderActiveSessions(sessions) {
     const container = document.getElementById('activeSessionsContainer');
     if (!container) return;
 
-    const sessionKey = sessions ? sessions.map(s =>
-        `${s.client_id}-${s.session_id}-${s.is_running}`
+    const validSessions = sessions.filter(session =>
+        session.client_id &&
+        session.client_id !== 'unknown' &&
+        session.client_id.trim() !== ''
+    );
+
+    const sessionKey = validSessions ? validSessions.map(s =>
+        `${s.client_id}-${s.is_running}`
     ).join('|') : 'empty';
 
     if (sessionKey === window.lastSessionKey) return;
     window.lastSessionKey = sessionKey;
 
-    if (!sessions || sessions.length === 0) {
+    if (!validSessions || validSessions.length === 0) {
         container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">No active sessions detected</div>';
         return;
     }
 
     container.innerHTML = '';
-    sessions.forEach(session => {
+
+    validSessions.sort((a, b) => {
+        if (a.client_id === CLIENT_ID) return -1;
+        if (b.client_id === CLIENT_ID) return 1;
+        return a.client_id.localeCompare(b.client_id);
+    });
+
+    validSessions.forEach(session => {
         const isCurrentClient = session.client_id === CLIENT_ID;
         const sessionCard = document.createElement('div');
         sessionCard.className = 'device-card';
         sessionCard.style.borderColor = isCurrentClient ? 'var(--border-accent)' : 'var(--border-subtle)';
 
+        const displayId = session.client_id.substring(0, 16) + '...';
+
         sessionCard.innerHTML = `
-    <div class="device-header">
-        <div class="device-name">
-            ${isCurrentClient ? '<strong>This Device</strong>' : `Session ${session.session_id}`}
-        </div>
-        <div class="device-status ${session.is_running ? '' : 'offline'}">
-            <div style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></div>
-            ${session.is_running ? 'Running' : 'Idle'}
-        </div>
-    </div>
-    <div style="font-size: 10px; color: var(--text-muted); margin-top: 8px;">
-        Client ID: ${session.client_id.substring(0, 16)}...
-    </div>
-    ${session.rdp_detected ? `
-        <div style="margin-top: 8px;">
-            <div class="rdp-indicator active">
-                <div class="rdp-dot"></div>
-                <span>RDP ${session.rdp_state}</span>
+            <div class="device-header">
+                <div class="device-name">
+                    ${isCurrentClient ? '<strong>This Device</strong>' : `Client ${displayId}`}
+                </div>
+                <div class="device-status ${session.is_running ? '' : 'offline'}">
+                    <div style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></div>
+                    ${session.is_running ? 'Running' : 'Idle'}
+                </div>
             </div>
-        </div>
-    ` : ''}
-  `;
+            <div style="font-size: 10px; color: var(--text-muted); margin-top: 8px;">
+                Client ID: ${displayId}
+            </div>
+            ${session.rdp_detected ? `
+                <div style="margin-top: 8px;">
+                    <div class="rdp-indicator active">
+                        <div class="rdp-dot"></div>
+                        <span>RDP ${session.rdp_state}</span>
+                    </div>
+                </div>
+            ` : ''}
+        `;
         container.appendChild(sessionCard);
     });
 }
+
+function debugSessions() {
+    console.log('=== SESSION DEBUG INFO ===');
+    console.log('My Client ID:', CLIENT_ID);
+    console.log('Stored in localStorage:', localStorage.getItem('macroClientId'));
+
+    fetch(`http://localhost:8765/state?clientId=${CLIENT_ID}`)
+        .then(r => r.json())
+        .then(state => {
+            console.log('Current Active Client ID:', state.currentActiveClientId);
+            console.log('Is Running:', state.isRunning);
+            console.log('Active Sessions:', state.activeSessions);
+            console.log('=========================');
+        });
+}
+
 
 function buildSlideshow() {
     const tabsEl = document.getElementById('slideshowTabs');
@@ -941,7 +972,8 @@ async function sendToPython(action, payload) {
         const response = await fetch('http://localhost:8765/command', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action, payload })
+            body: JSON.stringify({ action, payload }),
+            clientId: CLIENT_ID
         });
         const result = await response.json();
         if (result.status === 'error') {
@@ -1155,10 +1187,10 @@ async function pollPythonState() {
             setInputValue('soundSensitivity', state.soundSensitivity);
         }
 
-        if (document.getElementById('clientIdDisplay')) {
-            document.getElementById('clientIdDisplay').textContent = CLIENT_ID;
+        const clientIdDisplay = document.getElementById('clientIdDisplay');
+        if (clientIdDisplay) {
+            clientIdDisplay.textContent = CLIENT_ID;
         }
-
         setToggleState('autoDetectRdpToggle', state.auto_detect_rdp !== false);
 
         setToggleState('enableDeviceSyncToggle', state.enable_device_sync || false);

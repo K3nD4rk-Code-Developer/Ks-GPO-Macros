@@ -441,7 +441,6 @@ class MacroStateManager:
         self.LastInputResendTime = time.time()
         
         self.SessionLock = Lock()
-        self.AllSessions = {}
         
         self.ClientStats = {}
         self.GlobalStats = {
@@ -1613,19 +1612,25 @@ class AutomatedFishingSystem:
         if self.Config.Settings['RDPSettings']['AutoDetectRDP']:
             self.State.RDPDetected, self.State.RDPSessionState, self.State.RDPSessionId, RDPSessionName = RDPDetector.DetectRDPSession()
         
-        with self.State.SessionLock:
-            self.State.AllSessions[self.State.ClientId] = {
-                'is_running': self.State.IsRunning,
-                'last_updated': time.time(),
-                'session_id': self.State.RDPSessionId,
-                'rdp_detected': self.State.RDPDetected,
-                'rdp_state': self.State.RDPSessionState,
-                'client_id': self.State.ClientId
+        if self.State.ClientId not in self.State.ClientStats:
+            self.State.ClientStats[self.State.ClientId] = {
+                "fish_caught": 0,
+                "start_time": None,
+                "is_running": False,
+                "last_seen": time.time(),
+                "rdp_detected": self.State.RDPDetected,
+                "rdp_state": self.State.RDPSessionState
             }
+        
+        self.State.ClientStats[self.State.ClientId]["is_running"] = self.State.IsRunning
+        self.State.ClientStats[self.State.ClientId]["last_seen"] = time.time()
+        self.State.ClientStats[self.State.ClientId]["rdp_detected"] = self.State.RDPDetected
+        self.State.ClientStats[self.State.ClientId]["rdp_state"] = self.State.RDPSessionState
         
         if self.State.IsRunning:
             self.State.UpdateStatus("Starting macro...")
             self.State.SessionStartTime = time.time()
+            self.State.ClientStats[self.State.ClientId]["start_time"] = time.time()
             self.State.RobloxWindowFocused = False
             self.State.ConsecutiveRecastTimeouts = 0
             self.State.LastPeriodicStatsTime = time.time()
@@ -1713,10 +1718,9 @@ class AutomatedFishingSystem:
                 if self.Config.Settings['RDPSettings']['AutoDetectRDP']:
                     self.State.RDPDetected, self.State.RDPSessionState, self.State.RDPSessionId, RDPSessionName = RDPDetector.DetectRDPSession()
                     
-                    with self.State.SessionLock:
-                        self.State.AllSessions[self.State.ClientId]['rdp_detected'] = self.State.RDPDetected
-                        self.State.AllSessions[self.State.ClientId]['rdp_state'] = self.State.RDPSessionState
-                        self.State.AllSessions[self.State.ClientId]['session_id'] = self.State.RDPSessionId
+                    if self.State.ClientId in self.State.ClientStats:
+                        self.State.ClientStats[self.State.ClientId]['rdp_detected'] = self.State.RDPDetected
+                        self.State.ClientStats[self.State.ClientId]['rdp_state'] = self.State.RDPSessionState
 
                 self.State.UpdateStatus("Starting new fishing cycle")
                 self.State.PreviousError = None
@@ -1797,7 +1801,7 @@ class AutomatedFishingSystem:
                 break
         
         self.State.UpdateStatus("Idle")
-    
+        
     def ExecutePreCast(self):
         if not self.State.RobloxWindowFocused:
             self.State.UpdateStatus("Focusing Roblox window")
@@ -2154,25 +2158,19 @@ class AutomatedFishingSystem:
     
     def GetStateForAPI(self):
         CurrentTime = time.time()
-        with self.State.SessionLock:
-            StaleSessions = [
-                Cid for Cid, Sess in self.State.AllSessions.items()
-                if CurrentTime - Sess.get('last_updated', 0) > 30
-            ]
-            for Cid in StaleSessions:
-                del self.State.AllSessions[Cid]
-            
-            ActiveSessions = [
-                {
-                    'client_id': Sess.get('client_id', Cid),
-                    'is_running': Sess.get('is_running', False),
-                    'rdp_detected': Sess.get('rdp_detected', False),
-                    'rdp_state': Sess.get('rdp_state', 'unknown'),
-                    'session_id': Sess.get('session_id', -1),
-                    'last_updated': Sess.get('last_updated', 0)
-                }
-                for Cid, Sess in self.State.AllSessions.items()
-            ]
+        ActiveSessions = [
+            {
+                'client_id': Cid,
+                'is_running': Stats.get('is_running', False),
+                'rdp_detected': Stats.get('rdp_detected', False),
+                'rdp_state': Stats.get('rdp_state', 'unknown'),
+                'session_id': self.State.RDPSessionId if Cid == self.State.ClientId else -1,
+                'last_updated': Stats.get('last_seen', 0)
+            }
+
+            for Cid, Stats in self.State.ClientStats.items()
+            if Cid and Cid != 'unknown' and (CurrentTime - Stats.get('last_seen', 0)) < 30
+        ]
         
         return {
             "clientId": self.State.ClientId,
@@ -2291,52 +2289,64 @@ MacroSystem.OcrManager.Initialize()
 
 @FlaskApp.route('/state', methods=['GET'])
 def GetState():
-    ClientId = request.args.get('clientId', 'unknown')
+    ClientId = request.args.get('clientId', MacroSystem.State.ClientId)
     
     if ClientId not in MacroSystem.State.ClientStats:
         MacroSystem.State.ClientStats[ClientId] = {
             "fish_caught": 0,
             "start_time": None,
             "is_running": False,
-            "last_seen": time.time()
+            "last_seen": time.time(),
+            "rdp_detected": False,
+            "rdp_state": "unknown"
         }
     
     MacroSystem.State.ClientStats[ClientId]["last_seen"] = time.time()
     
-    if ClientId != 'unknown':
-        MacroSystem.State.ClientId = ClientId
+    if ClientId != 'unknown' and ClientId == MacroSystem.State.ClientId:
+        MacroSystem.State.ClientStats[ClientId]["is_running"] = MacroSystem.State.IsRunning
+        MacroSystem.State.ClientStats[ClientId]["fish_caught"] = MacroSystem.State.TotalFishCaught
+        MacroSystem.State.ClientStats[ClientId]["rdp_detected"] = MacroSystem.State.RDPDetected
+        MacroSystem.State.ClientStats[ClientId]["rdp_state"] = MacroSystem.State.RDPSessionState
+    
+    CurrentTime = time.time()
+    StaleClients = [
+        Cid for Cid, Stats in MacroSystem.State.ClientStats.items()
+        if CurrentTime - Stats.get('last_seen', 0) > 30
+    ]
+    for Cid in StaleClients:
+        del MacroSystem.State.ClientStats[Cid]
+    
+    ActiveSessions = []
+    for Cid, Stats in MacroSystem.State.ClientStats.items():
+        if Cid and Cid != 'unknown':
+            ActiveSessions.append({
+                'client_id': Cid,
+                'is_running': Stats.get('is_running', False),
+                'rdp_detected': Stats.get('rdp_detected', False),
+                'rdp_state': Stats.get('rdp_state', 'unknown'),
+                'session_id': MacroSystem.State.RDPSessionId if Cid == MacroSystem.State.ClientId else -1,
+                'last_updated': Stats.get('last_seen', 0)
+            })
     
     IsThisClient = (ClientId == MacroSystem.State.ClientId and MacroSystem.State.IsRunning)
-    
-    MacroSystem.State.ClientStats[ClientId]["is_running"] = IsThisClient
-    MacroSystem.State.ClientStats[ClientId]["fish_caught"] = MacroSystem.State.TotalFishCaught
-    
-    with MacroSystem.State.SessionLock:
-        MacroSystem.State.AllSessions[ClientId] = {
-            'client_id': ClientId,
-            'is_running': IsThisClient,
-            'last_updated': time.time(),
-            'session_id': MacroSystem.State.RDPSessionId,
-            'rdp_detected': MacroSystem.State.RDPDetected,
-            'rdp_state': MacroSystem.State.RDPSessionState
-        }
-    
     TotalFish = MacroSystem.State.TotalFishCaught
     ActiveCount = 1 if IsThisClient else 0
     
     if MacroSystem.Config.Settings['DeviceSyncSettings']['EnableDeviceSync'] and MacroSystem.Config.Settings['DeviceSyncSettings']['ShareFishCount']:
-        TotalFish = sum(C["fish_caught"] for C in MacroSystem.State.ClientStats.values())
-        ActiveCount = sum(1 for C in MacroSystem.State.ClientStats.values() if C["is_running"])
+        TotalFish = sum(C.get("fish_caught", 0) for C in MacroSystem.State.ClientStats.values())
+        ActiveCount = sum(1 for C in MacroSystem.State.ClientStats.values() if C.get("is_running", False))
     
     TotalUptime = MacroSystem.State.GetElapsedTime()
     GlobalFPH = (TotalFish / TotalUptime * 3600) if TotalUptime > 0 else 0
     
     BaseResponse = MacroSystem.GetStateForAPI()
     BaseResponse.update({
-        "clientId": ClientId,
+        "clientId": MacroSystem.State.ClientId,
         "currentActiveClientId": MacroSystem.State.ClientId,
         "isRunning": IsThisClient,
-        "clientFishCaught": MacroSystem.State.ClientStats[ClientId]["fish_caught"],
+        "activeSessions": ActiveSessions,  # Use cleaned session list
+        "clientFishCaught": MacroSystem.State.ClientStats[ClientId].get("fish_caught", 0),
         "globalFishCaught": TotalFish,
         "globalFishPerHour": round(GlobalFPH, 1),
         "activeClients": ActiveCount,
