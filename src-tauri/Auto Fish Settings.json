@@ -119,10 +119,10 @@
         ]
     },
     "AutomationFeatures": {
-        "AutoBuyCommonBait": true,
+        "AutoBuyCommonBait": false,
         "AutoStoreDevilFruit": true,
         "AutoSelectTopBait": false,
-        "AutoCraftBait": false
+        "AutoCraftBait": true
     },
     "AutomationFrequencies": {
         "LoopsPerPurchase": 100,
@@ -226,7 +226,7 @@
         }
     },
     "SpawnDetection": {
-        "EnableSpawnDetection": true,
+        "EnableSpawnDetection": false,
         "ScanInterval": 2.0,
         "LogSpawns": true,
         "PingSpawns": true

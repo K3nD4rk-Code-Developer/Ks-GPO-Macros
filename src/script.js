@@ -748,6 +748,48 @@ async function updateRecipeValue(recipeIndex, fieldName, value) {
     }
 }
 
+async function checkAndToggleMegalodon() {
+    const toggle = document.getElementById('megalodonSoundToggle');
+    const warning = document.getElementById('megalodonAudioWarning');
+
+    if (toggle.classList.contains('active')) {
+        activeElement = toggle;
+        skipNextUpdate.add('megalodonSoundToggle');
+        toggle.classList.remove('active');
+        if (warning) warning.classList.remove('show');
+        sendToPython('toggle_megalodon_sound', 'false');
+        setTimeout(() => {
+            activeElement = null;
+            skipNextUpdate.delete('megalodonSoundToggle');
+        }, 1000);
+        return;
+    }
+
+    try {
+        const response = await fetch('http://localhost:8765/check_audio_device');
+        const result = await response.json();
+
+        if (!result.found) {
+            if (warning) warning.classList.add('show');
+            return;
+        }
+
+        if (warning) warning.classList.remove('show');
+        activeElement = toggle;
+        skipNextUpdate.add('megalodonSoundToggle');
+        toggle.classList.add('active');
+        sendToPython('toggle_megalodon_sound', 'true');
+        setTimeout(() => {
+            activeElement = null;
+            skipNextUpdate.delete('megalodonSoundToggle');
+        }, 1000);
+
+    } catch (error) {
+        if (warning) warning.classList.add('show');
+        showErrorNotification('Could not check audio device: ' + error.message);
+    }
+}
+
 function toggleLoggingExpandable(toggleId, expandId) {
     const toggle = document.getElementById(toggleId);
     const section = document.getElementById(expandId);
@@ -1214,7 +1256,12 @@ async function pollPythonState() {
 
         if (state.megalodonSoundEnabled !== undefined) {
             setToggleState('megalodonSoundToggle', state.megalodonSoundEnabled);
+            if (!state.megalodonSoundEnabled) {
+                const megWarning = document.getElementById('megalodonAudioWarning');
+                if (megWarning) megWarning.classList.remove('show');
+            }
         }
+
         if (state.soundSensitivity !== undefined) {
             setInputValue('soundSensitivity', state.soundSensitivity);
         }

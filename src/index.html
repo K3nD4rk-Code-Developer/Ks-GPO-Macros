@@ -424,8 +424,13 @@
             <div class="control-group">
               <span class="control-label">Enable Megalodon Sound Recognition</span>
               <div class="control-input">
-                <div class="toggle-switch" id="megalodonSoundToggle" onclick="toggleSetting('megalodonSound')"></div>
+                <div class="toggle-switch" id="megalodonSoundToggle" onclick="checkAndToggleMegalodon()"></div>
               </div>
+            </div>
+            <div class="requirement-warning" id="megalodonAudioWarning">
+              <strong>⚠️ No Loopback Audio Device Found:</strong><br>
+              Megalodon sound detection requires a WASAPI loopback device (e.g. "Stereo Mix" or a virtual audio cable).<br>
+              Enable <strong>Stereo Mix</strong> in Windows Sound settings → Recording tab, or install a virtual audio driver.
             </div>
             <div class="help-hint">Listens for Megalodon roar sound and only continues fishing if detected</div>
             <div class="control-group">
@@ -637,7 +642,7 @@
               <div class="control-group">
                 <span class="control-label">Scan Interval</span>
                 <div class="control-input">
-                  <input type="number" class="input" id="spawnScanInterval" value="2.0" step="0.5" min="0.5" max="10"
+                  <input type="number" class="input" id="spawnScanInterval" value="5.0" step="0.5" min="0.5" max="10"
                     onchange="sendToPython('set_spawn_scan_interval', this.value)">
                   <span class="unit">seconds</span>
                 </div>

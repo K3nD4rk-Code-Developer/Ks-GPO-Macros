@@ -188,7 +188,7 @@ class ConfigurationManager:
             },
             'SpawnDetection': {
                 'EnableSpawnDetection': False,
-                'ScanInterval': 2.0,
+                'ScanInterval': 5.0,
                 'LogSpawns': True,
                 'PingSpawns': False
             },
@@ -329,7 +329,7 @@ class ConfigurationManager:
             Spawn = LoadedData["SpawnDetection"]
             self.Settings['SpawnDetection'].update({
                 'EnableSpawnDetection': Spawn.get("EnableSpawnDetection", False),
-                'ScanInterval': Spawn.get("ScanInterval", 2.0),
+                'ScanInterval': Spawn.get("ScanInterval", 5.0),
                 'LogSpawns': Spawn.get("LogSpawns", True),
                 'PingSpawns': Spawn.get("PingSpawns", False)
             })
@@ -2562,6 +2562,48 @@ def HealthCheck():
     return jsonify({"status": "ok", "message": "Backend running"})
 
 
+@FlaskApp.route('/check_audio_device', methods=['GET'])
+def CheckAudioDevice():
+    try:
+        AudioInterface = pyaudio.PyAudio()
+        DeviceFound = False
+        DeviceName = None
+        
+        try:
+            WasapiInfo = AudioInterface.get_host_api_info_by_type(pyaudio.paWASAPI)
+            DefaultOutputIndex = WasapiInfo.get("defaultOutputDevice")
+            
+            if DefaultOutputIndex is not None and DefaultOutputIndex >= 0:
+                try:
+                    DefaultDevice = AudioInterface.get_device_info_by_index(DefaultOutputIndex)
+                    DefaultName = DefaultDevice.get("name", "")
+                    
+                    for Loopback in AudioInterface.get_loopback_device_info_generator():
+                        if DefaultName in Loopback.get("name", ""):
+                            if Loopback.get('maxInputChannels', 0) > 0:
+                                DeviceFound = True
+                                DeviceName = Loopback.get("name", "Unknown")
+                                break
+                except Exception:
+                    pass
+            
+            if not DeviceFound:
+                for Loopback in AudioInterface.get_loopback_device_info_generator():
+                    if Loopback.get('maxInputChannels', 0) > 0:
+                        DeviceFound = True
+                        DeviceName = Loopback.get("name", "Unknown")
+                        break
+                        
+        except Exception:
+            DeviceFound = False
+        finally:
+            AudioInterface.terminate()
+        
+        return jsonify({"found": DeviceFound, "deviceName": DeviceName})
+    except Exception as E:
+        return jsonify({"found": False, "deviceName": None, "error": str(E)})
+
+
 @FlaskApp.route('/set_window_property', methods=['POST'])
 def SetWindowProperty():
     try:
@@ -3058,6 +3100,7 @@ def HandleTestWebhook():
         return jsonify({"status": "success"})
     except Exception as E:
         return jsonify({"status": "error", "message": str(E)}), 500
+
 
 def HandleOCRAreaSelector():
     def OnOCRRegionComplete(Coords):
