@@ -35,7 +35,7 @@
           <h1>K's GPO Fishing Macro</h1>
           <div style="display: flex; align-items: center; gap: 8px;">
             <div class="version">Version 1.2.8</div>
-            <div style="color: var(--accent-tertiary); opacity: 0.7; font-size: 0.75em;">Production</div>
+            <div style="color: var(--accent-tertiary); opacity: 0.7; font-size: 0.75em;">Pre-Release</div>
           </div>
         </div>
       </div>
@@ -65,17 +65,13 @@
           <i data-lucide="map-pin"></i>
           <span>Locations</span>
         </div>
-        <div class="nav-item" data-view="automation">
-          <i data-lucide="workflow"></i>
-          <span>Automation</span>
-        </div>
-        <div class="nav-item" data-view="logging">
-          <i data-lucide="file-text"></i>
-          <span>Logging</span>
-        </div>
         <div class="nav-item" data-view="fishing-modes">
           <i data-lucide="fish"></i>
           <span>Fishing Modes</span>
+        </div>
+        <div class="nav-item" data-view="automation">
+          <i data-lucide="workflow"></i>
+          <span>Automation</span>
         </div>
         <div class="nav-item" data-view="tuning">
           <i data-lucide="settings"></i>
@@ -85,6 +81,10 @@
           <i data-lucide="clock"></i>
           <span>Timing</span>
         </div>
+        <div class="nav-item" data-view="logging">
+          <i data-lucide="file-text"></i>
+          <span>Logging</span>
+        </div>
         <div class="nav-item" data-view="settings">
           <i data-lucide="cog"></i>
           <span>Settings</span>
@@ -92,6 +92,7 @@
       </div>
 
       <div class="content-area">
+
         <div class="view active" id="home">
           <div class="hero-section">
             <h1 class="hero-title">Welcome to K's GPO Fishing Macro</h1>
@@ -117,77 +118,57 @@
           </div>
 
           <div class="tips-section">
-            <div class="tips-title">
-              Essential Setup Tips
-            </div>
+            <div class="tips-title">Essential Setup Tips</div>
             <div class="tip-item">
-              <div class="tip-text">
-                <strong>Run As Admin:</strong> Run the app as Admin to give it more CPU resources.
+              <div class="tip-text"><strong>Run As Admin:</strong> Run the app as Admin to give it more CPU resources.
               </div>
             </div>
             <div class="tip-item">
-              <div class="tip-text">
-                <strong>FPS Cap:</strong> Set your in-game FPS to your monitors refresh rate to prevent missed catches.
-              </div>
+              <div class="tip-text"><strong>FPS Cap:</strong> Set your in-game FPS to your monitor's refresh rate to
+                prevent missed catches.</div>
             </div>
             <div class="tip-item">
-              <div class="tip-text">
-                <strong>Camera Zoom:</strong> Keep your camera zoomed enough to see the bar closely enough but not too
-                much it's above other UI's.
-              </div>
+              <div class="tip-text"><strong>Camera Zoom:</strong> Keep your camera zoomed enough to see the bar closely
+                enough but not too much it's above other UI's.</div>
             </div>
             <div class="tip-item">
-              <div class="tip-text">
-                <strong>Cartoonize Your Gameplay:</strong> Set your graphics to 1, turn on fast mode in your GPO
-                settings, and turn off shadows.
-              </div>
+              <div class="tip-text"><strong>Cartoonize Your Gameplay:</strong> Set your graphics to 1, turn on fast mode
+                in your GPO settings, and turn off shadows.</div>
             </div>
           </div>
 
           <div class="slideshow-card">
             <div class="card-header" style="margin-bottom:16px;">Visual Guides</div>
-
             <div class="slideshow-tabs" id="slideshowTabs"></div>
-
             <div class="slideshow-viewport" id="slideshowViewport">
               <button class="slide-nav prev" id="slidePrev">&#8249;</button>
               <button class="slide-nav next" id="slideNext">&#8250;</button>
             </div>
-
             <div class="slide-dots" id="slideDots"></div>
           </div>
 
           <div class="card">
             <div class="card-header">Troubleshooting</div>
             <div class="tip-item">
-              <div class="tip-text">
-                <strong>Macro won't start:</strong> Ensure that your water point and selected rods are correct.
-              </div>
+              <div class="tip-text"><strong>Macro won't start:</strong> Ensure that your water point and selected rods
+                are correct.</div>
             </div>
             <div class="tip-item">
-              <div class="tip-text">
-                <strong>Missing fish games:</strong> Adjust the scan area so it fully covers the fishing bar (and a bit
-                beyond). Make sure Roblox is running at your
-                monitor's refresh rate, the bar doesn't overlap with others UI, and run app as admin.
-              </div>
+              <div class="tip-text"><strong>Missing fish games:</strong> Adjust the scan area so it fully covers the
+                fishing bar (and a bit beyond). Make sure Roblox is running at your monitor's refresh rate, the bar
+                doesn't overlap with other UI, and run app as admin.</div>
             </div>
             <div class="tip-item">
-              <div class="tip-text">
-                <strong>Not casting:</strong> Verify Water Point is set correctly. Check that fishing rod is in the
-                correct inventory slot.
-              </div>
+              <div class="tip-text"><strong>Not casting:</strong> Verify Water Point is set correctly. Check that
+                fishing rod is in the correct inventory slot.</div>
             </div>
             <div class="tip-item">
-              <div class="tip-text">
-                <strong>Auto-buy failing:</strong> Reconfigure bait shop points. Increase Pre-Cast delays in Timing →
-                Purchase Interaction Timing.
-              </div>
+              <div class="tip-text"><strong>Auto-buy failing:</strong> Reconfigure bait shop points. Increase Pre-Cast
+                delays in Timing → Purchase Interaction Timing.</div>
             </div>
             <div class="tip-item">
-              <div class="tip-text">
-                <strong>Actions too fast/slow:</strong> Adjust timing delays in the Timing tab. Add 0.1-0.2s to delays
-                if actions are being skipped.
-              </div>
+              <div class="tip-text"><strong>Actions too fast/slow:</strong> Adjust timing delays in the Timing tab. Add
+                0.1–0.2s to delays if actions are being skipped.</div>
             </div>
           </div>
         </div>
@@ -216,6 +197,7 @@
               </div>
             </div>
           </div>
+
           <div class="card">
             <div class="card-header">Inventory Slots</div>
             <div class="control-group">
@@ -260,6 +242,7 @@
             </div>
             <div class="help-hint">Select multiple slots to check for devil fruits</div>
           </div>
+
           <div class="card">
             <div class="card-header">Application Settings</div>
             <div class="control-group">
@@ -289,6 +272,18 @@
             </div>
             <div class="help-hint">Click the location in water where you want to cast your fishing line</div>
           </div>
+
+          <div class="card">
+            <div class="card-header">Bait Locations</div>
+            <div class="control-group">
+              <span class="control-label">Top Bait Point</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="baitPointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_bait_point', '')">Configure</button>
+              </div>
+            </div>
+          </div>
+
           <div class="card">
             <div class="card-header">Bait Shop Interaction Points</div>
             <div class="control-group">
@@ -313,25 +308,7 @@
               </div>
             </div>
           </div>
-          <div class="card">
-            <div class="card-header">Devil Fruit Locations</div>
-            <div class="control-group">
-              <span class="control-label">Devil Fruit Store</span>
-              <div class="control-input">
-                <span class="point-indicator unset" id="storeFruitPointStatus">Not Configured</span>
-                <button class="btn btn-sm" onclick="sendToPython('set_store_fruit_point', '')">Configure</button>
-              </div>
-            </div>
-            <div class="control-group">
-              <span class="control-label">Devil Fruit Backpack</span>
-              <div class="control-input">
-                <span class="point-indicator unset" id="devilFruitLocationPointStatus">Not Configured</span>
-                <button class="btn btn-sm" onclick="sendToPython('set_devil_fruit_location_point', '')">Configure</button>
-              </div>
-            </div>
-            <div class="help-hint">This feature is still a work in progress, don't mind it. Used for storing inside of
-              backpack instead of drop</div>
-          </div>
+
           <div class="card">
             <div class="card-header">Crafting Interface Points</div>
             <div class="control-group">
@@ -377,6 +354,7 @@
               </div>
             </div>
           </div>
+
           <div class="card">
             <div class="card-header">
               Crafting Recipes
@@ -384,333 +362,42 @@
             </div>
             <div id="RecipesContainer"></div>
           </div>
+
+          <div class="card">
+            <div class="card-header">Devil Fruit Locations</div>
+            <div class="control-group">
+              <span class="control-label">Devil Fruit Store</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="storeFruitPointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_store_fruit_point', '')">Configure</button>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Devil Fruit Backpack</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="devilFruitLocationPointStatus">Not Configured</span>
+                <button class="btn btn-sm"
+                  onclick="sendToPython('set_devil_fruit_location_point', '')">Configure</button>
+              </div>
+            </div>
+            <div class="help-hint">This feature is still a work in progress, don't mind it. Used for storing inside of
+              backpack instead of drop</div>
+          </div>
+
           <div class="card">
             <div class="card-header">OCR Configuration</div>
             <div class="control-group">
               <span class="control-label">Devil Fruit Detection Area</span>
               <div class="control-input">
-                <button class="btn btn-sm" onclick="sendToPython('open_ocr_area_selector', '')">Configure OCR Region</button>
+                <button class="btn btn-sm" onclick="sendToPython('open_ocr_area_selector', '')">Configure OCR
+                  Region</button>
               </div>
             </div>
             <div class="help-hint">Set the screen area where devil fruit notifications appear for OCR detection</div>
           </div>
-          
-        </div>
-
-      <div class="view" id="automation">
-        <div class="card">
-          <div class="card-header">Auto Purchase Bait</div>
-          <div class="control-group">
-            <span class="control-label">Enable Auto Buy Common Bait</span>
-            <div class="control-input">
-              <div class="toggle-switch" id="autoBuyBaitToggle" onclick="toggleExpandable('autoBuyBait', 'autoBuyExpand')">
-              </div>
-            </div>
-          </div>
-          <div class="requirement-warning" id="autoBuyBaitWarning">
-            <strong>⚠️ Missing Requirements:</strong><br>
-            You need to configure all Bait Shop points first.<br>
-            Go to <a onclick="navigateToLocations()">Locations → Bait Shop Interaction Points</a>
-          </div>
-          <div class="expandable-section" id="autoBuyExpand">
-            <div class="control-group">
-              <span class="control-label">Purchase Frequency</span>
-              <div class="control-input">
-                <input type="number" class="input" id="loopsPerPurchase" value="100" step="1"
-                  onchange="sendToPython('set_loops_per_purchase', this.value)">
-                <span class="unit">loops</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header">Auto Craft Bait</div>
-          <div class="control-group">
-            <span class="control-label">Enable Auto Craft</span>
-            <div class="control-input">
-              <div class="toggle-switch" id="autoCraftBaitToggle"
-                onclick="toggleExpandable('autoCraftBait', 'autoCraftExpand')"></div>
-            </div>
-          </div>
-          <div class="requirement-warning" id="autoCraftBaitWarning">
-            <strong>Missing Requirements:</strong><br>
-            You need to configure all crafting points and recipes first.<br>
-            Go to <a onclick="navigateToLocations()">Locations → Crafting Interface Points</a>
-          </div>
-          <div class="expandable-section" id="autoCraftExpand">
-            <div class="control-group">
-              <span class="control-label">Fish Caught Before Craft</span>
-              <div class="control-input">
-                <input type="number" class="input" id="fishCountPerCraft" value="50" step="1" min="1"
-                  onchange="sendToPython('set_fish_count_per_craft', this.value)">
-                <span class="unit">fish</span>
-              </div>
-            </div>
-            <div class="control-group">
-              <span class="control-label">Movement Duration</span>
-              <div class="control-input">
-                <input type="number" class="input" id="moveDuration" value="0" step="0.25"
-                  onchange="sendToPython('set_move_duration', this.value)">
-                <span class="unit">seconds</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header">Auto Store Devil Fruit</div>
-          <div class="control-group">
-            <span class="control-label">Enable Auto Storage</span>
-            <div class="control-input">
-              <div class="toggle-switch" id="autoStoreFruitToggle"
-                onclick="toggleExpandable('autoStoreFruit', 'autoStoreExpand')"></div>
-            </div>
-          </div>
-          <div class="requirement-warning" id="autoStoreFruitWarning">
-            <strong>Missing Requirements:</strong><br>
-            You need to configure the Devil Fruit Store location first.<br>
-            Go to <a onclick="navigateToLocations()">Locations → Devil Fruit Locations</a>
-          </div>
-          <div class="expandable-section" id="autoStoreExpand">
-            <div class="control-group">
-              <span class="control-label">Store to Backpack (vs Drop)</span>
-              <div class="control-input">
-                <div class="toggle-switch disabled" id="storeToBackpackToggle"
-                  style="opacity: 0.5; cursor: not-allowed; pointer-events: none;"></div>
-                <span style="color: #6b7a92; font-size: 10px; font-style: italic; margin-left: 8px;">Coming
-                  Soon</span>
-              </div>
-            </div>
-            <div class="control-group">
-              <span class="control-label">Storage Frequency</span>
-              <div class="control-input">
-                <input type="number" class="input" id="loopsPerStore" value="1" step="1" min="1"
-                  onchange="sendToPython('set_loops_per_store', this.value)">
-                <span class="unit">loops</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header">Auto Select Bait</div>
-          <div class="control-group">
-            <span class="control-label">Enable Auto Select Top Bait</span>
-            <div class="control-input">
-              <div class="toggle-switch" id="autoSelectBaitToggle" onclick="toggleSetting('autoSelectBait')"></div>
-            </div>
-          </div>
-          <div class="requirement-warning" id="autoSelectBaitWarning">
-            <strong>Missing Requirements:</strong><br>
-            You need to configure the Top Bait Point first.<br>
-            Go to <a onclick="navigateToLocations()">Locations → Bait Locations</a>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header">Devil Fruit Spawn Detection</div>
-          <div class="control-group">
-            <span class="control-label">Enable Spawn Detection</span>
-            <div class="control-input">
-              <div class="toggle-switch" id="enableSpawnDetectionToggle"
-                onclick="toggleExpandable('enableSpawnDetection', 'spawnDetectionExpand')"></div>
-            </div>
-          </div>
-          <div class="requirement-warning" id="enableSpawnDetectionWarning">
-            <strong>⚠️ Missing Requirements:</strong><br>
-            You need to configure the OCR Detection Area first.<br>
-            Go to <a onclick="navigateToLocations()">Locations → OCR Configuration</a>
-          </div>
-          <div class="expandable-section" id="spawnDetectionExpand">
-            <div class="control-group">
-              <span class="control-label">Scan Interval</span>
-              <div class="control-input">
-                <input type="number" class="input" id="spawnScanInterval" value="2.0" step="0.5" min="0.5" max="10"
-                  onchange="sendToPython('set_spawn_scan_interval', this.value)">
-                <span class="unit">seconds</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-        <div class="view" id="logging">
-          <div class="card">
-            <div class="card-header">Webhook Configuration</div>
-            <div class="control-group">
-              <span class="control-label">Discord Webhook URL</span>
-              <div class="control-input">
-                <input type="text" class="input input-wide" id="webhookUrl" placeholder="https://discord.com/api/webhooks/..."
-                  onchange="sendToPython('set_webhook_url', this.value)">
-              </div>
-            </div>
-        
-            <div class="control-group">
-              <span class="control-label">Discord User ID (for pings)</span>
-              <div class="control-input">
-                <input type="text" class="input input-wide" id="discordUserId" placeholder="123456789012345678"
-                  onchange="sendToPython('set_discord_user_id', this.value)">
-              </div>
-            </div>
-            <div class="help-hint">Enter your Discord User ID - use toggles below to control which notifications ping you
-            </div>
-        
-            <div class="control-group">
-              <span class="control-label">Test Webhook</span>
-              <div class="control-input">
-                <button class="btn btn-sm" onclick="testWebhook()">Send Test Message</button>
-              </div>
-            </div>
-          </div>
-          
-          <div class="card">
-            <div class="card-header">Notification Settings</div>
-        
-            <div class="control-group">
-              <span class="control-label">Devil Fruit Stored</span>
-              <div class="control-input">
-                <div class="toggle-switch" id="logDevilFruitToggle"
-                  onclick="toggleLoggingExpandable('logDevilFruitToggle', 'logDevilFruitExpand')"></div>
-              </div>
-            </div>
-            <div class="expandable-section" id="logDevilFruitExpand">
-              <div class="control-group">
-                <span class="control-label">Enable Ping</span>
-                <div class="control-input">
-                  <div class="toggle-switch" id="pingDevilFruitToggle" onclick="toggleSetting('pingDevilFruit')"></div>
-                </div>
-              </div>
-            </div>
-
-            <div class="control-group">
-              <span class="control-label">Devil Fruit Spawns</span>
-              <div class="control-input">
-                <div class="toggle-switch" id="logSpawnsToggle"
-                  onclick="toggleLoggingExpandable('logSpawnsToggle', 'logSpawnsExpand')"></div>
-              </div>
-            </div>
-            <div class="expandable-section" id="logSpawnsExpand">
-              <div class="control-group">
-                <span class="control-label">Enable Ping</span>
-                <div class="control-input">
-                  <div class="toggle-switch" id="pingSpawnsToggle" onclick="toggleSetting('pingSpawns')"></div>
-                </div>
-              </div>
-            
-            </div>
-            <div class="control-group">
-              <span class="control-label">Recast Timeouts</span>
-              <div class="control-input">
-                <div class="toggle-switch" id="logRecastTimeoutsToggle"
-                  onclick="toggleLoggingExpandable('logRecastTimeoutsToggle', 'logRecastTimeoutsExpand')"></div>
-              </div>
-            </div>
-            <div class="expandable-section" id="logRecastTimeoutsExpand">
-              <div class="control-group">
-                <span class="control-label">Enable Ping</span>
-                <div class="control-input">
-                  <div class="toggle-switch" id="pingRecastTimeoutsToggle" onclick="toggleSetting('pingRecastTimeouts')"></div>
-                </div>
-              </div>
-            </div>
-        
-            <div class="control-group">
-              <span class="control-label">Periodic Statistics</span>
-              <div class="control-input">
-                <div class="toggle-switch" id="logPeriodicStatsToggle"
-                  onclick="toggleLoggingExpandable('logPeriodicStatsToggle', 'logPeriodicStatsExpand')"></div>
-              </div>
-            </div>
-            <div class="expandable-section" id="logPeriodicStatsExpand">
-              <div class="control-group">
-                <span class="control-label">Enable Ping</span>
-                <div class="control-input">
-                  <div class="toggle-switch" id="pingPeriodicStatsToggle" onclick="toggleSetting('pingPeriodicStats')"></div>
-                </div>
-              </div>
-            </div>
-        
-            <div class="control-group">
-              <span class="control-label">General Updates</span>
-              <div class="control-input">
-                <div class="toggle-switch" id="logGeneralUpdatesToggle"
-                  onclick="toggleLoggingExpandable('logGeneralUpdatesToggle', 'logGeneralUpdatesExpand')"></div>
-              </div>
-            </div>
-            <div class="expandable-section" id="logGeneralUpdatesExpand">
-              <div class="control-group">
-                <span class="control-label">Enable Ping</span>
-                <div class="control-input">
-                  <div class="toggle-switch" id="pingGeneralUpdatesToggle" onclick="toggleSetting('pingGeneralUpdates')"></div>
-                </div>
-              </div>
-            </div>
-        
-            <div class="control-group">
-              <span class="control-label">Macro Start/Stop</span>
-              <div class="control-input">
-                <div class="toggle-switch" id="logMacroStateToggle"
-                  onclick="toggleLoggingExpandable('logMacroStateToggle', 'logMacroStateExpand')"></div>
-              </div>
-            </div>
-            <div class="expandable-section" id="logMacroStateExpand">
-              <div class="control-group">
-                <span class="control-label">Enable Ping</span>
-                <div class="control-input">
-                  <div class="toggle-switch" id="pingMacroStateToggle" onclick="toggleSetting('pingMacroState')"></div>
-                </div>
-              </div>
-            </div>
-        
-            <div class="control-group">
-              <span class="control-label">Errors & Warnings</span>
-              <div class="control-input">
-                <div class="toggle-switch active" id="logErrorsToggle"
-                  onclick="toggleLoggingExpandable('logErrorsToggle', 'logErrorsExpand')"></div>
-              </div>
-            </div>
-            <div class="expandable-section" id="logErrorsExpand">
-              <div class="control-group">
-                <span class="control-label">Enable Ping</span>
-                <div class="control-input">
-                  <div class="toggle-switch" id="pingErrorsToggle" onclick="toggleSetting('pingErrors')"></div>
-                </div>
-              </div>
-            </div>
-        
-          </div>
-          
-          <div class="card">
-            <div class="card-header">Reporting Intervals</div>
-            <div class="control-group">
-              <span class="control-label">Stats Report Interval</span>
-              <div class="control-input">
-                <input type="number" class="input" id="periodicStatsInterval" value="5" step="1" min="1"
-                  onchange="sendToPython('set_periodic_stats_interval', this.value)">
-                <span class="unit">minutes</span>
-              </div>
-            </div>
-            <div class="help-hint">How often to send periodic statistics reports to your webhook</div>
-          </div>
         </div>
 
         <div class="view" id="fishing-modes">
-          <div class="card">
-            <div class="card-header">Megalodon Mode</div>
-            <div class="control-group">
-              <span class="control-label">Enable Megalodon Sound Recognition</span>
-              <div class="control-input">
-                <div class="toggle-switch" id="megalodonSoundToggle" onclick="toggleSetting('megalodonSound')"></div>
-              </div>
-            </div>
-            <div class="help-hint">Listens for Megalodon roar sound and only continues fishing if detected</div>
-            <div class="control-group">
-              <span class="control-label">Sound Sensitivity</span>
-              <div class="control-input">
-                <input type="number" class="input" id="soundSensitivity" value="0.1" step="0.1" min="0" max="1"
-                  onchange="sendToPython('set_sound_sensitivity', this.value)">
-                <span class="unit">threshold</span>
-              </div>
-            </div>
-          </div>
-
           <div class="card">
             <div class="card-header">RDP Session Detection</div>
             <div class="control-group">
@@ -730,6 +417,25 @@
               </div>
             </div>
             <div class="help-hint">Automatically detect when running in Remote Desktop and adjust behavior</div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Megalodon Mode</div>
+            <div class="control-group">
+              <span class="control-label">Enable Megalodon Sound Recognition</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="megalodonSoundToggle" onclick="toggleSetting('megalodonSound')"></div>
+              </div>
+            </div>
+            <div class="help-hint">Listens for Megalodon roar sound and only continues fishing if detected</div>
+            <div class="control-group">
+              <span class="control-label">Sound Sensitivity</span>
+              <div class="control-input">
+                <input type="number" class="input" id="soundSensitivity" value="0.1" step="0.1" min="0" max="1"
+                  onchange="sendToPython('set_sound_sensitivity', this.value)">
+                <span class="unit">threshold</span>
+              </div>
+            </div>
           </div>
 
           <div class="card">
@@ -773,15 +479,6 @@
           </div>
 
           <div class="card">
-            <div class="card-header">Active Sessions</div>
-            <div id="activeSessionsContainer">
-              <div style="text-align:center;padding:20px;color:#6b7a92;">
-                Loading sessions...
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
             <div class="card-header">Client Identification</div>
             <div class="control-group">
               <span class="control-label">Device Name</span>
@@ -799,6 +496,153 @@
               </div>
             </div>
             <div class="help-hint">Each device has a unique ID for tracking and synchronization</div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Active Sessions</div>
+            <div id="activeSessionsContainer">
+              <div style="text-align:center;padding:20px;color:#6b7a92;">
+                Loading sessions...
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="view" id="automation">
+          <div class="card">
+            <div class="card-header">Auto Select Bait</div>
+            <div class="control-group">
+              <span class="control-label">Enable Auto Select Top Bait</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="autoSelectBaitToggle" onclick="toggleSetting('autoSelectBait')"></div>
+              </div>
+            </div>
+            <div class="requirement-warning" id="autoSelectBaitWarning">
+              <strong>Missing Requirements:</strong><br>
+              You need to configure the Top Bait Point first.<br>
+              Go to <a onclick="navigateToLocations()">Locations → Bait Locations</a>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Auto Purchase Bait</div>
+            <div class="control-group">
+              <span class="control-label">Enable Auto Buy Common Bait</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="autoBuyBaitToggle"
+                  onclick="toggleExpandable('autoBuyBait', 'autoBuyExpand')"></div>
+              </div>
+            </div>
+            <div class="requirement-warning" id="autoBuyBaitWarning">
+              <strong>⚠️ Missing Requirements:</strong><br>
+              You need to configure all Bait Shop points first.<br>
+              Go to <a onclick="navigateToLocations()">Locations → Bait Shop Interaction Points</a>
+            </div>
+            <div class="expandable-section" id="autoBuyExpand">
+              <div class="control-group">
+                <span class="control-label">Purchase Frequency</span>
+                <div class="control-input">
+                  <input type="number" class="input" id="loopsPerPurchase" value="100" step="1"
+                    onchange="sendToPython('set_loops_per_purchase', this.value)">
+                  <span class="unit">loops</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Auto Craft Bait</div>
+            <div class="control-group">
+              <span class="control-label">Enable Auto Craft</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="autoCraftBaitToggle"
+                  onclick="toggleExpandable('autoCraftBait', 'autoCraftExpand')"></div>
+              </div>
+            </div>
+            <div class="requirement-warning" id="autoCraftBaitWarning">
+              <strong>Missing Requirements:</strong><br>
+              You need to configure all crafting points and recipes first.<br>
+              Go to <a onclick="navigateToLocations()">Locations → Crafting Interface Points</a>
+            </div>
+            <div class="expandable-section" id="autoCraftExpand">
+              <div class="control-group">
+                <span class="control-label">Fish Caught Before Craft</span>
+                <div class="control-input">
+                  <input type="number" class="input" id="fishCountPerCraft" value="50" step="1" min="1"
+                    onchange="sendToPython('set_fish_count_per_craft', this.value)">
+                  <span class="unit">fish</span>
+                </div>
+              </div>
+              <div class="control-group">
+                <span class="control-label">Movement Duration</span>
+                <div class="control-input">
+                  <input type="number" class="input" id="moveDuration" value="0" step="0.25"
+                    onchange="sendToPython('set_move_duration', this.value)">
+                  <span class="unit">seconds</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Auto Store Devil Fruit</div>
+            <div class="control-group">
+              <span class="control-label">Enable Auto Storage</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="autoStoreFruitToggle"
+                  onclick="toggleExpandable('autoStoreFruit', 'autoStoreExpand')"></div>
+              </div>
+            </div>
+            <div class="requirement-warning" id="autoStoreFruitWarning">
+              <strong>Missing Requirements:</strong><br>
+              You need to configure the Devil Fruit Store location first.<br>
+              Go to <a onclick="navigateToLocations()">Locations → Devil Fruit Locations</a>
+            </div>
+            <div class="expandable-section" id="autoStoreExpand">
+              <div class="control-group">
+                <span class="control-label">Store to Backpack (vs Drop)</span>
+                <div class="control-input">
+                  <div class="toggle-switch disabled" id="storeToBackpackToggle"
+                    style="opacity: 0.5; cursor: not-allowed; pointer-events: none;"></div>
+                  <span style="color: #6b7a92; font-size: 10px; font-style: italic; margin-left: 8px;">Coming
+                    Soon</span>
+                </div>
+              </div>
+              <div class="control-group">
+                <span class="control-label">Storage Frequency</span>
+                <div class="control-input">
+                  <input type="number" class="input" id="loopsPerStore" value="1" step="1" min="1"
+                    onchange="sendToPython('set_loops_per_store', this.value)">
+                  <span class="unit">loops</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Devil Fruit Spawn Detection</div>
+            <div class="control-group">
+              <span class="control-label">Enable Spawn Detection</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="enableSpawnDetectionToggle"
+                  onclick="toggleExpandable('enableSpawnDetection', 'spawnDetectionExpand')"></div>
+              </div>
+            </div>
+            <div class="requirement-warning" id="enableSpawnDetectionWarning">
+              <strong>⚠️ Missing Requirements:</strong><br>
+              You need to configure the OCR Detection Area first.<br>
+              Go to <a onclick="navigateToLocations()">Locations → OCR Configuration</a>
+            </div>
+            <div class="expandable-section" id="spawnDetectionExpand">
+              <div class="control-group">
+                <span class="control-label">Scan Interval</span>
+                <div class="control-input">
+                  <input type="number" class="input" id="spawnScanInterval" value="2.0" step="0.5" min="0.5" max="10"
+                    onchange="sendToPython('set_spawn_scan_interval', this.value)">
+                  <span class="unit">seconds</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -828,6 +672,7 @@
             </div>
             <div class="help-hint">PD control maintains alignment between the fishing bar and target</div>
           </div>
+
           <div class="card">
             <div class="card-header">Advanced PD Parameters</div>
             <div class="control-group">
@@ -852,6 +697,7 @@
               </div>
             </div>
           </div>
+
           <div class="card">
             <div class="card-header">Casting Configuration</div>
             <div class="control-group">
@@ -871,6 +717,7 @@
               </div>
             </div>
           </div>
+
           <div class="card">
             <div class="card-header">Anti-Detection Thresholds</div>
             <div class="control-group">
@@ -920,6 +767,7 @@
               </div>
             </div>
           </div>
+
           <div class="card">
             <div class="card-header">Window Focus Timing</div>
             <div class="control-group">
@@ -939,6 +787,35 @@
               </div>
             </div>
           </div>
+
+          <div class="card">
+            <div class="card-header">Inventory Selection Timing</div>
+            <div class="control-group">
+              <span class="control-label">Rod Selection Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="rodDelay" value="0.5" step="0.1"
+                  onchange="sendToPython('set_rod_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Bait Selection Delay</span>
+              <div class="control-input">
+                <input type="number" class="input" id="baitDelay" value="0.5" step="0.1"
+                  onchange="sendToPython('set_bait_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Cursor Movement Humanization</span>
+              <div class="control-input">
+                <input type="number" class="input" id="cursorDelay" value="0.05" step="0.01"
+                  onchange="sendToPython('set_cursor_delay', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+          </div>
+
           <div class="card">
             <div class="card-header">Purchase Interaction Timing</div>
             <div class="control-group">
@@ -974,33 +851,7 @@
               </div>
             </div>
           </div>
-          <div class="card">
-            <div class="card-header">Inventory Selection Timing</div>
-            <div class="control-group">
-              <span class="control-label">Rod Selection Delay</span>
-              <div class="control-input">
-                <input type="number" class="input" id="rodDelay" value="0.5" step="0.1"
-                  onchange="sendToPython('set_rod_delay', this.value)">
-                <span class="unit">seconds</span>
-              </div>
-            </div>
-            <div class="control-group">
-              <span class="control-label">Bait Selection Delay</span>
-              <div class="control-input">
-                <input type="number" class="input" id="baitDelay" value="0.5" step="0.1"
-                  onchange="sendToPython('set_bait_delay', this.value)">
-                <span class="unit">seconds</span>
-              </div>
-            </div>
-            <div class="control-group">
-              <span class="control-label">Cursor Movement Humanization</span>
-              <div class="control-input">
-                <input type="number" class="input" id="cursorDelay" value="0.05" step="0.01"
-                  onchange="sendToPython('set_cursor_delay', this.value)">
-                <span class="unit">seconds</span>
-              </div>
-            </div>
-          </div>
+
           <div class="card">
             <div class="card-header">Devil Fruit Storage Timing</div>
             <div class="control-group">
@@ -1036,6 +887,7 @@
               </div>
             </div>
           </div>
+
           <div class="card">
             <div class="card-header">Crafting Timing</div>
             <div class="control-group">
@@ -1098,34 +950,167 @@
           </div>
         </div>
 
-        <div class="view" id="settings">
+        <div class="view" id="logging">
           <div class="card">
-            <div class="card-header">Configuration Management</div>
+            <div class="card-header">Webhook Configuration</div>
             <div class="control-group">
-              <span class="control-label">Export Settings to File</span>
+              <span class="control-label">Discord Webhook URL</span>
               <div class="control-input">
-                <button class="btn btn-sm" onclick="sendToPython('export_settings', '')">Export Settings</button>
+                <input type="text" class="input input-wide" id="webhookUrl"
+                  placeholder="https://discord.com/api/webhooks/..."
+                  onchange="sendToPython('set_webhook_url', this.value)">
               </div>
             </div>
-            <div class="help-hint">Save your current configuration to a file</div>
-
             <div class="control-group">
-              <span class="control-label">Import Settings from File</span>
+              <span class="control-label">Discord User ID (for pings)</span>
               <div class="control-input">
-                <button class="btn btn-sm" onclick="sendToPython('import_settings', '')">Import Settings</button>
+                <input type="text" class="input input-wide" id="discordUserId" placeholder="123456789012345678"
+                  onchange="sendToPython('set_discord_user_id', this.value)">
               </div>
             </div>
-            <div class="help-hint">Load configuration from a previously exported file</div>
-
+            <div class="help-hint">Enter your Discord User ID - use toggles below to control which notifications ping
+              you</div>
             <div class="control-group">
-              <span class="control-label">Reset to Default Settings</span>
+              <span class="control-label">Test Webhook</span>
               <div class="control-input">
-                <button class="btn btn-sm btn-secondary" onclick="confirmResetSettings()">Reset Settings</button>
+                <button class="btn btn-sm" onclick="testWebhook()">Send Test Message</button>
               </div>
             </div>
-            <div class="help-hint">This will erase all your current settings and restore defaults</div>
           </div>
 
+          <div class="card">
+            <div class="card-header">Reporting Intervals</div>
+            <div class="control-group">
+              <span class="control-label">Stats Report Interval</span>
+              <div class="control-input">
+                <input type="number" class="input" id="periodicStatsInterval" value="5" step="1" min="1"
+                  onchange="sendToPython('set_periodic_stats_interval', this.value)">
+                <span class="unit">minutes</span>
+              </div>
+            </div>
+            <div class="help-hint">How often to send periodic statistics reports to your webhook</div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">Notification Settings</div>
+            <div class="control-group">
+              <span class="control-label">Devil Fruit Stored</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="logDevilFruitToggle"
+                  onclick="toggleLoggingExpandable('logDevilFruitToggle', 'logDevilFruitExpand')"></div>
+              </div>
+            </div>
+            <div class="expandable-section" id="logDevilFruitExpand">
+              <div class="control-group">
+                <span class="control-label">Enable Ping</span>
+                <div class="control-input">
+                  <div class="toggle-switch" id="pingDevilFruitToggle" onclick="toggleSetting('pingDevilFruit')"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">Devil Fruit Spawns</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="logSpawnsToggle"
+                  onclick="toggleLoggingExpandable('logSpawnsToggle', 'logSpawnsExpand')"></div>
+              </div>
+            </div>
+            <div class="expandable-section" id="logSpawnsExpand">
+              <div class="control-group">
+                <span class="control-label">Enable Ping</span>
+                <div class="control-input">
+                  <div class="toggle-switch" id="pingSpawnsToggle" onclick="toggleSetting('pingSpawns')"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">Recast Timeouts</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="logRecastTimeoutsToggle"
+                  onclick="toggleLoggingExpandable('logRecastTimeoutsToggle', 'logRecastTimeoutsExpand')"></div>
+              </div>
+            </div>
+            <div class="expandable-section" id="logRecastTimeoutsExpand">
+              <div class="control-group">
+                <span class="control-label">Enable Ping</span>
+                <div class="control-input">
+                  <div class="toggle-switch" id="pingRecastTimeoutsToggle"
+                    onclick="toggleSetting('pingRecastTimeouts')"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">Periodic Statistics</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="logPeriodicStatsToggle"
+                  onclick="toggleLoggingExpandable('logPeriodicStatsToggle', 'logPeriodicStatsExpand')"></div>
+              </div>
+            </div>
+            <div class="expandable-section" id="logPeriodicStatsExpand">
+              <div class="control-group">
+                <span class="control-label">Enable Ping</span>
+                <div class="control-input">
+                  <div class="toggle-switch" id="pingPeriodicStatsToggle" onclick="toggleSetting('pingPeriodicStats')">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">General Updates</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="logGeneralUpdatesToggle"
+                  onclick="toggleLoggingExpandable('logGeneralUpdatesToggle', 'logGeneralUpdatesExpand')"></div>
+              </div>
+            </div>
+            <div class="expandable-section" id="logGeneralUpdatesExpand">
+              <div class="control-group">
+                <span class="control-label">Enable Ping</span>
+                <div class="control-input">
+                  <div class="toggle-switch" id="pingGeneralUpdatesToggle"
+                    onclick="toggleSetting('pingGeneralUpdates')"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">Macro Start/Stop</span>
+              <div class="control-input">
+                <div class="toggle-switch" id="logMacroStateToggle"
+                  onclick="toggleLoggingExpandable('logMacroStateToggle', 'logMacroStateExpand')"></div>
+              </div>
+            </div>
+            <div class="expandable-section" id="logMacroStateExpand">
+              <div class="control-group">
+                <span class="control-label">Enable Ping</span>
+                <div class="control-input">
+                  <div class="toggle-switch" id="pingMacroStateToggle" onclick="toggleSetting('pingMacroState')"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="control-group">
+              <span class="control-label">Errors & Warnings</span>
+              <div class="control-input">
+                <div class="toggle-switch active" id="logErrorsToggle"
+                  onclick="toggleLoggingExpandable('logErrorsToggle', 'logErrorsExpand')"></div>
+              </div>
+            </div>
+            <div class="expandable-section" id="logErrorsExpand">
+              <div class="control-group">
+                <span class="control-label">Enable Ping</span>
+                <div class="control-input">
+                  <div class="toggle-switch" id="pingErrorsToggle" onclick="toggleSetting('pingErrors')"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="view" id="settings">
           <div class="card">
             <div class="card-header">Application Information</div>
             <div class="control-group">
@@ -1135,7 +1120,6 @@
                   style="background: linear-gradient(135deg, rgba(0, 255, 170, 0.2), rgba(0, 204, 136, 0.15)); border-color: rgba(0, 255, 170, 0.4); color: var(--success);">1.2.8</span>
               </div>
             </div>
-
             <div class="control-group">
               <span class="control-label">Build Hash</span>
               <div class="control-input">
@@ -1143,7 +1127,6 @@
                   style="font-size: 9px; letter-spacing: 0; background: rgba(22, 27, 38, 0.8);">06a1b16287acc78892d5dd2ff57f26e8</span>
               </div>
             </div>
-
             <div class="control-group">
               <span class="control-label">Configuration File</span>
               <div class="control-input">
@@ -1154,6 +1137,31 @@
           </div>
 
           <div class="card">
+            <div class="card-header">Configuration Management</div>
+            <div class="control-group">
+              <span class="control-label">Export Settings to File</span>
+              <div class="control-input">
+                <button class="btn btn-sm" onclick="sendToPython('export_settings', '')">Export Settings</button>
+              </div>
+            </div>
+            <div class="help-hint">Save your current configuration to a file</div>
+            <div class="control-group">
+              <span class="control-label">Import Settings from File</span>
+              <div class="control-input">
+                <button class="btn btn-sm" onclick="sendToPython('import_settings', '')">Import Settings</button>
+              </div>
+            </div>
+            <div class="help-hint">Load configuration from a previously exported file</div>
+            <div class="control-group">
+              <span class="control-label">Reset to Default Settings</span>
+              <div class="control-input">
+                <button class="btn btn-sm btn-secondary" onclick="confirmResetSettings()">Reset Settings</button>
+              </div>
+            </div>
+            <div class="help-hint">This will erase all your current settings and restore defaults</div>
+          </div>
+
+          <div class="card">
             <div class="card-header">Debug Tools</div>
             <div class="control-group">
               <span class="control-label">View Current Configuration</span>
@@ -1161,7 +1169,6 @@
                 <button class="btn btn-sm" onclick="sendToPython('view_config', '')">View Config JSON</button>
               </div>
             </div>
-
             <div class="control-group">
               <span class="control-label">Clear Cached Data</span>
               <div class="control-input">
@@ -1170,6 +1177,7 @@
             </div>
           </div>
         </div>
+
       </div>
     </div>
   </div>

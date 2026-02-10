@@ -770,7 +770,8 @@ function toggleLoggingExpandable(toggleId, expandId) {
         'logPeriodicStatsToggle': 'log_periodic_stats',
         'logGeneralUpdatesToggle': 'log_general_updates',
         'logMacroStateToggle': 'log_macro_state',
-        'logErrorsToggle': 'log_errors'
+        'logErrorsToggle': 'log_errors',
+        'logSpawnsToggle': 'log_spawns'
     };
 
     const settingName = settingNameMap[toggleId];
@@ -922,6 +923,14 @@ function checkRequirements(settingName) {
         }
     }
 
+    if (settingName === 'enableSpawnDetection') {
+        const ocrRegion = document.getElementById('enableSpawnDetectionWarning');
+        if (ocrRegion && ocrRegion.dataset.ocrConfigured !== 'true') {
+            missingRequirements = true;
+            message += 'Configure the OCR Detection Area in <a onclick="navigateToLocations()">Locations → OCR Configuration</a>';
+        }
+    }
+
     if (isToggled && missingRequirements) {
         warningEl.innerHTML = message;
         warningEl.classList.add('show');
@@ -1048,7 +1057,9 @@ function loadAllSettings(state) {
     setToggleState('alwaysOnTopToggle', state.alwaysOnTop);
     setToggleState('debugOverlayToggle', state.showDebugOverlay);
     setToggleState('megalodonSoundToggle', state.megalodonSoundEnabled);
-    setToggleState('enableSpawnDetectionToggle', state.enableSpawnDetection || false);
+
+    // FIX: use setExpandableSection so the panel opens when the setting is saved as true
+    setExpandableSection('enableSpawnDetectionToggle', 'spawnDetectionExpand', state.enableSpawnDetection || false);
 
     setExpandableSection('autoBuyBaitToggle', 'autoBuyExpand', state.autoBuyCommonBait);
     setExpandableSection('autoCraftBaitToggle', 'autoCraftExpand', state.autoCraftBait);
@@ -1101,6 +1112,9 @@ function loadAllSettings(state) {
 
     setExpandableSection('logDevilFruitToggle', 'logDevilFruitExpand', state.logDevilFruit || false);
     setToggleState('pingDevilFruitToggle', state.pingDevilFruit || false);
+
+    setExpandableSection('logSpawnsToggle', 'logSpawnsExpand', state.logSpawns || false);
+    setToggleState('pingSpawnsToggle', state.pingSpawns || false);
 
     setExpandableSection('logRecastTimeoutsToggle', 'logRecastTimeoutsExpand', state.logRecastTimeouts || false);
     setToggleState('pingRecastTimeoutsToggle', state.pingRecastTimeouts || false);
@@ -1175,6 +1189,10 @@ async function pollPythonState() {
             renderConnectedDevices(state.connected_devices);
         }
 
+        if (state.enableSpawnDetection !== undefined) {
+            setExpandableSection('enableSpawnDetectionToggle', 'spawnDetectionExpand', state.enableSpawnDetection);
+        }
+
         if (state.logSpawns !== undefined) {
             setExpandableSection('logSpawnsToggle', 'logSpawnsExpand', state.logSpawns);
         }
@@ -1205,7 +1223,7 @@ async function pollPythonState() {
         if (clientIdDisplay) {
             clientIdDisplay.textContent = CLIENT_ID;
         }
-        
+
         setToggleState('autoDetectRdpToggle', state.auto_detect_rdp !== false);
 
         setToggleState('enableDeviceSyncToggle', state.enable_device_sync || false);
