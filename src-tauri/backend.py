@@ -705,18 +705,40 @@ class DevilFruitDetector:
             FullText = FullText.strip()
             FullTextLower = FullText.lower()
             
-            SpawnKeywords = ['spawned', 'has spawned', 'spawn', 'appeared', 'has appeared']
+            SpawnKeywords = [
+                'spawned',
+                'has spawned',
+                'spown',
+                'spavned',
+                'spawmed',
+                'spavned',
+                'spawneo',
+                'spawred',
+                'spavned',
+                'spawbed'
+            ]
+
             HasSpawnKeyword = any(keyword in FullTextLower for keyword in SpawnKeywords)
             
             if FullText and HasSpawnKeyword:
                 Words = FullText.split()
+                BestMatch = None
+                BestScore = 0
+                
                 for Word in Words:
                     CleanWord = Word.strip('.,!?<>[]{}()')
                     ClosestMatch = self.GetClosestFruit(CleanWord, Cutoff=0.6)
                     if ClosestMatch:
-                        return ClosestMatch
+                        from difflib import SequenceMatcher
+                        Score = SequenceMatcher(None, CleanWord.lower(), ClosestMatch.lower()).ratio()
+                        if Score > BestScore:
+                            BestScore = Score
+                            BestMatch = ClosestMatch
                 
-                return "Unknown Devil Fruit"
+                if BestMatch and BestScore >= 0.6:
+                    return BestMatch
+                
+                return None
                         
             return None
             
@@ -724,10 +746,6 @@ class DevilFruitDetector:
             print(f"Spawn detection error: {E}")
             traceback.print_exc()
             return None
-    
-    def GetClosestFruit(self, Name, Cutoff=0.6):
-        Matches = get_close_matches(Name, self.KnownFruits, n=1, cutoff=Cutoff)
-        return Matches[0] if Matches else None
 
 
 class WebhookNotifier:
@@ -1699,6 +1717,7 @@ class AutomatedFishingSystem:
                 self.LastSpawnCheck = CurrentTime
                 
                 DetectedFruit = self.FruitDetector.DetectSpawn()
+                
                 if DetectedFruit:
                     LogOpts = self.Config.Settings['SpawnDetection']
                     if LogOpts['LogSpawns'] and self.Config.Settings['DevilFruitStorage']['WebhookUrl']:
@@ -2258,7 +2277,11 @@ class AutomatedFishingSystem:
                     if self.Config.Settings['DevilFruitStorage']['WebhookUrl'] and not ColorDetector.DetectGreenish(Points['StoreFruit']):
                         DetectedFruit = None
                         if self.OcrManager.Enabled:
-                            DetectedFruit = self.FruitDetector.DetectNewItem()
+                            RawDetection = self.FruitDetector.DetectNewItem()
+                            if RawDetection:
+                                ClosestMatch = self.FruitDetector.GetClosestFruit(RawDetection, Cutoff=0.6)
+                                if ClosestMatch:
+                                    DetectedFruit = ClosestMatch
 
                         if DetectedFruit:
                             self.State.UpdateStatus("Fruit stored successfully")

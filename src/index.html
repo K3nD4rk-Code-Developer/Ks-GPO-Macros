@@ -397,114 +397,139 @@
           
         </div>
 
-        <div class="view" id="automation">
-          <div class="card">
-            <div class="card-header">Auto Purchase Bait</div>
-            <div class="control-group">
-              <span class="control-label">Enable Auto Buy Common Bait</span>
-              <div class="control-input">
-                <div class="toggle-switch" id="autoBuyBaitToggle"
-                  onclick="toggleExpandable('autoBuyBait', 'autoBuyExpand')"></div>
-              </div>
-            </div>
-            <div class="requirement-warning" id="autoBuyBaitWarning">
-              <strong>⚠️ Missing Requirements:</strong><br>
-              You need to configure all Bait Shop points first.<br>
-              Go to <a onclick="navigateToLocations()">Locations → Bait Shop Interaction Points</a>
-            </div>
-            <div class="expandable-section" id="autoBuyExpand">
-              <div class="control-group">
-                <span class="control-label">Purchase Frequency</span>
-                <div class="control-input">
-                  <input type="number" class="input" id="loopsPerPurchase" value="100" step="1"
-                    onchange="sendToPython('set_loops_per_purchase', this.value)">
-                  <span class="unit">loops</span>
-                </div>
+      <div class="view" id="automation">
+        <div class="card">
+          <div class="card-header">Auto Purchase Bait</div>
+          <div class="control-group">
+            <span class="control-label">Enable Auto Buy Common Bait</span>
+            <div class="control-input">
+              <div class="toggle-switch" id="autoBuyBaitToggle" onclick="toggleExpandable('autoBuyBait', 'autoBuyExpand')">
               </div>
             </div>
           </div>
-          <div class="card">
-            <div class="card-header">Auto Craft Bait</div>
-            <div class="control-group">
-              <span class="control-label">Enable Auto Craft</span>
-              <div class="control-input">
-                <div class="toggle-switch" id="autoCraftBaitToggle"
-                  onclick="toggleExpandable('autoCraftBait', 'autoCraftExpand')"></div>
-              </div>
-            </div>
-            <div class="requirement-warning" id="autoCraftBaitWarning">
-              <strong>Missing Requirements:</strong><br>
-              You need to configure all crafting points and recipes first.<br>
-              Go to <a onclick="navigateToLocations()">Locations → Crafting Interface Points</a>
-            </div>
-            <div class="expandable-section" id="autoCraftExpand">
-              <div class="control-group">
-                <span class="control-label">Fish Caught Before Craft</span>
-                <div class="control-input">
-                  <input type="number" class="input" id="fishCountPerCraft" value="50" step="1" min="1"
-                    onchange="sendToPython('set_fish_count_per_craft', this.value)">
-                  <span class="unit">fish</span>
-                </div>
-              </div>
-              <div class="control-group">
-                <span class="control-label">Movement Duration</span>
-                <div class="control-input">
-                  <input type="number" class="input" id="moveDuration" value="0" step="0.25"
-                    onchange="sendToPython('set_move_duration', this.value)">
-                  <span class="unit">seconds</span>
-                </div>
-              </div>
-            </div>
+          <div class="requirement-warning" id="autoBuyBaitWarning">
+            <strong>⚠️ Missing Requirements:</strong><br>
+            You need to configure all Bait Shop points first.<br>
+            Go to <a onclick="navigateToLocations()">Locations → Bait Shop Interaction Points</a>
           </div>
-          <div class="card">
-            <div class="card-header">Auto Store Devil Fruit</div>
+          <div class="expandable-section" id="autoBuyExpand">
             <div class="control-group">
-              <span class="control-label">Enable Auto Storage</span>
+              <span class="control-label">Purchase Frequency</span>
               <div class="control-input">
-                <div class="toggle-switch" id="autoStoreFruitToggle"
-                  onclick="toggleExpandable('autoStoreFruit', 'autoStoreExpand')"></div>
+                <input type="number" class="input" id="loopsPerPurchase" value="100" step="1"
+                  onchange="sendToPython('set_loops_per_purchase', this.value)">
+                <span class="unit">loops</span>
               </div>
-            </div>
-            <div class="requirement-warning" id="autoStoreFruitWarning">
-              <strong>Missing Requirements:</strong><br>
-              You need to configure the Devil Fruit Store location first.<br>
-              Go to <a onclick="navigateToLocations()">Locations → Devil Fruit Locations</a>
-            </div>
-            <div class="expandable-section" id="autoStoreExpand">
-              <div class="control-group">
-                <span class="control-label">Store to Backpack (vs Drop)</span>
-                <div class="control-input">
-                  <div class="toggle-switch disabled" id="storeToBackpackToggle"
-                    style="opacity: 0.5; cursor: not-allowed; pointer-events: none;"></div>
-                  <span style="color: #6b7a92; font-size: 10px; font-style: italic; margin-left: 8px;">Coming
-                    Soon</span>
-                </div>
-              </div>
-              <div class="control-group">
-                <span class="control-label">Storage Frequency</span>
-                <div class="control-input">
-                  <input type="number" class="input" id="loopsPerStore" value="1" step="1" min="1"
-                    onchange="sendToPython('set_loops_per_store', this.value)">
-                  <span class="unit">loops</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="card">
-            <div class="card-header">Auto Select Bait</div>
-            <div class="control-group">
-              <span class="control-label">Enable Auto Select Top Bait</span>
-              <div class="control-input">
-                <div class="toggle-switch" id="autoSelectBaitToggle" onclick="toggleSetting('autoSelectBait')"></div>
-              </div>
-            </div>
-            <div class="requirement-warning" id="autoSelectBaitWarning">
-              <strong>Missing Requirements:</strong><br>
-              You need to configure the Top Bait Point first.<br>
-              Go to <a onclick="navigateToLocations()">Locations → Bait Locations</a>
             </div>
           </div>
         </div>
+        <div class="card">
+          <div class="card-header">Auto Craft Bait</div>
+          <div class="control-group">
+            <span class="control-label">Enable Auto Craft</span>
+            <div class="control-input">
+              <div class="toggle-switch" id="autoCraftBaitToggle"
+                onclick="toggleExpandable('autoCraftBait', 'autoCraftExpand')"></div>
+            </div>
+          </div>
+          <div class="requirement-warning" id="autoCraftBaitWarning">
+            <strong>Missing Requirements:</strong><br>
+            You need to configure all crafting points and recipes first.<br>
+            Go to <a onclick="navigateToLocations()">Locations → Crafting Interface Points</a>
+          </div>
+          <div class="expandable-section" id="autoCraftExpand">
+            <div class="control-group">
+              <span class="control-label">Fish Caught Before Craft</span>
+              <div class="control-input">
+                <input type="number" class="input" id="fishCountPerCraft" value="50" step="1" min="1"
+                  onchange="sendToPython('set_fish_count_per_craft', this.value)">
+                <span class="unit">fish</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Movement Duration</span>
+              <div class="control-input">
+                <input type="number" class="input" id="moveDuration" value="0" step="0.25"
+                  onchange="sendToPython('set_move_duration', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">Auto Store Devil Fruit</div>
+          <div class="control-group">
+            <span class="control-label">Enable Auto Storage</span>
+            <div class="control-input">
+              <div class="toggle-switch" id="autoStoreFruitToggle"
+                onclick="toggleExpandable('autoStoreFruit', 'autoStoreExpand')"></div>
+            </div>
+          </div>
+          <div class="requirement-warning" id="autoStoreFruitWarning">
+            <strong>Missing Requirements:</strong><br>
+            You need to configure the Devil Fruit Store location first.<br>
+            Go to <a onclick="navigateToLocations()">Locations → Devil Fruit Locations</a>
+          </div>
+          <div class="expandable-section" id="autoStoreExpand">
+            <div class="control-group">
+              <span class="control-label">Store to Backpack (vs Drop)</span>
+              <div class="control-input">
+                <div class="toggle-switch disabled" id="storeToBackpackToggle"
+                  style="opacity: 0.5; cursor: not-allowed; pointer-events: none;"></div>
+                <span style="color: #6b7a92; font-size: 10px; font-style: italic; margin-left: 8px;">Coming
+                  Soon</span>
+              </div>
+            </div>
+            <div class="control-group">
+              <span class="control-label">Storage Frequency</span>
+              <div class="control-input">
+                <input type="number" class="input" id="loopsPerStore" value="1" step="1" min="1"
+                  onchange="sendToPython('set_loops_per_store', this.value)">
+                <span class="unit">loops</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">Auto Select Bait</div>
+          <div class="control-group">
+            <span class="control-label">Enable Auto Select Top Bait</span>
+            <div class="control-input">
+              <div class="toggle-switch" id="autoSelectBaitToggle" onclick="toggleSetting('autoSelectBait')"></div>
+            </div>
+          </div>
+          <div class="requirement-warning" id="autoSelectBaitWarning">
+            <strong>Missing Requirements:</strong><br>
+            You need to configure the Top Bait Point first.<br>
+            Go to <a onclick="navigateToLocations()">Locations → Bait Locations</a>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">Devil Fruit Spawn Detection</div>
+          <div class="control-group">
+            <span class="control-label">Enable Spawn Detection</span>
+            <div class="control-input">
+              <div class="toggle-switch" id="enableSpawnDetectionToggle"
+                onclick="toggleExpandable('enableSpawnDetection', 'spawnDetectionExpand')"></div>
+            </div>
+          </div>
+          <div class="requirement-warning" id="enableSpawnDetectionWarning">
+            <strong>⚠️ Missing Requirements:</strong><br>
+            You need to configure the OCR Detection Area first.<br>
+            Go to <a onclick="navigateToLocations()">Locations → OCR Configuration</a>
+          </div>
+          <div class="expandable-section" id="spawnDetectionExpand">
+            <div class="control-group">
+              <span class="control-label">Scan Interval</span>
+              <div class="control-input">
+                <input type="number" class="input" id="spawnScanInterval" value="2.0" step="0.5" min="0.5" max="10"
+                  onchange="sendToPython('set_spawn_scan_interval', this.value)">
+                <span class="unit">seconds</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
         <div class="view" id="logging">
           <div class="card">
@@ -778,23 +803,6 @@
         </div>
 
         <div class="view" id="tuning">
-          <div class="card">
-            <div class="card-header">Devil Fruit Spawn Detection</div>
-            <div class="control-group">
-              <span class="control-label">Enable Spawn Detection</span>
-              <div class="control-input">
-                <div class="toggle-switch" id="enableSpawnDetectionToggle" onclick="toggleSetting('enableSpawnDetection')"></div>
-              </div>
-            </div>
-            <div class="control-group">
-              <span class="control-label">Scan Interval</span>
-              <div class="control-input">
-                <input type="number" class="input" id="spawnScanInterval" value="2.0" step="0.5" min="0.5" max="10"
-                  onchange="sendToPython('set_spawn_scan_interval', this.value)">
-                <span class="unit">seconds</span>
-              </div>
-            </div>
-          </div>
           <div class="card">
             <div class="card-header">PD Controller Settings</div>
             <div class="control-group">

@@ -119,8 +119,8 @@
         ]
     },
     "AutomationFeatures": {
-        "AutoBuyCommonBait": false,
-        "AutoStoreDevilFruit": false,
+        "AutoBuyCommonBait": true,
+        "AutoStoreDevilFruit": true,
         "AutoSelectTopBait": false,
         "AutoCraftBait": false
     },
@@ -152,7 +152,7 @@
         "PeriodicStatsIntervalMinutes": 30
     },
     "FishingModes": {
-        "MegalodonSound": true,
+        "MegalodonSound": false,
         "SoundSensitivity": 0.05
     },
     "RDPSettings": {
@@ -162,7 +162,7 @@
         "ResumeOnRDPReconnect": false
     },
     "DeviceSyncSettings": {
-        "EnableDeviceSync": true,
+        "EnableDeviceSync": false,
         "SyncSettings": true,
         "SyncStats": false,
         "ShareFishCount": false,
@@ -226,7 +226,7 @@
         }
     },
     "SpawnDetection": {
-        "EnableSpawnDetection": false,
+        "EnableSpawnDetection": true,
         "ScanInterval": 2.0,
         "LogSpawns": true,
         "PingSpawns": true
