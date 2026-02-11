@@ -1181,6 +1181,17 @@ class InputController:
         time.sleep(self.Config.Settings['TimingDelays']['PreCast']['PreCastClickDelay'])
         return True
     
+    def FastClickPoint(self, Point):
+        if not Point:
+            return False
+        
+        ctypes.windll.user32.SetCursorPos(Point['x'], Point['y'])
+        time.sleep(0.015)
+        ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
+        time.sleep(0.015)
+        pyautogui.click()
+        return True
+    
     def PressKey(self, Key):
         keyboard.press_and_release(Key)
     
@@ -2112,7 +2123,7 @@ class AutomatedFishingSystem:
                     if not self.State.IsRunning:
                         return
                     
-                    self.InputController.ClickPoint(Points['CraftButton'])
+                    self.InputController.FastClickPoint(Points['CraftButton'])
                     time.sleep(0.025)
         
         self.State.UpdateStatus("Closing craft menu")

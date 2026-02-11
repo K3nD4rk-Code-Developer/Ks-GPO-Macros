@@ -19,8 +19,8 @@
     },
     "ClickPoints": {
         "WaterPoint": {
-            "x": 1406,
-            "y": 49
+            "x": 1562,
+            "y": 54
         },
         "Shop": {
             "LeftPoint": {
@@ -37,8 +37,8 @@
             }
         },
         "BaitPoint": {
-            "x": 1282,
-            "y": 1063
+            "x": 1273,
+            "y": 1061
         },
         "DevilFruit": {
             "StoreFruitPoint": {
@@ -121,15 +121,15 @@
     "AutomationFeatures": {
         "AutoBuyCommonBait": false,
         "AutoStoreDevilFruit": true,
-        "AutoSelectTopBait": false,
+        "AutoSelectTopBait": true,
         "AutoCraftBait": true
     },
     "AutomationFrequencies": {
         "LoopsPerPurchase": 100,
-        "LoopsPerStore": 50,
+        "LoopsPerStore": 25,
         "LoopsPerCraft": 5,
         "CraftsPerCycle": 40,
-        "FishCountPerCraft": 1
+        "FishCountPerCraft": 50
     },
     "DevilFruitStorage": {
         "StoreToBackpack": false,
