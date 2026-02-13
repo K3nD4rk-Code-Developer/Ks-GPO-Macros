@@ -229,9 +229,10 @@ async function downloadUpdate() {
 function dismissBanner() {
     const banner = document.getElementById('updateBanner');
     if (banner) {
-        banner.style.animation = 'slideUp 0.3s ease-out';
+        banner.classList.add('banner-exit');
         setTimeout(() => {
             banner.style.display = 'none';
+            banner.classList.remove('banner-exit');
         }, 300);
     }
 }
@@ -256,22 +257,22 @@ function closeDisclaimer() {
 
 function showWarningNotification(message) {
     const notification = document.createElement('div');
-    notification.style.cssText = 'position:fixed;top:80px;right:20px;background:linear-gradient(135deg,rgba(255,170,0,0.95),rgba(245,158,11,0.95));color:#111;padding:16px 24px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:0 8px 32px rgba(255,170,0,0.4);z-index:10000;animation:slideInRight 0.3s ease-out;border:1px solid rgba(255,255,255,0.2);max-width:400px;word-wrap:break-word;';
+    notification.className = 'notification notification-warning';
     notification.textContent = message;
     document.body.appendChild(notification);
     setTimeout(() => {
-        notification.style.animation = 'slideOutRight 0.3s ease-out';
+        notification.classList.add('notification-exit');
         setTimeout(() => notification.remove(), 300);
     }, 5000);
 }
 
 function showErrorNotification(message) {
     const notification = document.createElement('div');
-    notification.style.cssText = 'position:fixed;top:80px;right:20px;background:linear-gradient(135deg,rgba(255,68,102,0.95),rgba(220,38,38,0.95));color:white;padding:16px 24px;border-radius:12px;font-weight:600;font-size:14px;box-shadow:0 8px 32px rgba(255,68,102,0.4);z-index:10000;animation:slideInRight 0.3s ease-out;border:1px solid rgba(255,255,255,0.2);max-width:400px;word-wrap:break-word;';
+    notification.className = 'notification notification-error';
     notification.textContent = message;
     document.body.appendChild(notification);
     setTimeout(() => {
-        notification.style.animation = 'slideOutRight 0.3s ease-out';
+        notification.classList.add('notification-exit');
         setTimeout(() => notification.remove(), 300);
     }, 5000);
 }
@@ -345,7 +346,7 @@ function renderConnectedDevices(devices) {
     if (!container) return;
 
     if (!devices || devices.length === 0) {
-        container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">No devices connected. Enable device synchronization to see connected devices.</div>';
+        container.innerHTML = '<div class="loading-message">No devices connected. Enable device synchronization to see connected devices.</div>';
         return;
     }
 
@@ -360,11 +361,11 @@ function renderConnectedDevices(devices) {
           <i class="fas fa-desktop"></i> ${device.name || `Device ${index + 1}`}
         </div>
         <div class="device-status ${isOnline ? '' : 'offline'}">
-          <div style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></div>
+          <div class="status-dot-small"></div>
           ${isOnline ? 'Online' : 'Offline'}
         </div>
       </div>
-      <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 8px;">
+      <div class="device-id-text">
         ID: ${device.client_id}
       </div>
       <div class="device-stats">
@@ -378,7 +379,7 @@ function renderConnectedDevices(devices) {
         </div>
         <div class="device-stat">
           <div class="device-stat-label">Status</div>
-          <div class="device-stat-value" style="font-size: 12px;">${device.is_running ? 'Active' : 'Idle'}</div>
+          <div class="device-stat-value device-stat-status">${device.is_running ? 'Active' : 'Idle'}</div>
         </div>
       </div>
     `;
@@ -404,7 +405,7 @@ function renderActiveSessions(sessions) {
     window.lastSessionKey = sessionKey;
 
     if (!validSessions || validSessions.length === 0) {
-        container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">No active sessions detected</div>';
+        container.innerHTML = '<div class="loading-message">No active sessions detected</div>';
         return;
     }
 
@@ -420,7 +421,9 @@ function renderActiveSessions(sessions) {
         const isCurrentClient = session.client_id === CLIENT_ID;
         const sessionCard = document.createElement('div');
         sessionCard.className = 'device-card';
-        sessionCard.style.borderColor = isCurrentClient ? 'var(--border-accent)' : 'var(--border-subtle)';
+        if (isCurrentClient) {
+            sessionCard.classList.add('current-client');
+        }
 
         const displayId = session.client_id.substring(0, 16) + '...';
 
@@ -430,15 +433,15 @@ function renderActiveSessions(sessions) {
                     ${isCurrentClient ? '<strong>This Device</strong>' : `Client ${displayId}`}
                 </div>
                 <div class="device-status ${session.is_running ? '' : 'offline'}">
-                    <div style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></div>
+                    <div class="status-dot-small"></div>
                     ${session.is_running ? 'Running' : 'Idle'}
                 </div>
             </div>
-            <div style="font-size: 10px; color: var(--text-muted); margin-top: 8px;">
+            <div class="device-id-text session-client-id">
                 Client ID: ${displayId}
             </div>
             ${session.rdp_detected ? `
-                <div style="margin-top: 8px;">
+                <div class="session-rdp-container">
                     <div class="rdp-indicator active">
                         <div class="rdp-dot"></div>
                         <span>RDP ${session.rdp_state}</span>
@@ -572,9 +575,7 @@ function renderDevilFruitSlotSelector(selectedSlots) {
         button.textContent = i.toString();
         const isSelected = selectedSlots.includes(i.toString());
         if (isSelected) {
-            button.style.cssText = 'min-width:40px;padding:8px 12px;background:linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));border-color:var(--accent-primary);box-shadow:0 4px 15px rgba(0, 217, 255, 0.4);';
-        } else {
-            button.style.cssText = 'min-width:40px;padding:8px 12px;background:rgba(22, 27, 38, 0.8);box-shadow:none;border:1px solid var(--border-subtle);';
+            button.classList.add('slot-selected');
         }
         button.onclick = () => toggleDevilFruitSlot(i.toString());
         container.appendChild(button);
@@ -654,16 +655,15 @@ function renderRecipes(recipes) {
     lastRenderedRecipes = JSON.parse(JSON.stringify(recipes));
     container.innerHTML = '';
     if (recipes.length === 0) {
-        container.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-muted);">No recipes configured. Click "+ Add Recipe" to get started.</div>';
+        container.innerHTML = '<div class="loading-message">No recipes configured. Click "+ Add Recipe" to get started.</div>';
         return;
     }
     recipes.forEach((recipe, index) => {
         const recipeDiv = document.createElement('div');
-        recipeDiv.className = 'recipe-item';
-        recipeDiv.style.cssText = 'border:1px solid var(--border-subtle);border-radius:12px;padding:18px;margin-bottom:14px;background:linear-gradient(135deg, rgba(26, 32, 48, 0.5), rgba(22, 27, 38, 0.5));transition:all 0.3s ease;backdrop-filter:blur(10px);';
+        recipeDiv.className = 'recipe-item card';
         recipeDiv.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-        <strong style="background:linear-gradient(135deg, var(--accent-primary), var(--accent-tertiary));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;font-size:14px;">Recipe ${index + 1}</strong>
+      <div class="recipe-header">
+        <strong class="recipe-title">Recipe ${index + 1}</strong>
         <button class="btn btn-sm btn-secondary" onclick="removeRecipe(${index})">Remove</button>
       </div>
       <div class="control-group">
@@ -1363,6 +1363,8 @@ function startPolling() {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+    loadFastMode();
+    loadSavedTheme();
     checkForUpdates();
     checkDisclaimer();
     buildSlideshow();
@@ -1393,3 +1395,52 @@ window.addEventListener('DOMContentLoaded', () => {
 window.updateStatus = updateStatus;
 window.updateHotkey = updateHotkey;
 window.updatePointStatus = updatePointStatus;
+
+function changeTheme(themeName) {
+    document.documentElement.setAttribute('data-theme', themeName);
+
+    document.querySelectorAll('.theme-option').forEach(option => {
+        option.classList.remove('active');
+    });
+
+    const selectedOption = document.querySelector(`[data-theme="${themeName}"]`);
+    if (selectedOption) {
+        selectedOption.classList.add('active');
+    }
+
+    localStorage.setItem('selectedTheme', themeName);
+}
+
+function loadSavedTheme() {
+    const savedTheme = localStorage.getItem('selectedTheme') || 'default';
+    changeTheme(savedTheme);
+}
+
+async function toggleFastMode(enabled) {
+    document.documentElement.setAttribute('data-perf', enabled ? 'fast' : 'normal');
+    localStorage.setItem('fastMode', enabled ? 'true' : 'false');
+
+    try {
+        await fetch('http://localhost:8765/set_fast_mode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled })
+        });
+    } catch (error) {
+        console.error('Failed to set fast mode on backend:', error);
+    }
+
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(pollPythonState, enabled ? 1000 : 500);
+}
+
+function loadFastMode() {
+    const saved = localStorage.getItem('fastMode') === 'true';
+    const toggle = document.getElementById('fastModeToggle');
+    if (toggle) toggle.classList.toggle('active', saved);
+
+    if (saved) toggleFastMode(true);
+
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(pollPythonState, saved ? 1000 : 500);
+}

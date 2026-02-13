@@ -19,8 +19,8 @@
     },
     "ClickPoints": {
         "WaterPoint": {
-            "x": 1562,
-            "y": 54
+            "x": 1176,
+            "y": 609
         },
         "Shop": {
             "LeftPoint": {
@@ -37,8 +37,8 @@
             }
         },
         "BaitPoint": {
-            "x": 1273,
-            "y": 1061
+            "x": 1279,
+            "y": 1071
         },
         "DevilFruit": {
             "StoreFruitPoint": {
@@ -110,23 +110,23 @@
         "DevilFruitHotkeys": [
             "3",
             "4",
-            "5",
             "2",
             "6",
             "7",
             "8",
+            "5",
             "9"
         ]
     },
     "AutomationFeatures": {
-        "AutoBuyCommonBait": false,
+        "AutoBuyCommonBait": true,
         "AutoStoreDevilFruit": true,
-        "AutoSelectTopBait": true,
-        "AutoCraftBait": true
+        "AutoSelectTopBait": false,
+        "AutoCraftBait": false
     },
     "AutomationFrequencies": {
         "LoopsPerPurchase": 100,
-        "LoopsPerStore": 25,
+        "LoopsPerStore": 50,
         "LoopsPerCraft": 5,
         "CraftsPerCycle": 40,
         "FishCountPerCraft": 50
@@ -145,8 +145,8 @@
         "PingPeriodicStats": false,
         "LogGeneralUpdates": false,
         "PingGeneralUpdates": true,
-        "LogMacroState": false,
-        "PingMacroState": true,
+        "LogMacroState": true,
+        "PingMacroState": false,
         "LogErrors": false,
         "PingErrors": true,
         "PeriodicStatsIntervalMinutes": 30
@@ -156,7 +156,7 @@
         "SoundSensitivity": 0.05
     },
     "RDPSettings": {
-        "AutoDetectRDP": true,
+        "AutoDetectRDP": false,
         "AllowRDPExecution": true,
         "PauseOnRDPDisconnect": true,
         "ResumeOnRDPReconnect": false
@@ -202,17 +202,17 @@
         },
         "Inventory": {
             "RodSelectDelay": 0.2,
-            "AutoSelectBaitDelay": 0.5
+            "AutoSelectBaitDelay": 0.1
         },
         "DevilFruitStorage": {
-            "StoreFruitHotkeyDelay": 0.2,
-            "StoreFruitClickDelay": 0.25,
+            "StoreFruitHotkeyDelay": 0.015,
+            "StoreFruitClickDelay": 0.025,
             "StoreFruitShiftDelay": 0.35,
             "StoreFruitBackspaceDelay": 0.2
         },
         "AntiDetection": {
             "CursorAntiDetectDelay": 0.05,
-            "AntiMacroSpamDelay": 0.25
+            "AntiMacroSpamDelay": 0.05
         },
         "Crafting": {
             "MoveDuration": 0.0,

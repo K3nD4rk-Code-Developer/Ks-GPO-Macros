@@ -444,6 +444,7 @@ class MacroStateManager:
         self.ClientId = str(uuid.uuid4())
         
         self.TotalFishCaught = 0
+        self.TotalDevilFruits = 0
         self.CumulativeUptime = 0
         self.SessionStartTime = None
         self.LastFishCaptureTime = None
@@ -490,6 +491,9 @@ class MacroStateManager:
         self.TotalFishCaught += 1
         self.FishSinceLastCraft += 1
         self.LastFishCaptureTime = time.time()
+
+    def IncrementDevilFruitCount(self):
+        self.TotalDevilFruits += 1
     
     def HandleRecastTimeout(self):
         self.TotalRecastTimeouts += 1
@@ -1474,7 +1478,14 @@ class FishingMinigameController:
                 Image = np.array(Screenshot)
             
             if ColorDetector.DetectBlackScreen(ScanArea, Image):
-                return False
+                BlackScreenCount = BlackScreenCount + 1 if 'BlackScreenCount' in locals() else 1
+                if BlackScreenCount >= 3:
+                    self.State.UpdateStatus("Multiple black screens detected - recasting")
+                    return False
+                time.sleep(0.5)
+                continue
+            else:
+                BlackScreenCount = 0
             
             BlueMask = ((Image[:, :, 2] == BlueColor[0]) & 
                        (Image[:, :, 1] == BlueColor[1]) & 
@@ -1515,9 +1526,13 @@ class FishingMinigameController:
         
         if ColorDetector.DetectBlackScreen(ScanArea, Image):
             if self.State.MousePressed:
-                pyautogui.mouseUp()
-                self.State.MousePressed = False
-            return False
+                try:
+                    pyautogui.mouseUp()
+                    self.State.MousePressed = False
+                except:
+                    pass
+            time.sleep(0.2)
+            return True
         
         BlueColor = np.array([85, 170, 255])
         BlueMask = ((Image[:, :, 2] == BlueColor[0]) & 
@@ -1890,8 +1905,14 @@ class AutomatedFishingSystem:
         self.State.FishAtLastStats = self.State.TotalFishCaught
     
     def ExecuteMacroLoop(self):
+        LastActivity = time.time()
+        ErrorCount = 0
+        MaxConsecutiveErrors = 5
+        
         while self.State.IsRunning:
             try:
+                LastActivity = time.time()
+                
                 if self.Config.Settings['RDPSettings']['AutoDetectRDP']:
                     self.State.RDPDetected, self.State.RDPSessionState, self.State.RDPSessionId, RDPSessionName = RDPDetector.DetectRDPSession()
                     
@@ -1900,6 +1921,7 @@ class AutomatedFishingSystem:
                         self.State.ClientStats[self.State.ClientId]['rdp_state'] = self.State.RDPSessionState
 
                 self.State.UpdateStatus("Starting new fishing cycle")
+                LastActivity = time.time()
                 self.State.PreviousError = None
                 self.State.PreviousTargetY = None
                 self.State.LastScanTime = time.time()
@@ -1998,22 +2020,68 @@ class AutomatedFishingSystem:
                         Remaining -= Increment
             
             except Exception as E:
+                ErrorCount += 1
                 self.State.UpdateStatus(f"Error: {str(E)[:30]}")
                 print(f"Error in Main: {E}")
+                print(f"Error occurred after {time.time() - LastActivity:.1f}s of inactivity")
+                print(f"Last status: {self.State.CurrentStatus}")
+                traceback.print_exc()
+                
                 LogOpts = self.Config.Settings['LoggingOptions']
-                if self.Config.Settings['DevilFruitStorage']['WebhookUrl'] and LogOpts['LogGeneralUpdates']:
-                    self.Notifier.SendNotification(f"Macro crashed: {E}")
-                break
+                if self.Config.Settings['DevilFruitStorage']['WebhookUrl'] and LogOpts['LogErrors']:
+                    self.Notifier.SendNotification(f"Macro error (#{ErrorCount}): {E}")
+                
+                if self.State.MousePressed:
+                    try:
+                        pyautogui.mouseUp()
+                        self.State.MousePressed = False
+                    except:
+                        pass
+                
+                if ErrorCount >= MaxConsecutiveErrors:
+                    self.State.UpdateStatus(f"Too many errors ({MaxConsecutiveErrors}) - stopping")
+                    if self.Config.Settings['DevilFruitStorage']['WebhookUrl'] and LogOpts['LogErrors']:
+                        self.Notifier.SendNotification(f"Macro stopped after {MaxConsecutiveErrors} consecutive errors")
+                    break
+                
+                self.State.UpdateStatus(f"Recovering from error... ({ErrorCount}/{MaxConsecutiveErrors})")
+                time.sleep(2)
+                self.State.RobloxWindowFocused = False
+                continue
+        
+        if self.State.SessionStartTime:
+            self.State.CumulativeUptime += time.time() - self.State.SessionStartTime
+            self.State.SessionStartTime = None
+        
+        if self.State.MousePressed:
+            try:
+                pyautogui.mouseUp()
+                self.State.MousePressed = False
+            except:
+                pass
         
         self.State.UpdateStatus("Idle")
 
     def ExecutePreCast(self):
         if not self.State.RobloxWindowFocused:
             self.State.UpdateStatus("Focusing Roblox window")
-            if self.InputController.FocusRobloxWindow():
-                self.State.RobloxWindowFocused = True
-                self.State.UpdateStatus("Window focused")
-                time.sleep(self.Config.Settings['TimingDelays']['RobloxWindow']['RobloxPostFocusDelay'])
+            FocusRetries = 0
+            MaxFocusRetries = 3
+            
+            while FocusRetries < MaxFocusRetries and self.State.IsRunning:
+                if self.InputController.FocusRobloxWindow():
+                    self.State.RobloxWindowFocused = True
+                    self.State.UpdateStatus("Window focused")
+                    time.sleep(self.Config.Settings['TimingDelays']['RobloxWindow']['RobloxPostFocusDelay'])
+                    break
+                else:
+                    FocusRetries += 1
+                    self.State.UpdateStatus(f"Failed to focus window (attempt {FocusRetries}/{MaxFocusRetries})")
+                    time.sleep(1)
+            
+            if not self.State.RobloxWindowFocused:
+                self.State.UpdateStatus("Could not focus Roblox window - will retry next cycle")
+                return False
 
         if not self.State.IsRunning:
             return False
@@ -2296,13 +2364,16 @@ class AutomatedFishingSystem:
 
                         if DetectedFruit:
                             self.State.UpdateStatus("Fruit stored successfully")
+                            self.State.IncrementDevilFruitCount()
                             self.Notifier.SendNotification(f"Devil Fruit {DetectedFruit} stored successfully!")
                         else:
                             self.State.UpdateStatus("Fruit stored successfully")
+                            self.State.IncrementDevilFruitCount()
                             self.Notifier.SendNotification("Devil Fruit stored successfully!")
                     else:
                         if self.Config.Settings['DevilFruitStorage']['WebhookUrl']:
                             self.State.UpdateStatus("Fruit storage failed")
+                            self.State.IncrementDevilFruitCount()
                             self.Notifier.SendNotification("Devil Fruit could not be stored.")
 
                         if self.Config.Settings['AutomationFeatures']['AutoBuyBait']:
@@ -2389,6 +2460,7 @@ class AutomatedFishingSystem:
             "loopsPerStore": self.Config.Settings['AutomationFrequencies']['LoopsPerStore'],
             "isRunning": self.State.IsRunning,
             "fishCaught": self.State.TotalFishCaught,
+            "devilFruitsCaught": self.State.TotalDevilFruits,
             "timeElapsed": self.State.GetFormattedElapsedTime(),
             "moveDuration": self.Config.Settings['TimingDelays']['Crafting']['MoveDuration'],
             "fishPerHour": round(self.State.GetFishPerHour(), 1),
@@ -2613,6 +2685,39 @@ def CheckAudioDevice():
         return jsonify({"found": DeviceFound, "deviceName": DeviceName})
     except Exception as E:
         return jsonify({"found": False, "deviceName": None, "error": str(E)})
+
+
+@FlaskApp.route('/set_fast_mode', methods=['POST'])
+def SetFastMode():
+    try:
+        Data = request.json
+        Enabled = Data.get('enabled', False)
+        
+        if Enabled:
+            CurrentDelay = MacroSystem.Config.Settings['FishingControl']['Detection']['ScanLoopDelay']
+            MacroSystem.Config.Settings['FishingControl']['Detection']['ScanLoopDelay'] = CurrentDelay + 0.2
+            MacroSystem.OcrManager.Enabled = False
+            
+            kernel32 = ctypes.windll.kernel32
+            Pid = os.getpid()
+            Handle = kernel32.OpenProcess(0x0200, False, Pid)
+            if Handle:
+                kernel32.SetPriorityClass(Handle, 0x00000020)
+                kernel32.CloseHandle(Handle)
+        else:
+            MacroSystem.Config.LoadFromDisk()
+            MacroSystem.OcrManager.Enabled = True
+            
+            kernel32 = ctypes.windll.kernel32
+            Pid = os.getpid()
+            Handle = kernel32.OpenProcess(0x0200, False, Pid)
+            if Handle:
+                kernel32.SetPriorityClass(Handle, 0x00000080)
+                kernel32.CloseHandle(Handle)
+        
+        return jsonify({"status": "success", "fastMode": Enabled})
+    except Exception as E:
+        return jsonify({"status": "error", "message": str(E)}), 500
 
 
 @FlaskApp.route('/set_window_property', methods=['POST'])

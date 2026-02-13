@@ -19,7 +19,7 @@
             -webkit-app-region: drag;
         }
 
-        .stats-container {
+        .StatsContainer {
             background: rgba(10, 10, 10, 0.9);
             color: #10b981;
             padding: 16px 24px;
@@ -30,29 +30,34 @@
             min-width: 200px;
         }
 
-        .stat-line {
+        .StatLine {
             margin-bottom: 8px;
             display: flex;
             justify-content: space-between;
             gap: 20px;
         }
 
-        .stat-label {
+        .StatLabel {
             color: #666;
         }
 
-        .stat-value {
+        .StatValue {
             color: #00d4ff;
             text-align: right;
         }
 
-        .status-line {
+        .DevilFruitValue {
+            color: #bf40bf;
+            text-align: right;
+        }
+
+        .StatusLine {
             margin-top: 12px;
             padding-top: 12px;
             border-top: 1px solid rgba(100, 100, 100, 0.3);
         }
 
-        .status-label {
+        .StatusLabel {
             color: #888;
             font-size: 11px;
             text-transform: uppercase;
@@ -60,13 +65,13 @@
             margin-bottom: 4px;
         }
 
-        .status-value {
+        .StatusValue {
             color: #10b981;
             font-size: 13px;
-            animation: pulse 2s ease-in-out infinite;
+            animation: Pulse 2s ease-in-out infinite;
         }
 
-        @keyframes pulse {
+        @keyframes Pulse {
 
             0%,
             100% {
@@ -81,44 +86,49 @@
 </head>
 
 <body>
-    <div class="stats-container">
-        <div class="stat-line">
-            <span class="stat-label">Fish Caught</span>
-            <span class="stat-value" id="fishCount">0</span>
+    <div class="StatsContainer">
+        <div class="StatLine">
+            <span class="StatLabel">Fish Caught</span>
+            <span class="StatValue" id="FishCount">0</span>
         </div>
-        <div class="stat-line">
-            <span class="stat-label">Time</span>
-            <span class="stat-value" id="timeElapsed">0:00:00</span>
+        <div class="StatLine">
+            <span class="StatLabel">Devil Fruits</span>
+            <span class="DevilFruitValue" id="DevilFruitCount">0</span>
         </div>
-        <div class="stat-line">
-            <span class="stat-label">Fish/Hour</span>
-            <span class="stat-value" id="fishPerHour">0.0</span>
+        <div class="StatLine">
+            <span class="StatLabel">Time</span>
+            <span class="StatValue" id="TimeElapsed">0:00:00</span>
         </div>
-        <div class="status-line">
-            <div class="status-label">Current Status</div>
-            <div class="status-value" id="currentStatus">Idle</div>
+        <div class="StatLine">
+            <span class="StatLabel">Fish/Hour</span>
+            <span class="StatValue" id="FishPerHour">0.0</span>
+        </div>
+        <div class="StatusLine">
+            <div class="StatusLabel">Current Status</div>
+            <div class="StatusValue" id="CurrentStatus">Idle</div>
         </div>
     </div>
 
     <script>
         const { appWindow } = window.__TAURI__.window;
 
-        async function pollStats() {
+        async function PollStats() {
             try {
-                const response = await fetch('http://localhost:8765/state');
-                const state = await response.json();
+                const Response = await fetch('http://localhost:8765/state');
+                const State = await Response.json();
 
-                document.getElementById('fishCount').textContent = state.fishCaught || 0;
-                document.getElementById('timeElapsed').textContent = state.timeElapsed || '0:00:00';
-                document.getElementById('fishPerHour').textContent = (state.fishPerHour || 0).toFixed(1);
-                document.getElementById('currentStatus').textContent = state.currentStatus || 'Idle';
-            } catch (error) {
-                console.error('Failed to poll stats:', error);
+                document.getElementById('FishCount').textContent = State.fishCaught || 0;
+                document.getElementById('DevilFruitCount').textContent = State.devilFruitsCaught || 0;
+                document.getElementById('TimeElapsed').textContent = State.timeElapsed || '0:00:00';
+                document.getElementById('FishPerHour').textContent = (State.fishPerHour || 0).toFixed(1);
+                document.getElementById('CurrentStatus').textContent = State.currentStatus || 'Idle';
+            } catch (Error) {
+                console.error('Failed to poll stats:', Error);
             }
         }
 
-        setInterval(pollStats, 500);
-        pollStats();
+        setInterval(PollStats, 500);
+        PollStats();
     </script>
 </body>
 
