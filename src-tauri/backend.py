@@ -754,6 +754,19 @@ class DevilFruitDetector:
             print(f"Spawn detection error: {E}")
             traceback.print_exc()
             return None
+        
+    def GetClosestFruit(self, Name, Cutoff=0.6):
+        KnownFruits = {
+            "Soul", "Dragon", "Mochi", "Ope", "Tori", "Buddha",
+            "Pika", "Kage", "Magu", "Gura", "Yuki", "Smoke",
+            "Goru", "Suna", "Mera", "Goro", "Ito", "Paw",
+            "Yami", "Zushi", "Kira", "Spring", "Yomi",
+            "Bomu", "Bari", "Mero", "Horo", "Gomu", "Suke", "Heal",
+            "Kilo", "Spin", "Hie", "Venom", "Pteranodon",
+        }
+
+        Matches = get_close_matches(Name, KnownFruits, n=1, cutoff=Cutoff)
+        return Matches[0] if Matches else None
 
 
 class WebhookNotifier:
@@ -1522,7 +1535,10 @@ class FishingMinigameController:
             if BlueDetected and WhiteDetected and DarkGrayDetected:
                 return True
             
-            time.sleep(self.Config.Settings['FishingControl']['Detection']['ScanLoopDelay'])
+            if not self.FastMode.Enabled:
+                time.sleep(self.Config.Settings['FishingControl']['Detection']['ScanLoopDelay'] + 0.2)
+            else:
+                time.sleep(self.Config.Settings['FishingControl']['Detection']['ScanLoopDelay'])
 
         return False
     
@@ -2728,10 +2744,9 @@ def SetFastMode():
         Enabled = Data.get('enabled', False)
         
         if Enabled:
-            CurrentDelay = MacroSystem.Config.Settings['FishingControl']['Detection']['ScanLoopDelay']
-            MacroSystem.Config.Settings['FishingControl']['Detection']['ScanLoopDelay'] = CurrentDelay + 0.2
             MacroSystem.OcrManager.Enabled = False
-            
+            MacroSystem.FastMode.Enabled = True
+
             kernel32 = ctypes.windll.kernel32
             Pid = os.getpid()
             Handle = kernel32.OpenProcess(0x0200, False, Pid)
@@ -2741,6 +2756,7 @@ def SetFastMode():
         else:
             MacroSystem.Config.LoadFromDisk()
             MacroSystem.OcrManager.Enabled = True
+            MacroSystem.FastMode.Enabled = False
             
             kernel32 = ctypes.windll.kernel32
             Pid = os.getpid()

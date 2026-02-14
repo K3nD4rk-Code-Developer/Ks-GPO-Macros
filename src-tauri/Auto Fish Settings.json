@@ -186,7 +186,7 @@
         "Detection": {
             "GapToleranceMultiplier": 2.0,
             "BlackScreenThreshold": 0.5,
-            "ScanLoopDelay": 0.30000000000000004
+            "ScanLoopDelay": 0.1
         }
     },
     "TimingDelays": {
