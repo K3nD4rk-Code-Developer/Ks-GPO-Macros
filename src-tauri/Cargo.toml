@@ -1,6 +1,6 @@
 [package]
 name = "gpo-fish-macro"
-version = "1.2.8"
+version = "1.2.9"
 description = "A Grand Piece Online fishing macro."
 authors = ["Ken"]
 edition = "2021"

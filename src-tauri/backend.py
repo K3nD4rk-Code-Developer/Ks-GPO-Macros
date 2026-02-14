@@ -116,6 +116,10 @@ class ConfigurationManager:
                 'MegalodonSound': False,
                 'SoundSensitivity': 0.1
             },
+            'AudioDevice': {
+                'SelectedDeviceIndex': None,
+                'DeviceName': ''
+            },
             'RDPSettings': {
                 'AutoDetectRDP': True,
                 'AllowRDPExecution': True,
@@ -961,37 +965,48 @@ class MegalodonSoundDetector:
                 RecordingDuration = 1.5
                 DeviceToUse = None
                 
-                try:
-                    WasapiInfo = AudioInterface.get_host_api_info_by_type(pyaudio.paWASAPI)
-                    DefaultOutputIndex = WasapiInfo.get("defaultOutputDevice")
-                    
-                    if DefaultOutputIndex is not None and DefaultOutputIndex >= 0:
-                        try:
-                            DefaultDevice = AudioInterface.get_device_info_by_index(DefaultOutputIndex)
-                            DefaultName = DefaultDevice.get("name", "")
-                            
-                            for Loopback in AudioInterface.get_loopback_device_info_generator():
-                                if DefaultName in Loopback.get("name", ""):
+                SelectedIndex = self.Config.Settings['AudioDevice']['SelectedDeviceIndex']
+
+                if SelectedIndex is not None:
+                    try:
+                        DeviceToUse = AudioInterface.get_device_info_by_index(SelectedIndex)
+                        print(f"Using manually selected device: {DeviceToUse.get('name', 'Unknown')}")
+                    except Exception as E:
+                        print(f"Selected device not available: {E}")
+                        print("Falling back to auto-detect")
+
+                if DeviceToUse is None:
+                    try:
+                        WasapiInfo = AudioInterface.get_host_api_info_by_type(pyaudio.paWASAPI)
+                        DefaultOutputIndex = WasapiInfo.get("defaultOutputDevice")
+                        
+                        if DefaultOutputIndex is not None and DefaultOutputIndex >= 0:
+                            try:
+                                DefaultDevice = AudioInterface.get_device_info_by_index(DefaultOutputIndex)
+                                DefaultName = DefaultDevice.get("name", "")
+                                
+                                for Loopback in AudioInterface.get_loopback_device_info_generator():
+                                    if DefaultName in Loopback.get("name", ""):
+                                        if Loopback.get('maxInputChannels', 0) > 0:
+                                            DeviceToUse = Loopback
+                                            print(f"Found matching loopback device: {Loopback.get('name', 'Unknown')}")
+                                            break
+                            except Exception as E:
+                                print(f"Error matching default output device: {E}")
+                        
+                        if DeviceToUse is None:
+                            print("No matching loopback device found, trying any available loopback device...")
+                            try:
+                                for Loopback in AudioInterface.get_loopback_device_info_generator():
                                     if Loopback.get('maxInputChannels', 0) > 0:
                                         DeviceToUse = Loopback
-                                        print(f"Found matching loopback device: {Loopback.get('name', 'Unknown')}")
+                                        print(f"Using loopback device: {Loopback.get('name', 'Unknown')}")
                                         break
-                        except Exception as E:
-                            print(f"Error matching default output device: {E}")
-                    
-                    if DeviceToUse is None:
-                        print("No matching loopback device found, trying any available loopback device...")
-                        try:
-                            for Loopback in AudioInterface.get_loopback_device_info_generator():
-                                if Loopback.get('maxInputChannels', 0) > 0:
-                                    DeviceToUse = Loopback
-                                    print(f"Using loopback device: {Loopback.get('name', 'Unknown')}")
-                                    break
-                        except Exception as E:
-                            print(f"Error finding any loopback device: {E}")
-                    
-                except Exception as E:
-                    print(f"WASAPI not available: {E}")
+                            except Exception as E:
+                                print(f"Error finding any loopback device: {E}")
+                        
+                    except Exception as E:
+                        print(f"WASAPI not available: {E}")
                 
                 if DeviceToUse is None:
                     print("No loopback device found - Megalodon sound detection disabled")
@@ -1808,13 +1823,11 @@ class AutomatedFishingSystem:
             self.State.ClientStats[self.State.ClientId] = {
                 "fish_caught": 0,
                 "start_time": None,
-                "is_running": False,
                 "last_seen": time.time(),
                 "rdp_detected": self.State.RDPDetected,
                 "rdp_state": self.State.RDPSessionState
             }
         
-        self.State.ClientStats[self.State.ClientId]["is_running"] = self.State.IsRunning
         self.State.ClientStats[self.State.ClientId]["last_seen"] = time.time()
         self.State.ClientStats[self.State.ClientId]["rdp_detected"] = self.State.RDPDetected
         self.State.ClientStats[self.State.ClientId]["rdp_state"] = self.State.RDPSessionState
@@ -1823,6 +1836,7 @@ class AutomatedFishingSystem:
             self.State.UpdateStatus("Starting macro...")
             self.State.SessionStartTime = time.time()
             self.State.ClientStats[self.State.ClientId]["start_time"] = time.time()
+            self.State.ClientStats[self.State.ClientId]["fish_caught"] = self.State.TotalFishCaught
             self.State.RobloxWindowFocused = False
             self.State.ConsecutiveRecastTimeouts = 0
             self.State.LastPeriodicStatsTime = time.time()
@@ -2436,12 +2450,11 @@ class AutomatedFishingSystem:
         pyautogui.mouseUp()
         return True
     
-    def GetStateForAPI(self):
+    def GetStateForAPI(self, clientId=None):
         CurrentTime = time.time()
         ActiveSessions = [
             {
                 'client_id': Cid,
-                'is_running': Stats.get('is_running', False),
                 'rdp_detected': Stats.get('rdp_detected', False),
                 'rdp_state': Stats.get('rdp_state', 'unknown'),
                 'session_id': self.State.RDPSessionId if Cid == self.State.ClientId else -1,
@@ -2451,6 +2464,9 @@ class AutomatedFishingSystem:
             for Cid, Stats in self.State.ClientStats.items()
             if Cid and Cid != 'unknown' and (CurrentTime - Stats.get('last_seen', 0)) < 30
         ]
+        
+        if clientId is None:
+            clientId = self.State.ClientId
         
         return {
             "clientId": self.State.ClientId,
@@ -2563,14 +2579,13 @@ class AutomatedFishingSystem:
             "connected_devices": self.State.ConnectedDevices,
             "is_syncing": self.State.IsSyncing,
         }
-
+    
 
 FlaskApp = Flask(__name__)
 CORS(FlaskApp)
 
 MacroSystem = AutomatedFishingSystem()
 MacroSystem.OcrManager.Initialize()
-
 
 @FlaskApp.route('/state', methods=['GET'])
 def GetState():
@@ -2580,7 +2595,6 @@ def GetState():
         MacroSystem.State.ClientStats[ClientId] = {
             "fish_caught": 0,
             "start_time": None,
-            "is_running": False,
             "last_seen": time.time(),
             "rdp_detected": False,
             "rdp_state": "unknown"
@@ -2588,8 +2602,7 @@ def GetState():
     
     MacroSystem.State.ClientStats[ClientId]["last_seen"] = time.time()
     
-    if ClientId != 'unknown' and ClientId == MacroSystem.State.ClientId:
-        MacroSystem.State.ClientStats[ClientId]["is_running"] = MacroSystem.State.IsRunning
+    if ClientId == MacroSystem.State.ClientId:
         MacroSystem.State.ClientStats[ClientId]["fish_caught"] = MacroSystem.State.TotalFishCaught
         MacroSystem.State.ClientStats[ClientId]["rdp_detected"] = MacroSystem.State.RDPDetected
         MacroSystem.State.ClientStats[ClientId]["rdp_state"] = MacroSystem.State.RDPSessionState
@@ -2607,34 +2620,29 @@ def GetState():
         if Cid and Cid != 'unknown':
             ActiveSessions.append({
                 'client_id': Cid,
-                'is_running': Stats.get('is_running', False),
                 'rdp_detected': Stats.get('rdp_detected', False),
                 'rdp_state': Stats.get('rdp_state', 'unknown'),
                 'session_id': MacroSystem.State.RDPSessionId if Cid == MacroSystem.State.ClientId else -1,
                 'last_updated': Stats.get('last_seen', 0)
             })
     
-    IsThisClient = (ClientId == MacroSystem.State.ClientId and MacroSystem.State.IsRunning)
     TotalFish = MacroSystem.State.TotalFishCaught
-    ActiveCount = 1 if IsThisClient else 0
     
     if MacroSystem.Config.Settings['DeviceSyncSettings']['EnableDeviceSync'] and MacroSystem.Config.Settings['DeviceSyncSettings']['ShareFishCount']:
         TotalFish = sum(C.get("fish_caught", 0) for C in MacroSystem.State.ClientStats.values())
-        ActiveCount = sum(1 for C in MacroSystem.State.ClientStats.values() if C.get("is_running", False))
     
     TotalUptime = MacroSystem.State.GetElapsedTime()
     GlobalFPH = (TotalFish / TotalUptime * 3600) if TotalUptime > 0 else 0
     
-    BaseResponse = MacroSystem.GetStateForAPI()
+    BaseResponse = MacroSystem.GetStateForAPI(ClientId)
+    
     BaseResponse.update({
         "clientId": MacroSystem.State.ClientId,
         "currentActiveClientId": MacroSystem.State.ClientId,
-        "isRunning": IsThisClient,
         "activeSessions": ActiveSessions,
         "clientFishCaught": MacroSystem.State.ClientStats[ClientId].get("fish_caught", 0),
         "globalFishCaught": TotalFish,
         "globalFishPerHour": round(GlobalFPH, 1),
-        "activeClients": ActiveCount,
     })
     
     return jsonify(BaseResponse)
@@ -2686,6 +2694,32 @@ def CheckAudioDevice():
     except Exception as E:
         return jsonify({"found": False, "deviceName": None, "error": str(E)})
 
+
+@FlaskApp.route('/get_audio_devices', methods=['GET'])
+def GetAudioDevices():
+    try:
+        AudioInterface = pyaudio.PyAudio()
+        Devices = []
+        
+        try:
+            WasapiInfo = AudioInterface.get_host_api_info_by_type(pyaudio.paWASAPI)
+            
+            for Loopback in AudioInterface.get_loopback_device_info_generator():
+                if Loopback.get('maxInputChannels', 0) > 0:
+                    Devices.append({
+                        'index': Loopback.get('index'),
+                        'name': Loopback.get('name', 'Unknown Device'),
+                        'sampleRate': int(Loopback.get('defaultSampleRate', 44100))
+                    })
+        except Exception as E:
+            print(f"Error getting audio devices: {E}")
+        finally:
+            AudioInterface.terminate()
+        
+        return jsonify({"devices": Devices})
+    except Exception as E:
+        return jsonify({"devices": [], "error": str(E)})
+    
 
 @FlaskApp.route('/set_fast_mode', methods=['POST'])
 def SetFastMode():
@@ -2934,6 +2968,19 @@ def ProcessCommand():
         
         if Action == 'set_devil_fruit_hotkeys':
             return HandleDevilFruitSlots(Payload)
+
+        if Action == 'set_audio_device':
+            if Payload is None:
+                return jsonify({"status": "error", "message": "Missing payload"}), 400
+            
+            try:
+                DeviceData = json.loads(Payload)
+                MacroSystem.Config.Settings['AudioDevice']['SelectedDeviceIndex'] = DeviceData.get('index')
+                MacroSystem.Config.Settings['AudioDevice']['DeviceName'] = DeviceData.get('name', '')
+                MacroSystem.Config.SaveToDisk()
+                return jsonify({"status": "success"})
+            except Exception as E:
+                return jsonify({"status": "error", "message": str(E)}), 500
         
         if Action in ActionMap:
             return ActionMap[Action]()

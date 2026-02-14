@@ -1,4 +1,4 @@
-const CURRENT_VERSION = '1.2.8';
+const CURRENT_VERSION = '1.2.9';
 const GITHUB_REPO = 'K3nD4rk-Code-Developer/Grand-Piece-Online-Fishing';
 const CLIENT_ID = getClientId();
 
@@ -377,10 +377,6 @@ function renderConnectedDevices(devices) {
           <div class="device-stat-label">Uptime</div>
           <div class="device-stat-value">${formatUptime(device.uptime || 0)}</div>
         </div>
-        <div class="device-stat">
-          <div class="device-stat-label">Status</div>
-          <div class="device-stat-value device-stat-status">${device.is_running ? 'Active' : 'Idle'}</div>
-        </div>
       </div>
     `;
         container.appendChild(deviceCard);
@@ -396,13 +392,6 @@ function renderActiveSessions(sessions) {
         session.client_id !== 'unknown' &&
         session.client_id.trim() !== ''
     );
-
-    const sessionKey = validSessions ? validSessions.map(s =>
-        `${s.client_id}-${s.is_running}`
-    ).join('|') : 'empty';
-
-    if (sessionKey === window.lastSessionKey) return;
-    window.lastSessionKey = sessionKey;
 
     if (!validSessions || validSessions.length === 0) {
         container.innerHTML = '<div class="loading-message">No active sessions detected</div>';
@@ -432,10 +421,6 @@ function renderActiveSessions(sessions) {
                 <div class="device-name">
                     ${isCurrentClient ? '<strong>This Device</strong>' : `Client ${displayId}`}
                 </div>
-                <div class="device-status ${session.is_running ? '' : 'offline'}">
-                    <div class="status-dot-small"></div>
-                    ${session.is_running ? 'Running' : 'Idle'}
-                </div>
             </div>
             <div class="device-id-text session-client-id">
                 Client ID: ${displayId}
@@ -452,22 +437,6 @@ function renderActiveSessions(sessions) {
         container.appendChild(sessionCard);
     });
 }
-
-function debugSessions() {
-    console.log('=== SESSION DEBUG INFO ===');
-    console.log('My Client ID:', CLIENT_ID);
-    console.log('Stored in localStorage:', localStorage.getItem('macroClientId'));
-
-    fetch(`http://localhost:8765/state?clientId=${CLIENT_ID}`)
-        .then(r => r.json())
-        .then(state => {
-            console.log('Current Active Client ID:', state.currentActiveClientId);
-            console.log('Is Running:', state.isRunning);
-            console.log('Active Sessions:', state.activeSessions);
-            console.log('=========================');
-        });
-}
-
 
 function buildSlideshow() {
     const tabsEl = document.getElementById('slideshowTabs');
@@ -1100,7 +1069,6 @@ function loadAllSettings(state) {
     setToggleState('debugOverlayToggle', state.showDebugOverlay);
     setToggleState('megalodonSoundToggle', state.megalodonSoundEnabled);
 
-    // FIX: use setExpandableSection so the panel opens when the setting is saved as true
     setExpandableSection('enableSpawnDetectionToggle', 'spawnDetectionExpand', state.enableSpawnDetection || false);
 
     setExpandableSection('autoBuyBaitToggle', 'autoBuyExpand', state.autoBuyCommonBait);
@@ -1210,9 +1178,7 @@ async function pollPythonState() {
     try {
         const response = await fetch(`http://localhost:8765/state?clientId=${CLIENT_ID}`);
         const state = await response.json();
-
-        const isThisClientActive = state.currentActiveClientId === CLIENT_ID && state.isRunning;
-        updateStatus(isThisClientActive);
+        updateStatus(state.isRunning);
 
         if (state.hotkeys) {
             updateHotkey('start', state.hotkeys.StartStop || state.hotkeys.start_stop || 'f1');
@@ -1362,12 +1328,102 @@ function startPolling() {
     pollInterval = setInterval(pollPythonState, 500);
 }
 
+async function loadAudioDevices() {
+    try {
+        const response = await fetch('http://localhost:8765/get_audio_devices');
+        const data = await response.json();
+
+        const select = document.getElementById('audioDeviceSelect');
+        if (!select) return;
+
+        const autoOption = select.querySelector('option[value="auto"]');
+        const separator = select.querySelector('option[disabled]');
+
+        while (select.options.length > 2) {
+            select.remove(2);
+        }
+
+        if (data.devices && data.devices.length > 0) {
+            data.devices.forEach(device => {
+                const option = document.createElement('option');
+                option.value = device.index;
+                option.textContent = `${device.name} (${device.sampleRate}Hz)`;
+                option.dataset.deviceName = device.name;
+                select.appendChild(option);
+            });
+
+            const warning = document.getElementById('megalodonAudioWarning');
+            if (warning && data.devices.length > 0) {
+                warning.classList.remove('show');
+            }
+        } else {
+            const warning = document.getElementById('megalodonAudioWarning');
+            if (warning) {
+                warning.classList.add('show');
+            }
+        }
+
+    } catch (error) {
+        console.error('Failed to load audio devices:', error);
+        showErrorNotification('Failed to load audio devices');
+    }
+}
+
+async function refreshAudioDevices() {
+    const button = event.target.closest('button');
+    const icon = button.querySelector('i');
+
+    if (icon) {
+        icon.style.animation = 'spin 1s linear';
+    }
+
+    await loadAudioDevices();
+
+    setTimeout(() => {
+        if (icon) {
+            icon.style.animation = '';
+        }
+    }, 1000);
+}
+
+async function selectAudioDevice(value) {
+    const select = document.getElementById('audioDeviceSelect');
+    const selectedOption = select.options[select.selectedIndex];
+
+    let deviceIndex = null;
+    let deviceName = '';
+
+    if (value !== 'auto') {
+        deviceIndex = parseInt(value);
+        deviceName = selectedOption.dataset.deviceName || selectedOption.textContent;
+    }
+
+    try {
+        await fetch('http://localhost:8765/command', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'set_audio_device',
+                payload: JSON.stringify({
+                    index: deviceIndex,
+                    name: deviceName
+                }),
+                clientId: CLIENT_ID
+            })
+        });
+    } catch (error) {
+        console.error('Failed to set audio device:', error);
+        showErrorNotification('Failed to set audio device');
+    }
+}
+
 window.addEventListener('DOMContentLoaded', () => {
     loadFastMode();
     loadSavedTheme();
     checkForUpdates();
     checkDisclaimer();
     buildSlideshow();
+    loadAudioDevices();
     loadInitialSettings();
 
     setTimeout(() => {

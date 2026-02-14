@@ -110,12 +110,12 @@
         "DevilFruitHotkeys": [
             "3",
             "4",
-            "2",
             "6",
             "7",
             "8",
             "5",
-            "9"
+            "9",
+            "2"
         ]
     },
     "AutomationFeatures": {
@@ -186,7 +186,7 @@
         "Detection": {
             "GapToleranceMultiplier": 2.0,
             "BlackScreenThreshold": 0.5,
-            "ScanLoopDelay": 0.1
+            "ScanLoopDelay": 0.30000000000000004
         }
     },
     "TimingDelays": {

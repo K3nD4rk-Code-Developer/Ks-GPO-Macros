@@ -166,6 +166,7 @@
 
   --gradient-slide-overlay: linear-gradient(to top, rgba(0, 0, 0, 0.85) 0%, transparent 60%);
 
+  --gradient-not-slot-selected: linear-gradient(135deg, var(--shadow-glow-strong), var(--shadow-glow-strong));
   --gradient-slot-selected: linear-gradient(135deg, var(--color-accent-light), var(--color-accent-primary));
   --gradient-slot-glow: linear-gradient(135deg, var(--color-accent-light), var(--color-accent-tertiary));
 
@@ -1688,6 +1689,7 @@ body::before {
 }
 
 .slot-button {
+  background: var(--gradient-not-slot-selected);
   min-width: 40px;
   padding: 8px 12px;
   transition: all 0.3s ease;
@@ -2021,6 +2023,43 @@ body::before {
 
 .sync-status i {
   animation: spin 2s linear infinite;
+}
+
+.select-wide {
+  min-width: 200px;
+  max-width: 400px;
+  flex: 1;
+}
+
+.control-input .btn-secondary {
+  margin-left: 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.device-option {
+  padding: 8px;
+}
+
+.device-option-name {
+  font-weight: 500;
+}
+
+.device-option-info {
+  font-size: 0.85em;
+  color: #94a3b8;
+  margin-left: 8px;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 [data-theme="cyber"] {

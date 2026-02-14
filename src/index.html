@@ -33,7 +33,7 @@
           <h1>K's GPO Fishing Macro</h1>
           <div class="version-container">
             <div class="version">Version 1.2.9</div>
-            <div class="build-type">Production</div>
+            <div class="build-type">Pre-Release</div>
           </div>
         </div>
       </div>
@@ -249,6 +249,20 @@
                 <div class="toggle-switch" id="megalodonSoundToggle" onclick="checkAndToggleMegalodon()"></div>
               </div>
             </div>
+
+            <div class="control-group">
+              <span class="control-label">Audio Input Device</span>
+              <div class="control-input">
+                <select class="select select-wide" id="audioDeviceSelect" onchange="selectAudioDevice(this.value)">
+                  <option value="auto" selected>Auto-Detect (Recommended)</option>
+                  <option disabled>──────────</option>
+                </select>
+                <button class="btn btn-sm btn-secondary" onclick="refreshAudioDevices()">
+                  <i data-lucide="refresh-cw"></i> Refresh
+                </button>
+              </div>
+            </div>
+
             <div class="requirement-warning" id="megalodonAudioWarning">
               <strong>⚠️ No Loopback Audio Device Found:</strong><br>
               Megalodon sound detection requires a WASAPI loopback device (e.g. "Stereo Mix" or a virtual audio
@@ -256,7 +270,9 @@
               Enable <strong>Stereo Mix</strong> in Windows Sound settings → Recording tab, or install a virtual audio
               driver.
             </div>
+
             <div class="help-hint">Listens for Megalodon roar sound and only continues fishing if detected</div>
+
             <div class="control-group">
               <span class="control-label">Sound Sensitivity</span>
               <div class="control-input">
@@ -1165,9 +1181,10 @@
                 </div>
               </div>
             </div>
-            <div class="help-hint">Disables animations and visual effects to reduce CPU/GPU load</div>
+            <div class="help-hint">Disables animations and visual effects to reduce CPU/GPU load, and reduces the
+              resource consumption on the backend side.</div>
           </div>
-          
+
           <div class="card">
             <div class="card-header">Application Information</div>
             <div class="control-group">
