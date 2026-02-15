@@ -5,8 +5,8 @@ const CLIENT_ID = getClientId();
 let activeCategoryIndex = 0;
 let activeSlideIndex = 0;
 let lastRenderedRecipes = null;
-let lastRenderedSessions = null;
 let lastRenderedSessionsJSON = null;
+let lastSessionsUpdateTime = 0;
 let pollInterval;
 let activeElement = null;
 let skipNextUpdate = new Set();
@@ -393,12 +393,21 @@ function renderActiveSessions(sessions) {
     const container = document.getElementById('activeSessionsContainer');
     if (!container) return;
 
-    const currentSessionsJSON = JSON.stringify(sessions);
+    const currentTime = Date.now();
+    const timeSinceLastUpdate = currentTime - lastSessionsUpdateTime;
 
-    if (currentSessionsJSON === lastRenderedSessionsJSON) {
+    if (timeSinceLastUpdate < 5000) {
         return;
     }
 
+    const currentSessionsJSON = JSON.stringify(sessions);
+
+    if (currentSessionsJSON === lastRenderedSessionsJSON) {
+        lastSessionsUpdateTime = currentTime;
+        return;
+    }
+
+    lastSessionsUpdateTime = currentTime;
     lastRenderedSessionsJSON = currentSessionsJSON;
 
     const validSessions = sessions.filter(session =>
@@ -1202,6 +1211,19 @@ async function pollPythonState() {
         if (state.hotkeys) {
             updateHotkey('start', state.hotkeys.StartStop || state.hotkeys.start_stop || 'f1');
             updateHotkey('exit', state.hotkeys.Exit || state.hotkeys.exit || 'f3');
+        }
+
+        if (state.is_admin !== undefined) {
+            const indicator = document.getElementById('adminIndicator');
+            const text = document.getElementById('adminText');
+
+            if (state.is_admin) {
+                indicator.classList.add('active');
+                text.textContent = 'Running as Admin';
+            } else {
+                indicator.classList.remove('active');
+                text.textContent = 'Not Admin';
+            }
         }
 
         if (state.activeSessions) {

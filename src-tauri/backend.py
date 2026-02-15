@@ -1789,6 +1789,7 @@ class AutomatedFishingSystem:
         self.InputController = InputController(self.Config)
         self.MinigameController = FishingMinigameController(self.Config, self.State)
         self.PointSelector = PointSelector()
+        self.IsAdmin = self.CheckAdminStatus()
         
         self.RegionSelectorActive = False
         self.ActiveRegionSelector = None
@@ -1949,6 +1950,12 @@ class AutomatedFishingSystem:
     def TerminateApp(self):
         os._exit(0)
     
+    def CheckAdminStatus(self):
+        try:
+            return ctypes.windll.shell32.IsUserAnAdmin() != 0
+        except:
+            return False
+
     def CheckPeriodicStats(self):
         LogOpts = self.Config.Settings['LoggingOptions']
         if not self.Config.Settings['DevilFruitStorage']['WebhookUrl'] or not LogOpts['LogPeriodicStats'] or self.State.LastPeriodicStatsTime is None:
@@ -2660,6 +2667,7 @@ class AutomatedFishingSystem:
             "device_name": self.Config.Settings['DeviceSyncSettings']['DeviceName'],
             "connected_devices": self.State.ConnectedDevices,
             "is_syncing": self.State.IsSyncing,
+            "is_admin": self.IsAdmin,
         }
     
 
