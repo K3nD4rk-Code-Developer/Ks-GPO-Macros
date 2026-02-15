@@ -19,8 +19,8 @@
     },
     "ClickPoints": {
         "WaterPoint": {
-            "x": 1176,
-            "y": 609
+            "x": 1566,
+            "y": 200
         },
         "Shop": {
             "LeftPoint": {
@@ -37,8 +37,8 @@
             }
         },
         "BaitPoint": {
-            "x": 1279,
-            "y": 1071
+            "x": 1277,
+            "y": 1064
         },
         "DevilFruit": {
             "StoreFruitPoint": {
@@ -60,8 +60,12 @@
                 "y": 1305
             },
             "CraftButtonPoint": {
-                "x": 1539,
-                "y": 1035
+                "x": 1482,
+                "y": 1040
+            },
+            "CraftConfirmPoint": {
+                "x": 1236,
+                "y": 825
             },
             "CloseMenuPoint": {
                 "x": 1666,
@@ -82,7 +86,11 @@
                         "y": 839
                     },
                     "CraftsPerCycle": 40,
-                    "SwitchFishCycle": 5
+                    "SwitchFishCycle": 5,
+                    "SelectMaxPoint": {
+                        "x": 1604,
+                        "y": 756
+                    }
                 },
                 {
                     "BaitRecipePoint": {
@@ -90,7 +98,11 @@
                         "y": 879
                     },
                     "CraftsPerCycle": 40,
-                    "SwitchFishCycle": 5
+                    "SwitchFishCycle": 5,
+                    "SelectMaxPoint": {
+                        "x": 1605,
+                        "y": 755
+                    }
                 },
                 {
                     "BaitRecipePoint": {
@@ -98,7 +110,11 @@
                         "y": 915
                     },
                     "CraftsPerCycle": 40,
-                    "SwitchFishCycle": 5
+                    "SwitchFishCycle": 5,
+                    "SelectMaxPoint": {
+                        "x": 1604,
+                        "y": 757
+                    }
                 }
             ],
             "CurrentRecipeIndex": 0
@@ -126,10 +142,10 @@
     },
     "AutomationFrequencies": {
         "LoopsPerPurchase": 100,
-        "LoopsPerStore": 50,
+        "LoopsPerStore": 15,
         "LoopsPerCraft": 5,
         "CraftsPerCycle": 40,
-        "FishCountPerCraft": 50
+        "FishCountPerCraft": 0
     },
     "DevilFruitStorage": {
         "StoreToBackpack": false,

@@ -33,7 +33,7 @@
           <h1>K's GPO Fishing Macro</h1>
           <div class="version-container">
             <div class="version">Version 1.2.9</div>
-            <div class="build-type">Pre-Release</div>
+            <div class="build-type">Production</div>
           </div>
         </div>
       </div>
@@ -271,16 +271,16 @@
               driver.
             </div>
 
-            <div class="help-hint">Listens for Megalodon roar sound and only continues fishing if detected</div>
-
             <div class="control-group">
-              <span class="control-label">Sound Sensitivity</span>
+              <span class="control-label">Sound Strictness</span>
               <div class="control-input">
                 <input type="number" class="input" id="soundSensitivity" value="0.1" step="0.1" min="0" max="1"
-                  onchange="sendToPython('set_sound_sensitivity', this.value)">
+                onchange="sendToPython('set_sound_sensitivity', this.value)">
                 <span class="unit">threshold</span>
               </div>
             </div>
+
+            <div class="help-hint">Listens for Megalodon roar sound and only continues fishing if detected, The higher the more strict.</div>
           </div>
 
           <div class="card">
@@ -358,6 +358,7 @@
                 <button class="btn btn-sm" onclick="sendToPython('set_craft_left_point', '')">Configure</button>
               </div>
             </div>
+
             <div class="control-group">
               <span class="control-label">Middle Dialog Option</span>
               <div class="control-input">
@@ -365,6 +366,7 @@
                 <button class="btn btn-sm" onclick="sendToPython('set_craft_middle_point', '')">Configure</button>
               </div>
             </div>
+
             <div class="control-group">
               <span class="control-label">Add Ingredient</span>
               <div class="control-input">
@@ -372,6 +374,7 @@
                 <button class="btn btn-sm" onclick="sendToPython('set_add_recipe_point', '')">Configure</button>
               </div>
             </div>
+
             <div class="control-group">
               <span class="control-label">Top Recipe Slot</span>
               <div class="control-input">
@@ -379,6 +382,7 @@
                 <button class="btn btn-sm" onclick="sendToPython('set_top_recipe_point', '')">Configure</button>
               </div>
             </div>
+
             <div class="control-group">
               <span class="control-label">Click Craft Confirm</span>
               <div class="control-input">
@@ -386,6 +390,17 @@
                 <button class="btn btn-sm" onclick="sendToPython('set_craft_button_point', '')">Configure</button>
               </div>
             </div>
+
+            <div class="control-group">
+              <span class="control-label">Click Craft Selected</span>
+              <div class="control-input">
+                <span class="point-indicator unset" id="craftConfirmPointStatus">Not Configured</span>
+                <button class="btn btn-sm" onclick="sendToPython('set_craft_confirm_point', '')">Configure</button>
+              </div>
+            </div>
+
+            <div class="help-hint">Make sure that the point is set to the right of the green button so that it may not click on other recipes.</div>
+            
             <div class="control-group">
               <span class="control-label">Menu Close</span>
               <div class="control-input">
@@ -1196,7 +1211,7 @@
             <div class="control-group">
               <span class="control-label">Build Hash</span>
               <div class="control-input">
-                <span class="hotkey-badge build-hash-badge">5e1cee66f6020c3cefb3f1da35d5f0b4</span>
+                <span class="hotkey-badge build-hash-badge">775495a6ac88e5ae22a3096c46bbc5b6</span>
               </div>
             </div>
             <div class="control-group">

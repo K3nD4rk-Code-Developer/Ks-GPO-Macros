@@ -6,6 +6,7 @@ let activeCategoryIndex = 0;
 let activeSlideIndex = 0;
 let lastRenderedRecipes = null;
 let lastRenderedSessions = null;
+let lastRenderedSessionsJSON = null;
 let pollInterval;
 let activeElement = null;
 let skipNextUpdate = new Set();
@@ -56,7 +57,12 @@ const SLIDESHOW_DATA = [
             },
             {
                 url: "https://i.postimg.cc/wB0cpbZd/Click-Craft-Confirm.png",
-                title: "Configure Click Craft Confirm",
+                title: "Configure Click Craft Button",
+                desc: "Go to Locations tab, to Crafting Interface Points and configure."
+            },
+            {
+                url: "https://i.postimg.cc/MZ9X4fDD/Screenshot-2026-02-14-214908.png",
+                title: "Configure Click Craft Selected",
                 desc: "Go to Locations tab, to Crafting Interface Points and configure."
             },
             {
@@ -387,6 +393,14 @@ function renderActiveSessions(sessions) {
     const container = document.getElementById('activeSessionsContainer');
     if (!container) return;
 
+    const currentSessionsJSON = JSON.stringify(sessions);
+
+    if (currentSessionsJSON === lastRenderedSessionsJSON) {
+        return;
+    }
+
+    lastRenderedSessionsJSON = currentSessionsJSON;
+
     const validSessions = sessions.filter(session =>
         session.client_id &&
         session.client_id !== 'unknown' &&
@@ -645,11 +659,14 @@ function renderRecipes(recipes) {
         </div>
       </div>
       <div class="control-group">
-        <span class="control-label">Amount of Crafts</span>
+        <span class="control-label">Select Max Button</span>
         <div class="control-input">
-          <input type="number" class="input" value="${recipe.CraftsPerCycle || 40}" step="1" onchange="updateRecipeValue(${index}, 'CraftsPerCycle', this.value)">
+            <span class="point-indicator ${recipe.SelectMaxPoint ? 'set' : 'unset'}">
+            ${recipe.SelectMaxPoint ? `X: ${recipe.SelectMaxPoint.x}, Y: ${recipe.SelectMaxPoint.y}` : 'Not Configured'}
+            </span>
+            <button class="btn btn-sm" onclick="setRecipePoint(${index}, 'SelectMaxPoint')">Configure</button>
         </div>
-      </div>
+        </div>
       <div class="control-group">
         <span class="control-label">Switch Fish Cycle</span>
         <div class="control-input">
@@ -898,6 +915,7 @@ function checkRequirements(settingName) {
             'craftLeftPointStatus': 'Left Dialog',
             'craftMiddlePointStatus': 'Middle Dialog',
             'craftButtonPointStatus': 'Craft Confirm',
+            'craftConfirmPointStatus': 'Craft Confirm Button',
             'closeMenuPointStatus': 'Menu Close',
             'addRecipePointStatus': 'Add Recipe',
             'topRecipePointStatus': 'Top Recipe Slot'
@@ -1154,6 +1172,7 @@ function loadAllSettings(state) {
     updatePointStatus('baitRecipePoint', state.baitRecipePoint?.x, state.baitRecipePoint?.y);
     updatePointStatus('topRecipePoint', state.topRecipePoint?.x, state.topRecipePoint?.y);
     updatePointStatus('craftButtonPoint', state.craftButtonPoint?.x, state.craftButtonPoint?.y);
+    updatePointStatus('craftConfirmPoint', state.craftConfirmPoint?.x, state.craftConfirmPoint?.y);
     updatePointStatus('closeMenuPoint', state.closeMenuPoint?.x, state.closeMenuPoint?.y);
     updatePointStatus('addRecipePoint', state.addRecipePoint?.x, state.addRecipePoint?.y);
     updatePointStatus('devilFruitLocationPoint', state.devilFruitLocationPoint?.x, state.devilFruitLocationPoint?.y);
@@ -1259,6 +1278,7 @@ async function pollPythonState() {
         updatePointStatus('baitPoint', state.baitPoint?.x, state.baitPoint?.y);
         updatePointStatus('craftLeftPoint', state.craftLeftPoint?.x, state.craftLeftPoint?.y);
         updatePointStatus('craftMiddlePoint', state.craftMiddlePoint?.x, state.craftMiddlePoint?.y);
+        updatePointStatus('craftConfirmPoint', state.craftConfirmPoint?.x, state.craftConfirmPoint?.y);
         updatePointStatus('closeMenuPoint', state.closeMenuPoint?.x, state.closeMenuPoint?.y);
         updatePointStatus('devilFruitLocationPoint', state.devilFruitLocationPoint?.x, state.devilFruitLocationPoint?.y);
         updatePointStatus('craftButtonPoint', state.craftButtonPoint?.x, state.craftButtonPoint?.y);

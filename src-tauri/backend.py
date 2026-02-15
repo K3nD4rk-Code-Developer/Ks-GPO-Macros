@@ -70,6 +70,7 @@ class ConfigurationManager:
                 'CraftLeft': None,
                 'CraftMiddle': None,
                 'CraftButton': None,
+                'CraftConfirm': None,
                 'CloseMenu': None,
                 'AddRecipe': None,
                 'TopRecipe': None
@@ -278,6 +279,7 @@ class ConfigurationManager:
                 self.Settings['ClickPoints']['CraftLeft'] = Craft.get("CraftLeftPoint", None)
                 self.Settings['ClickPoints']['CraftMiddle'] = Craft.get("CraftMiddlePoint", None)
                 self.Settings['ClickPoints']['CraftButton'] = Craft.get("CraftButtonPoint", None)
+                self.Settings['ClickPoints']['CraftConfirm'] = Craft.get("CraftConfirmPoint", None)
                 self.Settings['ClickPoints']['CloseMenu'] = Craft.get("CloseMenuPoint", None)
                 self.Settings['ClickPoints']['AddRecipe'] = Craft.get("AddRecipePoint", None)
                 self.Settings['ClickPoints']['TopRecipe'] = Craft.get("TopRecipePoint", None)
@@ -403,6 +405,7 @@ class ConfigurationManager:
                         "CraftLeftPoint": self.Settings['ClickPoints']['CraftLeft'],
                         "CraftMiddlePoint": self.Settings['ClickPoints']['CraftMiddle'],
                         "CraftButtonPoint": self.Settings['ClickPoints']['CraftButton'],
+                        "CraftConfirmPoint": self.Settings['ClickPoints']['CraftConfirm'],
                         "CloseMenuPoint": self.Settings['ClickPoints']['CloseMenu'],
                         "AddRecipePoint": self.Settings['ClickPoints']['AddRecipe'],
                         "TopRecipePoint": self.Settings['ClickPoints']['TopRecipe'],
@@ -464,6 +467,7 @@ class MacroStateManager:
         self.BaitCraftCounter = 0
         
         self.RobloxWindowFocused = False
+        self.FastModeEnabled = False
         self.MousePressed = False
         
         self.PreviousError = None
@@ -964,6 +968,45 @@ class MegalodonSoundDetector:
         self.ScalerMeans = [0.1308, 0.1496, 0.0916, 0.0797, 0.1209, 0.1816, 0.2457]
         self.ScalerScales = [0.0775, 0.0748, 0.0200, 0.0317, 0.0344, 0.0438, 0.0960]
         self.FrequencyBands = [(20, 60), (60, 120), (120, 250), (250, 500), (500, 1000), (1000, 2000), (2000, 4000)]
+        
+        self.NoiseFloor = 0.02
+    
+    def ReduceNoise(self, AudioData):
+        Magnitude = np.abs(AudioData)
+        Mask = Magnitude > self.NoiseFloor
+        return AudioData * Mask
+    
+    def CalculateSignalQuality(self, AudioData):
+        SignalPower = np.mean(AudioData ** 2)
+        NoisePower = np.var(AudioData)
+        
+        if NoisePower < 1e-10:
+            return 1.0
+        
+        SNR = 10 * np.log10(SignalPower / NoisePower) if NoisePower > 0 else 0
+        Quality = np.clip((SNR + 10) / 40, 0, 1)
+        return Quality
+    
+    def ExtractFeatures(self, AudioData, AudioSampleRate):
+        FftMag = np.abs(fft(AudioData))[:len(AudioData)//2]
+        FreqArray = np.fft.fftfreq(len(AudioData), 1/AudioSampleRate)[:len(AudioData)//2]
+        
+        Features = []
+        for LowFreq, HighFreq in self.FrequencyBands:
+            Mask = (FreqArray >= LowFreq) & (FreqArray < HighFreq)
+            Energy = np.sum(FftMag[Mask]) if np.any(Mask) else 0
+            Features.append(Energy)
+        
+        TotalEnergy = sum(Features) + 1e-10
+        Features = [F/TotalEnergy for F in Features]
+        
+        return Features
+    
+    def PredictProbability(self, Features):
+        Scaled = [(F - M) / S for F, M, S in zip(Features, self.ScalerMeans, self.ScalerScales)]
+        Logit = self.ModelIntercept + sum(C * F for C, F in zip(self.ModelCoefficients, Scaled))
+        Prob = 1 / (1 + np.exp(-Logit))
+        return Prob
     
     def Listen(self, TimeoutDuration=5.0):
         if not self.Config.Settings['FishingModes']['MegalodonSound']:
@@ -975,7 +1018,8 @@ class MegalodonSoundDetector:
             
             try:
                 AudioSampleRate = 44100
-                RecordingDuration = 1.5
+                RecordingDuration = 2.0
+                MultipleAttempts = 2
                 DeviceToUse = None
                 
                 SelectedIndex = self.Config.Settings['AudioDevice']['SelectedDeviceIndex']
@@ -1089,32 +1133,77 @@ class MegalodonSoundDetector:
                             AudioInterface.terminate()
                             return True
                 
-                Frames = []
+                PositiveDetections = 0
                 
-                for _ in range(int(AudioSampleRate * RecordingDuration / 1024)):
-                    try:
-                        Data = AudioStream.read(1024, exception_on_overflow=False)
-                        Frames.append(Data)
-                    except Exception as E:
-                        print(f"Error reading audio data: {E}")
-                        break
+                for Attempt in range(MultipleAttempts):
+                    Frames = []
+                    
+                    for _ in range(int(AudioSampleRate * RecordingDuration / 1024)):
+                        try:
+                            Data = AudioStream.read(1024, exception_on_overflow=False)
+                            Frames.append(Data)
+                        except Exception as E:
+                            print(f"Error reading audio data: {E}")
+                            break
+                    
+                    if not Frames:
+                        print("No audio data captured - skipping detection")
+                        continue
+                    
+                    if IsInt16:
+                        AudioData = np.frombuffer(b''.join(Frames), dtype=np.int16).astype(np.float32) / 32768.0
+                    else:
+                        AudioData = np.frombuffer(b''.join(Frames), dtype=np.float32)
+                    
+                    if Channels == 2:
+                        AudioData = AudioData.reshape(-1, 2).mean(axis=1)
+                    
+                    MaxAudio = np.max(np.abs(AudioData))
+                    if MaxAudio < 0.01:
+                        print(f"  Attempt {Attempt+1}: Too quiet (level: {MaxAudio:.4f})")
+                        continue
+                    
+                    AudioData = AudioData / MaxAudio
+                    AudioData = self.ReduceNoise(AudioData)
+                    SignalQuality = self.CalculateSignalQuality(AudioData)
+                    
+                    WindowDuration = 0.5
+                    HopDuration = 0.1
+                    WindowSamples = int(WindowDuration * AudioSampleRate)
+                    HopSamples = int(HopDuration * AudioSampleRate)
+                    
+                    MaxProb = 0
+                    
+                    for WindowStart in range(0, max(1, len(AudioData) - WindowSamples), HopSamples):
+                        Chunk = AudioData[WindowStart:WindowStart + WindowSamples]
+                        if len(Chunk) < WindowSamples:
+                            continue
+                        
+                        Features = self.ExtractFeatures(Chunk, AudioSampleRate)
+                        Prob = self.PredictProbability(Features)
+                        
+                        if Prob > MaxProb:
+                            MaxProb = Prob
+                    
+                    BaseSensitivity = self.Config.Settings['FishingModes']['SoundSensitivity']
+                    AdaptiveThreshold = BaseSensitivity * (0.7 + 0.3 * SignalQuality)
+                    
+                    print(f"  Attempt {Attempt+1}: MaxProb={MaxProb:.4f}, Threshold={AdaptiveThreshold:.4f}, Quality={SignalQuality:.2f}")
+                    
+                    if MaxProb > AdaptiveThreshold:
+                        PositiveDetections += 1
                 
                 if AudioStream:
                     AudioStream.stop_stream()
                     AudioStream.close()
                 AudioInterface.terminate()
                 
-                if not Frames:
-                    print("No audio data captured - skipping Megalodon detection")
-                    return True
+                RequiredPositive = max(1, MultipleAttempts // 2)
+                IsMegalodon = PositiveDetections >= RequiredPositive
                 
-                if IsInt16:
-                    AudioData = np.frombuffer(b''.join(Frames), dtype=np.int16).astype(np.float32) / 32768.0
-                else:
-                    AudioData = np.frombuffer(b''.join(Frames), dtype=np.float32)
+                print(f"Final result: {PositiveDetections}/{MultipleAttempts} positive detections (need {RequiredPositive})")
                 
-                if Channels == 2:
-                    AudioData = AudioData.reshape(-1, 2).mean(axis=1)
+                return IsMegalodon
                 
             except Exception as E:
                 print(f"PyAudioWPatch error: {E}")
@@ -1127,52 +1216,6 @@ class MegalodonSoundDetector:
                         pass
                 AudioInterface.terminate()
                 return True
-            
-            MaxAudio = np.max(np.abs(AudioData))
-            if MaxAudio < 0.01:
-                print(f"  Too quiet (level: {MaxAudio:.4f})")
-                return False
-            
-            AudioData = AudioData / MaxAudio
-            
-            WindowDuration = 0.5
-            HopDuration = 0.1
-            WindowSamples = int(WindowDuration * AudioSampleRate)
-            HopSamples = int(HopDuration * AudioSampleRate)
-            
-            MaxProb = 0
-            
-            for WindowStart in range(0, max(1, len(AudioData) - WindowSamples), HopSamples):
-                Chunk = AudioData[WindowStart:WindowStart + WindowSamples]
-                if len(Chunk) < WindowSamples:
-                    continue
-                
-                FftMag = np.abs(fft(Chunk))[:len(Chunk)//2]
-                FreqArray = np.fft.fftfreq(len(Chunk), 1/AudioSampleRate)[:len(Chunk)//2]
-                
-                Features = []
-                for LowFreq, HighFreq in self.FrequencyBands:
-                    Mask = (FreqArray >= LowFreq) & (FreqArray < HighFreq)
-                    Energy = np.sum(FftMag[Mask]) if np.any(Mask) else 0
-                    Features.append(Energy)
-                
-                TotalEnergy = sum(Features) + 1e-10
-                Features = [F/TotalEnergy for F in Features]
-                
-                Scaled = [(F - M) / S for F, M, S in zip(Features, self.ScalerMeans, self.ScalerScales)]
-                
-                Logit = self.ModelIntercept + sum(C * F for C, F in zip(self.ModelCoefficients, Scaled))
-                Prob = 1 / (1 + np.exp(-Logit))
-                
-                if Prob > MaxProb:
-                    MaxProb = Prob
-            
-            Threshold = self.Config.Settings['FishingModes']['SoundSensitivity']
-            
-            if MaxProb > Threshold:
-                return True
-            else:
-                return False
                 
         except Exception as E:
             print(f"Sound recognition error: {E}")
@@ -1535,10 +1578,10 @@ class FishingMinigameController:
             if BlueDetected and WhiteDetected and DarkGrayDetected:
                 return True
             
-            if not self.FastMode.Enabled:
-                time.sleep(self.Config.Settings['FishingControl']['Detection']['ScanLoopDelay'] + 0.2)
-            else:
-                time.sleep(self.Config.Settings['FishingControl']['Detection']['ScanLoopDelay'])
+            SleepTime = self.Config.Settings['FishingControl']['Detection']['ScanLoopDelay']
+            if self.State.FastModeEnabled:
+                SleepTime += 0.2
+            time.sleep(SleepTime)
 
         return False
     
@@ -1749,6 +1792,7 @@ class AutomatedFishingSystem:
         
         self.RegionSelectorActive = False
         self.ActiveRegionSelector = None
+        self.FastMode = False
         
         self.CurrentlyRebindingHotkey = None
 
@@ -1872,7 +1916,7 @@ class AutomatedFishingSystem:
                 self.State.MousePressed = False
             
             if self.Config.Settings['DevilFruitStorage']['WebhookUrl'] and self.Config.Settings['LoggingOptions']['LogMacroState']:
-                self.Notifier.SendNotification(f"Macro stopped. Fish this session: {self.State.TotalFishCaught}")
+                self.Notifier.SendNotification(f"Macro stopped. Fish this session: {self.State.TotalFishCaught} | Devil Fruits: {self.State.TotalDevilFruits}")
             
             self.State.UpdateStatus("Idle")
     
@@ -1929,6 +1973,7 @@ class AutomatedFishingSystem:
             f"Caught: {FishThisInterval} ({FishPerMin:.1f}/min)\n"
             f"Total: {self.State.TotalFishCaught} | Uptime: {H}:{M:02d}:{S:02d}\n"
             f"Rate: {OverallFPH:.1f}/hr | Timeouts: {self.State.TotalRecastTimeouts}"
+            f"Devil Fruits: {self.State.TotalDevilFruits}"
         )
         
         self.State.LastPeriodicStatsTime = time.time()
@@ -2175,6 +2220,15 @@ class AutomatedFishingSystem:
             if not self.State.IsRunning:
                 return
         
+        keyboard.press_and_release(self.Config.Settings['InventoryHotkeys']['Alternate'])
+        time.sleep(self.Config.Settings['TimingDelays']['Inventory']['RodSelectDelay'])
+
+        keyboard.press_and_release(self.Config.Settings['InventoryHotkeys']['Rod'])
+        time.sleep(self.Config.Settings['TimingDelays']['Inventory']['RodSelectDelay'])
+
+        keyboard.press_and_release(self.Config.Settings['InventoryHotkeys']['Rod'])
+        time.sleep(self.Config.Settings['TimingDelays']['Inventory']['RodSelectDelay'])
+        
         self.State.UpdateStatus("Opening craft menu")
         keyboard.press_and_release('t')
         time.sleep(Delays['CraftMenuOpenDelay'])
@@ -2202,7 +2256,7 @@ class AutomatedFishingSystem:
                 return
             
             RecipeCycle = Recipe.get('SwitchFishCycle', 5)
-            RecipeCrafts = Recipe.get('CraftsPerCycle', 40)
+            SelectMaxPoint = Recipe.get('SelectMaxPoint')
             
             for FishIter in range(RecipeCycle):
                 if not self.State.IsRunning:
@@ -2216,14 +2270,25 @@ class AutomatedFishingSystem:
                 if not self.State.IsRunning:
                     return
                 
-                for CraftIter in range(RecipeCrafts):
-                    self.State.UpdateStatus(f"Crafting iteration {CraftIter+1}/{RecipeCrafts}")
+                self.State.UpdateStatus(f"Opening craft dialog {FishIter+1}/{RecipeCycle}")
+                self.InputController.ClickPoint(Points['CraftButton'])
+                time.sleep(Delays['CraftClickDelay'])
+                if not self.State.IsRunning:
+                    return
+                
+                if SelectMaxPoint:
+                    self.State.UpdateStatus(f"Clicking Select Max for recipe {RecipeIndex+1}")
+                    self.InputController.ClickPoint(SelectMaxPoint)
+                    time.sleep(Delays['CraftClickDelay'])
                     if not self.State.IsRunning:
                         return
                     
-                    self.InputController.FastClickPoint(Points['CraftButton'])
-                    time.sleep(0.025)
-        
+                if Points['CraftConfirm']:
+                    self.InputController.ClickPoint(Points['CraftConfirm'])
+
+                self.State.UpdateStatus(f"Confirming craft batch {FishIter+1}/{RecipeCycle}")
+                time.sleep(Delays['CraftClickDelay'])     
+
         self.State.UpdateStatus("Closing craft menu")
         self.InputController.ClickPoint(Points['CloseMenu'])
         if not self.State.IsRunning:
@@ -2504,6 +2569,7 @@ class AutomatedFishingSystem:
             "baitPoint": self.Config.Settings['ClickPoints']['Bait'],
             "topRecipePoint": self.Config.Settings['ClickPoints']['TopRecipe'],
             "addRecipePoint": self.Config.Settings['ClickPoints']['AddRecipe'],
+            "craftConfirmPoint": self.Config.Settings['ClickPoints']['CraftConfirm'],
             "hotkeys": self.Config.Settings['Hotkeys'],
             "rodHotkey": self.Config.Settings['InventoryHotkeys']['Rod'],
             "anythingElseHotkey": self.Config.Settings['InventoryHotkeys']['Alternate'],
@@ -2745,7 +2811,7 @@ def SetFastMode():
         
         if Enabled:
             MacroSystem.OcrManager.Enabled = False
-            MacroSystem.FastMode.Enabled = True
+            MacroSystem.State.FastModeEnabled = True
 
             kernel32 = ctypes.windll.kernel32
             Pid = os.getpid()
@@ -2756,7 +2822,7 @@ def SetFastMode():
         else:
             MacroSystem.Config.LoadFromDisk()
             MacroSystem.OcrManager.Enabled = True
-            MacroSystem.FastMode.Enabled = False
+            MacroSystem.State.FastModeEnabled = False
             
             kernel32 = ctypes.windll.kernel32
             Pid = os.getpid()
@@ -2926,6 +2992,7 @@ def ProcessCommand():
             'set_loops_per_purchase': lambda: HandleIntValue('AutomationFrequencies.LoopsPerPurchase'),
             'set_fish_count_per_craft': lambda: HandleIntValue('AutomationFrequencies.FishCountPerCraft'),
             'set_crafts_per_cycle': lambda: HandleIntValue('AutomationFrequencies.CraftsPerCycle'),
+            'set_craft_confirm_point': lambda: HandlePointSelection('ClickPoints.CraftConfirm'),
             'set_loops_per_craft': lambda: HandleIntValue('AutomationFrequencies.LoopsPerCraft'),
             'set_periodic_stats_interval': lambda: HandleIntValue('LoggingOptions.PeriodicStatsIntervalMinutes'),
             'set_sync_interval': lambda: HandleIntValue('DeviceSyncSettings.SyncIntervalSeconds'),
@@ -3014,7 +3081,7 @@ def AddRecipe():
     try:
         MacroSystem.Config.Settings['BaitRecipes'].append({
             "BaitRecipePoint": None,
-            "CraftsPerCycle": 40,
+            "SelectMaxPoint": None,
             "SwitchFishCycle": 5 
         })
         MacroSystem.Config.SaveToDisk()
