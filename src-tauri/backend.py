@@ -13,6 +13,7 @@ import hashlib
 from datetime import datetime, timezone
 import traceback
 import webbrowser
+import psutil
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -27,6 +28,8 @@ from difflib import get_close_matches
 from scipy.fft import fft
 import sounddevice as sd
 import pyaudiowpatch as pyaudio
+import argparse
+import socket
 
 import ctypes
 from ctypes import wintypes
@@ -38,6 +41,30 @@ import win32ts
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 
+def FindFreePort(Start=8765, MaxAttempts=50):
+    for Port in range(Start, Start + MaxAttempts):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as S:
+            try:
+                S.bind(('0.0.0.0', Port))
+                return Port
+            except OSError:
+                continue
+    raise RuntimeError("No free port found in range")
+
+def CleanupOrphanedPortFiles(AppPath):
+    for FileName in os.listdir(AppPath):
+        if FileName.startswith('port_') and FileName.endswith('.json'):
+            try:
+                Pid = int(FileName.replace('port_', '').replace('.json', ''))
+                if not psutil.pid_exists(Pid):
+                    os.remove(os.path.join(AppPath, FileName))
+            except (ValueError, OSError):
+                pass
+
+ArgParser = argparse.ArgumentParser()
+ArgParser.add_argument('--pid', type=str, default='unknown')
+ParsedArgs, _ = ArgParser.parse_known_args()
+LauncherPid = ParsedArgs.pid
 
 class ConfigurationManager:
 
@@ -1979,7 +2006,7 @@ class AutomatedFishingSystem:
             f"Stats (last {LogOpts['PeriodicStatsIntervalMinutes']}m)\n"
             f"Caught: {FishThisInterval} ({FishPerMin:.1f}/min)\n"
             f"Total: {self.State.TotalFishCaught} | Uptime: {H}:{M:02d}:{S:02d}\n"
-            f"Rate: {OverallFPH:.1f}/hr | Timeouts: {self.State.TotalRecastTimeouts}"
+            f"Rate: {OverallFPH:.1f}/hr | Timeouts: {self.State.TotalRecastTimeouts}\n"
             f"Devil Fruits: {self.State.TotalDevilFruits}"
         )
         
@@ -2677,6 +2704,19 @@ CORS(FlaskApp)
 MacroSystem = AutomatedFishingSystem()
 MacroSystem.OcrManager.Initialize()
 
+Port = FindFreePort()
+
+if getattr(sys, 'frozen', False):
+    AppPath = os.path.dirname(sys.executable)
+else:
+    AppPath = os.path.dirname(os.path.abspath(__file__))
+
+CleanupOrphanedPortFiles(AppPath)
+
+PortFile = os.path.join(AppPath, f"port_{LauncherPid}.json")
+with open(PortFile, 'w') as Pf:
+    json.dump({"port": Port, "pid": LauncherPid}, Pf)
+
 @FlaskApp.route('/state', methods=['GET'])
 def GetState():
     ClientId = request.args.get('clientId', MacroSystem.State.ClientId)
@@ -3235,7 +3275,6 @@ def HandleResetSettings(Payload):
         MacroSystem.Config.Settings = MacroSystem.Config.InitializeDefaults()
         MacroSystem.Config.SaveToDisk()
         
-        messagebox.showinfo("Reset Successful", f"Settings reset to defaults!\n\nBackup saved to:\n{BackupPath}")
         return jsonify({"status": "success"})
     except Exception as E:
         messagebox.showerror("Reset Failed", f"Failed to reset settings:\n{str(E)}")
@@ -3384,7 +3423,7 @@ def HandleOCRAreaSelector():
     return jsonify({"status": "opening_selector"})
 
 def RunFlaskServer():
-    FlaskApp.run(host='0.0.0.0', port=8765, debug=False, use_reloader=False)
+    FlaskApp.run(host='0.0.0.0', port=Port, debug=False, use_reloader=False)
 
 
 if __name__ == "__main__":

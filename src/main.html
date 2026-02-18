@@ -1,0 +1,1048 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GPO Fishing Macro</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&family=DM+Mono:wght@300;400;500&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+  <div id="updateBanner" class="update-banner hidden">
+    <span>Update available: <strong id="newVersionText">v0.0.0</strong></span>
+    <button onclick="downloadUpdate()">Download</button>
+    <button onclick="dismissBanner()" class="dismiss">✕</button>
+  </div>
+
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-mark"></div>
+        <div class="brand-info">
+          <span class="brand-name">K's Macros</span>
+          <span class="brand-ver">v2.0.1</span>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <button class="nav-btn active" data-view="home">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+            <polyline points="9 22 9 12 15 12 15 22" />
+          </svg>
+          Dashboard
+        </button>
+        <button class="nav-btn" data-view="controls">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" />
+          </svg>
+          Controls
+        </button>
+        <button class="nav-btn" data-view="locations">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          Locations
+        </button>
+        <button class="nav-btn" data-view="automation">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="13 17 18 12 13 7" />
+            <polyline points="6 17 11 12 6 7" />
+          </svg>
+          Automation
+        </button>
+        <button class="nav-btn" data-view="tuning">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="4" y1="21" x2="4" y2="14" />
+            <line x1="4" y1="10" x2="4" y2="3" />
+            <line x1="12" y1="21" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12" y2="3" />
+            <line x1="20" y1="21" x2="20" y2="16" />
+            <line x1="20" y1="12" x2="20" y2="3" />
+            <line x1="1" y1="14" x2="7" y2="14" />
+            <line x1="9" y1="8" x2="15" y2="8" />
+            <line x1="17" y1="16" x2="23" y2="16" />
+          </svg>
+          Tuning
+        </button>
+        <button class="nav-btn" data-view="timing">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          Timing
+        </button>
+        <button class="nav-btn" data-view="logging">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+            <polyline points="14 2 14 8 20 8" />
+            <line x1="16" y1="13" x2="8" y2="13" />
+            <line x1="16" y1="17" x2="8" y2="17" />
+          </svg>
+          Logging
+        </button>
+        <button class="nav-btn" data-view="devices">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="2" y="3" width="20" height="14" rx="2" />
+            <line x1="8" y1="21" x2="16" y2="21" />
+            <line x1="12" y1="17" x2="12" y2="21" />
+          </svg>
+          Devices
+        </button>
+        <button class="nav-btn" data-view="settings">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3" />
+            <path
+              d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+          </svg>
+          Settings
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="status-pill" id="statusPill">
+          <span class="status-dot" id="statusDot"></span>
+          <span id="statusText">Inactive</span>
+        </div>
+        <div class="rdp-pill" id="rdpIndicator">
+          <span class="rdp-dot"></span>
+          <span id="rdpText">Local</span>
+        </div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="view active" id="home">
+        <div class="page-header">
+          <h1>Dashboard</h1>
+          <p>K's GPO Fishing Macro — Grand Piece Online automation tool</p>
+        </div>
+
+        <div class="grid-3">
+          <a href="https://github.com/K3nD4rk-Code-Developer/Grand-Piece-Online-Fishing" target="_blank"
+            class="link-card">
+            <i class="fab fa-github"></i>
+            <span>GitHub</span>
+          </a>
+          <a href="https://discord.com/invite/vKVBbyfHTD" target="_blank" class="link-card">
+            <i class="fab fa-discord"></i>
+            <span>Discord</span>
+          </a>
+          <a href="https://www.youtube.com/watch?v=1Dtef0QOiqs" target="_blank" class="link-card">
+            <i class="fab fa-youtube"></i>
+            <span>Tutorial</span>
+          </a>
+        </div>
+
+        <div class="section-title">Setup Checklist</div>
+        <div class="panel">
+          <div class="tip-row"><span class="tip-label">Run as Admin</span><span class="tip-val">Gives the app priority
+              CPU resources for better detection.</span></div>
+          <div class="tip-row"><span class="tip-label">FPS Cap</span><span class="tip-val">Match your monitor refresh
+              rate — prevents missed catches.</span></div>
+          <div class="tip-row"><span class="tip-label">Camera Zoom</span><span class="tip-val">Zoom in enough to see the
+              bar clearly, but not over UI elements.</span></div>
+          <div class="tip-row"><span class="tip-label">Cartoonize</span><span class="tip-val">Graphics → 1, enable Fast
+              Mode, disable shadows in GPO settings.</span></div>
+        </div>
+
+        <div class="section-title" style="margin-top:24px;">Visual Guides</div>
+        <div class="slideshow-wrap">
+          <div class="slideshow-tabs" id="slideshowTabs"></div>
+          <div class="slideshow-viewport" id="slideshowViewport">
+            <button class="slide-arrow prev" id="slidePrev">&#8249;</button>
+            <button class="slide-arrow next" id="slideNext">&#8250;</button>
+          </div>
+          <div class="slide-dots" id="slideDots"></div>
+        </div>
+
+        <div class="section-title" style="margin-top:24px;">Troubleshooting</div>
+        <div class="panel">
+          <div class="tip-row"><span class="tip-label">Won't start</span><span class="tip-val">Verify water point and
+              selected rods are configured correctly.</span></div>
+          <div class="tip-row"><span class="tip-label">Missing fish games</span><span class="tip-val">Adjust scan area
+              to fully cover fishing bar. Run at monitor refresh rate. Run as admin.</span></div>
+          <div class="tip-row"><span class="tip-label">Not casting</span><span class="tip-val">Verify Water Point is
+              set. Check rod is in the correct inventory slot.</span></div>
+          <div class="tip-row"><span class="tip-label">Auto-buy failing</span><span class="tip-val">Reconfigure bait
+              shop points. Increase Pre-Cast delays in Timing → Purchase.</span></div>
+          <div class="tip-row"><span class="tip-label">Too fast/slow</span><span class="tip-val">Adjust timing delays in
+              the Timing tab. Add 0.1–0.2s if actions are being skipped.</span></div>
+        </div>
+      </div>
+
+      <div class="view" id="controls">
+        <div class="page-header">
+          <h1>Controls</h1>
+          <p>Keybinds, inventory slots, and application settings</p>
+        </div>
+
+        <div class="section-title">Keybinds</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Start / Stop Macro</span>
+            <div class="row-ctrl">
+              <span class="kbd" id="hotkey-start">F1</span>
+              <button class="btn-sm" onclick="sendToPython('rebind_hotkey','start_stop')">Rebind</button>
+            </div>
+          </div>
+          <div class="row-item">
+            <span class="row-label">Exit Application</span>
+            <div class="row-ctrl">
+              <span class="kbd" id="hotkey-exit">F3</span>
+              <button class="btn-sm" onclick="sendToPython('rebind_hotkey','exit')">Rebind</button>
+            </div>
+          </div>
+          <div class="row-item">
+            <span class="row-label">Configure Scan Area</span>
+            <div class="row-ctrl">
+              <button class="btn-sm" onclick="sendToPython('open_area_selector','')">Open Selector</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Inventory Slots</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Fishing Rod Slot</span>
+            <div class="row-ctrl">
+              <select class="sel" id="rodHotkey" onchange="validateAndSetRodSlot(this.value)">
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option>4</option>
+                <option>5</option>
+                <option>6</option>
+                <option>7</option>
+                <option>8</option>
+                <option>9</option>
+                <option>0</option>
+              </select>
+            </div>
+          </div>
+          <div class="row-item">
+            <span class="row-label">Secondary Item Slot</span>
+            <div class="row-ctrl">
+              <select class="sel" id="anythingElseHotkey" onchange="validateAndSetSecondarySlot(this.value)">
+                <option>1</option>
+                <option selected>2</option>
+                <option>3</option>
+                <option>4</option>
+                <option>5</option>
+                <option>6</option>
+                <option>7</option>
+                <option>8</option>
+                <option>9</option>
+                <option>0</option>
+              </select>
+            </div>
+          </div>
+          <div class="row-item">
+            <span class="row-label">Devil Fruit Slots</span>
+            <div class="row-ctrl">
+              <div id="devilFruitSlotSelector" class="slot-row"></div>
+            </div>
+          </div>
+          <div class="row-hint">Select multiple slots to check for devil fruits</div>
+        </div>
+
+        <div class="section-title">Megalodon Detection</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Enable Sound Recognition</span>
+            <div class="row-ctrl">
+              <div class="toggle" id="megalodonSoundToggle" onclick="checkAndToggleMegalodon()"></div>
+            </div>
+          </div>
+          <div class="row-item">
+            <span class="row-label">Audio Input Device</span>
+            <div class="row-ctrl">
+              <select class="sel sel-wide" id="audioDeviceSelect" onchange="selectAudioDevice(this.value)">
+                <option value="auto">Auto-Detect</option>
+                <option disabled>──────────</option>
+              </select>
+              <button class="btn-sm" onclick="refreshAudioDevices()">Refresh</button>
+            </div>
+          </div>
+          <div class="warn-box hidden" id="megalodonAudioWarning">
+            <strong>No Loopback Device Found</strong> — Enable Stereo Mix in Windows Sound → Recording, or install a
+            virtual audio driver.
+          </div>
+          <div class="row-item">
+            <span class="row-label">Sound Strictness</span>
+            <div class="row-ctrl">
+              <input type="number" class="inp" id="soundSensitivity" value="0.1" step="0.1" min="0" max="1"
+                onchange="sendToPython('set_sound_sensitivity',this.value)">
+              <span class="unit">threshold</span>
+            </div>
+          </div>
+          <div class="row-hint">Higher = more strict. Listens for Megalodon roar before continuing.</div>
+        </div>
+
+        <div class="section-title">Application</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Keep Window on Top</span>
+            <div class="row-ctrl">
+              <div class="toggle" id="alwaysOnTopToggle" onclick="toggleSetting('alwaysOnTop')"></div>
+            </div>
+          </div>
+          <div class="row-item">
+            <span class="row-label">Display Statistics Overlay</span>
+            <div class="row-ctrl">
+              <div class="toggle" id="debugOverlayToggle" onclick="toggleSetting('debugOverlay')"></div>
+            </div>
+          </div>
+          <div class="row-item">
+            <span class="row-label">Administrator Privileges</span>
+            <div class="row-ctrl">
+              <div class="status-inline" id="adminIndicator">
+                <span class="dot"></span><span id="adminText">Checking…</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="locations">
+        <div class="page-header">
+          <h1>Locations</h1>
+          <p>Configure all on-screen interaction points</p>
+        </div>
+
+        <div class="section-title">Primary Fishing</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Water Target Point</span>
+            <div class="row-ctrl">
+              <span class="point-badge unset" id="waterPointStatus">Not Set</span>
+              <button class="btn-sm" onclick="sendToPython('set_water_point','')">Set</button>
+            </div>
+          </div>
+          <div class="row-hint">Click location in water where the fishing line should be cast</div>
+        </div>
+
+        <div class="section-title">Bait</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Top Bait Point</span>
+            <div class="row-ctrl">
+              <span class="point-badge unset" id="baitPointStatus">Not Set</span>
+              <button class="btn-sm" onclick="sendToPython('set_bait_point','')">Set</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Bait Shop Dialog</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Left Option</span>
+            <div class="row-ctrl">
+              <span class="point-badge unset" id="leftPointStatus">Not Set</span>
+              <button class="btn-sm" onclick="sendToPython('set_left_point','')">Set</button>
+            </div>
+          </div>
+          <div class="row-item">
+            <span class="row-label">Middle Option</span>
+            <div class="row-ctrl">
+              <span class="point-badge unset" id="middlePointStatus">Not Set</span>
+              <button class="btn-sm" onclick="sendToPython('set_middle_point','')">Set</button>
+            </div>
+          </div>
+          <div class="row-item">
+            <span class="row-label">Right Option</span>
+            <div class="row-ctrl">
+              <span class="point-badge unset" id="rightPointStatus">Not Set</span>
+              <button class="btn-sm" onclick="sendToPython('set_right_point','')">Set</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Crafting Interface</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">Left Dialog</span>
+            <div class="row-ctrl"><span class="point-badge unset" id="craftLeftPointStatus">Not Set</span><button
+                class="btn-sm" onclick="sendToPython('set_craft_left_point','')">Set</button></div>
+          </div>
+          <div class="row-item"><span class="row-label">Middle Dialog</span>
+            <div class="row-ctrl"><span class="point-badge unset" id="craftMiddlePointStatus">Not Set</span><button
+                class="btn-sm" onclick="sendToPython('set_craft_middle_point','')">Set</button></div>
+          </div>
+          <div class="row-item"><span class="row-label">Add Ingredient</span>
+            <div class="row-ctrl"><span class="point-badge unset" id="addRecipePointStatus">Not Set</span><button
+                class="btn-sm" onclick="sendToPython('set_add_recipe_point','')">Set</button></div>
+          </div>
+          <div class="row-item"><span class="row-label">Top Recipe Slot</span>
+            <div class="row-ctrl"><span class="point-badge unset" id="topRecipePointStatus">Not Set</span><button
+                class="btn-sm" onclick="sendToPython('set_top_recipe_point','')">Set</button></div>
+          </div>
+          <div class="row-item"><span class="row-label">Craft Confirm</span>
+            <div class="row-ctrl"><span class="point-badge unset" id="craftButtonPointStatus">Not Set</span><button
+                class="btn-sm" onclick="sendToPython('set_craft_button_point','')">Set</button></div>
+          </div>
+          <div class="row-item"><span class="row-label">Craft Selected</span>
+            <div class="row-ctrl"><span class="point-badge unset" id="craftConfirmPointStatus">Not Set</span><button
+                class="btn-sm" onclick="sendToPython('set_craft_confirm_point','')">Set</button></div>
+          </div>
+          <div class="row-item"><span class="row-label">Menu Close</span>
+            <div class="row-ctrl"><span class="point-badge unset" id="closeMenuPointStatus">Not Set</span><button
+                class="btn-sm" onclick="sendToPython('set_close_menu_point','')">Set</button></div>
+          </div>
+          <div class="row-hint">Set "Craft Selected" to the right of the green button to avoid clicking wrong recipes.
+          </div>
+        </div>
+
+        <div class="section-title">
+          Crafting Recipes
+          <button class="btn-sm inline-btn" onclick="addNewRecipe()">+ Add Recipe</button>
+        </div>
+        <div id="RecipesContainer"></div>
+
+        <div class="section-title">Devil Fruit</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">Store Location</span>
+            <div class="row-ctrl"><span class="point-badge unset" id="storeFruitPointStatus">Not Set</span><button
+                class="btn-sm" onclick="sendToPython('set_store_fruit_point','')">Set</button></div>
+          </div>
+          <div class="row-item"><span class="row-label">Backpack Location</span>
+            <div class="row-ctrl"><span class="point-badge unset" id="devilFruitLocationPointStatus">Not
+                Set</span><button class="btn-sm"
+                onclick="sendToPython('set_devil_fruit_location_point','')">Set</button></div>
+          </div>
+          <div class="row-hint">Backpack storage is a work in progress.</div>
+        </div>
+
+        <div class="section-title">OCR Configuration</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Fruit Detection Area</span>
+            <div class="row-ctrl">
+              <button class="btn-sm" onclick="sendToPython('open_ocr_area_selector','')">Configure Region</button>
+            </div>
+          </div>
+          <div class="row-hint">Set the screen region where devil fruit notifications appear</div>
+        </div>
+      </div>
+
+      <div class="view" id="automation">
+        <div class="page-header">
+          <h1>Automation</h1>
+          <p>Configure automatic behaviors during fishing sessions</p>
+        </div>
+
+        <div class="section-title">Auto Select Bait</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Auto Select Top Bait</span>
+            <div class="row-ctrl">
+              <div class="toggle" id="autoSelectBaitToggle" onclick="toggleSetting('autoSelectBait')"></div>
+            </div>
+          </div>
+          <div class="warn-box hidden" id="autoSelectBaitWarning">
+            Configure Top Bait Point first — <a onclick="navigateToLocations()">Locations → Bait</a>
+          </div>
+        </div>
+
+        <div class="section-title">Auto Purchase Bait</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Auto Buy Common Bait</span>
+            <div class="row-ctrl">
+              <div class="toggle" id="autoBuyBaitToggle" onclick="toggleExpandable('autoBuyBait','autoBuyExpand')">
+              </div>
+            </div>
+          </div>
+          <div class="warn-box hidden" id="autoBuyBaitWarning">
+            Configure all Bait Shop points first — <a onclick="navigateToLocations()">Locations → Bait Shop Dialog</a>
+          </div>
+          <div class="expandable" id="autoBuyExpand">
+            <div class="row-item"><span class="row-label">Purchase every N loops</span>
+              <div class="row-ctrl"><input type="number" class="inp" id="loopsPerPurchase" value="100" step="1"
+                  onchange="sendToPython('set_loops_per_purchase',this.value)"><span class="unit">loops</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Auto Craft Bait</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Enable Auto Craft</span>
+            <div class="row-ctrl">
+              <div class="toggle" id="autoCraftBaitToggle"
+                onclick="toggleExpandable('autoCraftBait','autoCraftExpand')"></div>
+            </div>
+          </div>
+          <div class="warn-box hidden" id="autoCraftBaitWarning">
+            Configure crafting points and recipes first — <a onclick="navigateToLocations()">Locations → Crafting</a>
+          </div>
+          <div class="expandable" id="autoCraftExpand">
+            <div class="row-item"><span class="row-label">Fish caught before craft</span>
+              <div class="row-ctrl"><input type="number" class="inp" id="fishCountPerCraft" value="50" step="1" min="1"
+                  onchange="sendToPython('set_fish_count_per_craft',this.value)"><span class="unit">fish</span></div>
+            </div>
+            <div class="row-item"><span class="row-label">Movement duration</span>
+              <div class="row-ctrl"><input type="number" class="inp" id="moveDuration" value="0" step="0.25"
+                  onchange="sendToPython('set_move_duration',this.value)"><span class="unit">sec</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Auto Store Devil Fruit</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Enable Auto Storage</span>
+            <div class="row-ctrl">
+              <div class="toggle" id="autoStoreFruitToggle"
+                onclick="toggleExpandable('autoStoreFruit','autoStoreExpand')"></div>
+            </div>
+          </div>
+          <div class="warn-box hidden" id="autoStoreFruitWarning">
+            Configure Devil Fruit Store location first — <a onclick="navigateToLocations()">Locations → Devil Fruit</a>
+          </div>
+          <div class="expandable" id="autoStoreExpand">
+            <div class="row-item">
+              <span class="row-label">Store to Backpack</span>
+              <div class="row-ctrl">
+                <div class="toggle disabled" id="storeToBackpackToggle"></div>
+                <span class="coming-soon">Coming Soon</span>
+              </div>
+            </div>
+            <div class="row-item"><span class="row-label">Store every N loops</span>
+              <div class="row-ctrl"><input type="number" class="inp" id="loopsPerStore" value="1" step="1" min="1"
+                  onchange="sendToPython('set_loops_per_store',this.value)"><span class="unit">loops</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Devil Fruit Spawn Detection</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Enable Spawn Detection</span>
+            <div class="row-ctrl">
+              <div class="toggle" id="enableSpawnDetectionToggle"
+                onclick="toggleExpandable('enableSpawnDetection','spawnDetectionExpand')"></div>
+            </div>
+          </div>
+          <div class="warn-box hidden" id="enableSpawnDetectionWarning">
+            Configure OCR Detection Area first — <a onclick="navigateToLocations()">Locations → OCR</a>
+          </div>
+          <div class="expandable" id="spawnDetectionExpand">
+            <div class="row-item"><span class="row-label">Scan interval</span>
+              <div class="row-ctrl"><input type="number" class="inp" id="spawnScanInterval" value="5.0" step="0.5"
+                  min="0.5" max="10" onchange="sendToPython('set_spawn_scan_interval',this.value)"><span
+                  class="unit">sec</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="tuning">
+        <div class="page-header">
+          <h1>Tuning</h1>
+          <p>PD controller and casting parameters</p>
+        </div>
+
+        <div class="section-title">PD Controller</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">Proportional Gain (Kp)</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="kp" value="0.9" step="0.1"
+                onchange="sendToPython('set_kp',this.value)"></div>
+          </div>
+          <div class="row-item"><span class="row-label">Derivative Gain (Kd)</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="kd" value="0.3" step="0.1"
+                onchange="sendToPython('set_kd',this.value)"></div>
+          </div>
+          <div class="row-item"><span class="row-label">Max Correction Clamp</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="pdClamp" value="1.0" step="0.1"
+                onchange="sendToPython('set_pd_clamp',this.value)"></div>
+          </div>
+          <div class="row-hint">PD control maintains alignment between fishing bar and target</div>
+        </div>
+
+        <div class="section-title">Advanced PD</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">Approaching Damping</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="pdApproaching" value="2.0" step="0.1"
+                onchange="sendToPython('set_pd_approaching',this.value)"></div>
+          </div>
+          <div class="row-item"><span class="row-label">Chasing Damping</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="pdChasing" value="0.5" step="0.1"
+                onchange="sendToPython('set_pd_chasing',this.value)"></div>
+          </div>
+          <div class="row-item"><span class="row-label">Gap Tolerance Multiplier</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="gapTolerance" value="2.0" step="0.1"
+                onchange="sendToPython('set_gap_tolerance',this.value)"></div>
+          </div>
+        </div>
+
+        <div class="section-title">Casting</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">Cast Hold Duration</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="castHold" value="1.0" step="0.1"
+                onchange="sendToPython('set_cast_hold',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Recast Timeout</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="recastTimeout" value="30.0" step="1.0"
+                onchange="sendToPython('set_recast_timeout',this.value)"><span class="unit">sec</span></div>
+          </div>
+        </div>
+
+        <div class="section-title">Anti-Detection</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">Black Screen Threshold</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="blackThreshold" value="0.5" step="0.05"
+                onchange="sendToPython('set_black_threshold',this.value)"><span class="unit">%</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Key Spam Prevention</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="spamDelay" value="0.25" step="0.05"
+                onchange="sendToPython('set_spam_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="timing">
+        <div class="page-header">
+          <h1>Timing</h1>
+          <p>Fine-tune all delay intervals</p>
+        </div>
+
+        <div class="section-title">Core</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">Fish Completion Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="fishEndDelay" value="2.0" step="0.1"
+                onchange="sendToPython('set_fish_end_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">State Resend Interval</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="stateResend" value="0.5" step="0.05"
+                onchange="sendToPython('set_state_resend',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Scan Loop Frequency</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="scanDelay" value="0.1" step="0.01"
+                onchange="sendToPython('set_scan_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+        </div>
+
+        <div class="section-title">Window Focus</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">Initial Focus Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="focusDelay" value="0.2" step="0.1"
+                onchange="sendToPython('set_focus_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Post-Focus Stabilization</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="postFocusDelay" value="1.0" step="0.1"
+                onchange="sendToPython('set_post_focus_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+        </div>
+
+        <div class="section-title">Inventory</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">Rod Selection Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="rodDelay" value="0.5" step="0.1"
+                onchange="sendToPython('set_rod_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Bait Selection Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="baitDelay" value="0.5" step="0.1"
+                onchange="sendToPython('set_bait_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Cursor Humanization</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="cursorDelay" value="0.05" step="0.01"
+                onchange="sendToPython('set_cursor_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+        </div>
+
+        <div class="section-title">Purchase Interaction</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">Interaction Key Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="preCastE" value="3.0" step="0.1"
+                onchange="sendToPython('set_precast_e_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Click Confirmation Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="preCastClick" value="3.0" step="0.1"
+                onchange="sendToPython('set_precast_click_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Typing Input Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="preCastType" value="3.0" step="0.1"
+                onchange="sendToPython('set_precast_type_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Humanization Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="antiDetect" value="0.05" step="0.01"
+                onchange="sendToPython('set_anti_detect_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+        </div>
+
+        <div class="section-title">Devil Fruit Storage</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">Hotkey Press Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="fruitHotkey" value="1.0" step="0.1"
+                onchange="sendToPython('set_fruit_hotkey_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Click Interaction Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="fruitClick" value="2.0" step="0.1"
+                onchange="sendToPython('set_fruit_click_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Shift Key Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="fruitShift" value="0.5" step="0.1"
+                onchange="sendToPython('set_fruit_shift_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Backspace Input Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="fruitBackspace" value="1.5" step="0.1"
+                onchange="sendToPython('set_fruit_backspace_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+        </div>
+
+        <div class="section-title">Crafting</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">Menu Open Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="craftMenuDelay" value="0.85" step="0.05"
+                onchange="sendToPython('set_craft_menu_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">UI Click Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="craftClickDelay" value="0.5" step="0.05"
+                onchange="sendToPython('set_craft_click_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Recipe Selection Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="craftRecipeDelay" value="0.5" step="0.05"
+                onchange="sendToPython('set_craft_recipe_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Add Recipe Button Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="craftAddDelay" value="0.5" step="0.05"
+                onchange="sendToPython('set_craft_add_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Top Recipe Slot Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="craftTopDelay" value="0.5" step="0.05"
+                onchange="sendToPython('set_craft_top_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Craft Button Click Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="craftButtonDelay" value="0.025" step="0.005"
+                onchange="sendToPython('set_craft_button_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Close Menu Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="craftCloseDelay" value="0.5" step="0.05"
+                onchange="sendToPython('set_craft_close_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="logging">
+        <div class="page-header">
+          <h1>Logging</h1>
+          <p>Discord webhook notifications and reporting</p>
+        </div>
+
+        <div class="section-title">Webhook</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">Discord Webhook URL</span>
+            <div class="row-ctrl"><input type="text" class="inp inp-wide" id="webhookUrl"
+                placeholder="https://discord.com/api/webhooks/…" onchange="sendToPython('set_webhook_url',this.value)">
+            </div>
+          </div>
+          <div class="row-item"><span class="row-label">Discord User ID</span>
+            <div class="row-ctrl"><input type="text" class="inp inp-wide" id="discordUserId"
+                placeholder="123456789012345678" onchange="sendToPython('set_discord_user_id',this.value)"></div>
+          </div>
+          <div class="row-item"><span class="row-label">Stats Report Interval</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="periodicStatsInterval" value="5" step="1" min="1"
+                onchange="sendToPython('set_periodic_stats_interval',this.value)"><span class="unit">min</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Test Connection</span>
+            <div class="row-ctrl"><button class="btn-sm" onclick="testWebhook()">Send Test</button></div>
+          </div>
+        </div>
+
+        <div class="section-title">Notification Events</div>
+        <div class="panel">
+          <div class="notif-row">
+            <div class="notif-main">
+              <span class="row-label">Devil Fruit Stored</span>
+              <div class="toggle" id="logDevilFruitToggle"
+                onclick="toggleLoggingExpandable('logDevilFruitToggle','logDevilFruitExpand')"></div>
+            </div>
+            <div class="expandable" id="logDevilFruitExpand">
+              <div class="row-item sub"><span class="row-label">Ping on event</span>
+                <div class="row-ctrl">
+                  <div class="toggle" id="pingDevilFruitToggle" onclick="toggleSetting('pingDevilFruit')"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="notif-row">
+            <div class="notif-main">
+              <span class="row-label">Devil Fruit Spawns</span>
+              <div class="toggle" id="logSpawnsToggle"
+                onclick="toggleLoggingExpandable('logSpawnsToggle','logSpawnsExpand')"></div>
+            </div>
+            <div class="expandable" id="logSpawnsExpand">
+              <div class="row-item sub"><span class="row-label">Ping on event</span>
+                <div class="row-ctrl">
+                  <div class="toggle" id="pingSpawnsToggle" onclick="toggleSetting('pingSpawns')"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="notif-row">
+            <div class="notif-main">
+              <span class="row-label">Recast Timeouts</span>
+              <div class="toggle" id="logRecastTimeoutsToggle"
+                onclick="toggleLoggingExpandable('logRecastTimeoutsToggle','logRecastTimeoutsExpand')"></div>
+            </div>
+            <div class="expandable" id="logRecastTimeoutsExpand">
+              <div class="row-item sub"><span class="row-label">Ping on event</span>
+                <div class="row-ctrl">
+                  <div class="toggle" id="pingRecastTimeoutsToggle" onclick="toggleSetting('pingRecastTimeouts')"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="notif-row">
+            <div class="notif-main">
+              <span class="row-label">Periodic Statistics</span>
+              <div class="toggle" id="logPeriodicStatsToggle"
+                onclick="toggleLoggingExpandable('logPeriodicStatsToggle','logPeriodicStatsExpand')"></div>
+            </div>
+            <div class="expandable" id="logPeriodicStatsExpand">
+              <div class="row-item sub"><span class="row-label">Ping on event</span>
+                <div class="row-ctrl">
+                  <div class="toggle" id="pingPeriodicStatsToggle" onclick="toggleSetting('pingPeriodicStats')"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="notif-row">
+            <div class="notif-main">
+              <span class="row-label">General Updates</span>
+              <div class="toggle" id="logGeneralUpdatesToggle"
+                onclick="toggleLoggingExpandable('logGeneralUpdatesToggle','logGeneralUpdatesExpand')"></div>
+            </div>
+            <div class="expandable" id="logGeneralUpdatesExpand">
+              <div class="row-item sub"><span class="row-label">Ping on event</span>
+                <div class="row-ctrl">
+                  <div class="toggle" id="pingGeneralUpdatesToggle" onclick="toggleSetting('pingGeneralUpdates')"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="notif-row">
+            <div class="notif-main">
+              <span class="row-label">Macro Start / Stop</span>
+              <div class="toggle" id="logMacroStateToggle"
+                onclick="toggleLoggingExpandable('logMacroStateToggle','logMacroStateExpand')"></div>
+            </div>
+            <div class="expandable" id="logMacroStateExpand">
+              <div class="row-item sub"><span class="row-label">Ping on event</span>
+                <div class="row-ctrl">
+                  <div class="toggle" id="pingMacroStateToggle" onclick="toggleSetting('pingMacroState')"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="notif-row">
+            <div class="notif-main">
+              <span class="row-label">Errors &amp; Warnings</span>
+              <div class="toggle active" id="logErrorsToggle"
+                onclick="toggleLoggingExpandable('logErrorsToggle','logErrorsExpand')"></div>
+            </div>
+            <div class="expandable" id="logErrorsExpand">
+              <div class="row-item sub"><span class="row-label">Ping on event</span>
+                <div class="row-ctrl">
+                  <div class="toggle" id="pingErrorsToggle" onclick="toggleSetting('pingErrors')"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="view" id="devices">
+        <div class="page-header">
+          <h1>Devices</h1>
+          <p>RDP detection and multi-device sync</p>
+        </div>
+
+        <div class="section-title">Session</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Current Session Type</span>
+            <div class="row-ctrl">
+              <span class="status-inline" id="sessionTypeIndicator"><span class="dot"></span><span
+                  id="sessionTypeText">Detecting…</span></span>
+            </div>
+          </div>
+          <div class="row-item">
+            <span class="row-label">Auto-Detect RDP</span>
+            <div class="row-ctrl">
+              <div class="toggle active" id="autoDetectRdpToggle" onclick="toggleSetting('autoDetectRdp')"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Sync</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Enable Device Synchronization</span>
+            <div class="row-ctrl">
+              <div class="toggle" id="enableDeviceSyncToggle"
+                onclick="toggleExpandable('enableDeviceSync','deviceSyncExpand')"></div>
+            </div>
+          </div>
+          <div class="expandable" id="deviceSyncExpand">
+            <div class="row-item"><span class="row-label">Sync Settings</span>
+              <div class="row-ctrl">
+                <div class="toggle active" id="syncSettingsToggle" onclick="toggleSetting('syncSettings')"></div>
+              </div>
+            </div>
+            <div class="row-item"><span class="row-label">Sync Statistics</span>
+              <div class="row-ctrl">
+                <div class="toggle active" id="syncStatsToggle" onclick="toggleSetting('syncStats')"></div>
+              </div>
+            </div>
+            <div class="row-item"><span class="row-label">Share Fish Count</span>
+              <div class="row-ctrl">
+                <div class="toggle" id="sharesFishCountToggle" onclick="toggleSetting('shareFishCount')"></div>
+              </div>
+            </div>
+            <div class="row-item"><span class="row-label">Sync Interval</span>
+              <div class="row-ctrl"><input type="number" class="inp" id="syncInterval" value="5" step="1" min="1"
+                  max="60" onchange="sendToPython('set_sync_interval',this.value)"><span class="unit">sec</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Client Identity</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">Device Name</span>
+            <div class="row-ctrl"><input type="text" class="inp inp-med" id="deviceName" placeholder="My Gaming PC"
+                onchange="sendToPython('set_device_name',this.value)"></div>
+          </div>
+          <div class="row-item">
+            <span class="row-label">Client ID</span>
+            <div class="row-ctrl">
+              <span class="mono-badge" id="clientIdDisplay">Loading…</span>
+              <button class="btn-sm" onclick="regenerateClientId()">Regenerate</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Active Sessions</div>
+        <div id="activeSessionsContainer">
+          <div class="empty-msg">Loading sessions…</div>
+        </div>
+      </div>
+
+      <div class="view" id="settings">
+        <div class="page-header">
+          <h1>Settings</h1>
+          <p>Theme, performance, and configuration management</p>
+        </div>
+
+        <div class="section-title">Theme</div>
+        <div class="panel">
+          <div class="theme-grid">
+            <button class="theme-opt active" data-theme="default" onclick="changeTheme('default')"><span
+                class="theme-swatch swatch-default"></span>Default</button>
+            <button class="theme-opt" data-theme="cyber" onclick="changeTheme('cyber')"><span
+                class="theme-swatch swatch-cyber"></span>Cyber</button>
+            <button class="theme-opt" data-theme="purple" onclick="changeTheme('purple')"><span
+                class="theme-swatch swatch-purple"></span>Purple</button>
+            <button class="theme-opt" data-theme="green" onclick="changeTheme('green')"><span
+                class="theme-swatch swatch-green"></span>Matrix</button>
+            <button class="theme-opt" data-theme="red" onclick="changeTheme('red')"><span
+                class="theme-swatch swatch-red"></span>Crimson</button>
+            <button class="theme-opt" data-theme="orange" onclick="changeTheme('orange')"><span
+                class="theme-swatch swatch-orange"></span>Sunset</button>
+            <button class="theme-opt" data-theme="pink" onclick="changeTheme('pink')"><span
+                class="theme-swatch swatch-pink"></span>Hot Pink</button>
+            <button class="theme-opt" data-theme="gold" onclick="changeTheme('gold')"><span
+                class="theme-swatch swatch-gold"></span>Golden</button>
+            <button class="theme-opt" data-theme="ocean" onclick="changeTheme('ocean')"><span
+                class="theme-swatch swatch-ocean"></span>Ocean</button>
+          </div>
+          <div class="row-item" style="margin-top:12px;">
+            <span class="row-label">Fast Mode <span class="subdued">(low-end PC)</span></span>
+            <div class="row-ctrl">
+              <div class="toggle" id="fastModeToggle"
+                onclick="this.classList.toggle('active');toggleFastMode(this.classList.contains('active'))"></div>
+            </div>
+          </div>
+          <div class="row-hint">Disables animations and reduces resource usage</div>
+        </div>
+
+        <div class="section-title">App Info</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">Version</span>
+            <div class="row-ctrl"><span class="mono-badge">2.0.1</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Build Hash</span>
+            <div class="row-ctrl"><span class="mono-badge small">878c2642a0f1fb55bcff0af356f5bcdf</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Config Folder</span>
+            <div class="row-ctrl"><button class="btn-sm" onclick="sendToPython('open_config_folder','')">Open</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">Configuration</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">Export Settings</span>
+            <div class="row-ctrl"><button class="btn-sm" onclick="sendToPython('export_settings','')">Export</button>
+            </div>
+          </div>
+          <div class="row-item"><span class="row-label">Import Settings</span>
+            <div class="row-ctrl"><button class="btn-sm" onclick="sendToPython('import_settings','')">Import</button>
+            </div>
+          </div>
+          <div class="row-item"><span class="row-label">Reset to Defaults</span>
+            <div class="row-ctrl"><button class="btn-sm danger" onclick="confirmResetSettings()">Reset</button></div>
+          </div>
+        </div>
+
+        <div class="section-title">Debug</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">View Config JSON</span>
+            <div class="row-ctrl"><button class="btn-sm" onclick="sendToPython('view_config','')">View</button></div>
+          </div>
+          <div class="row-item"><span class="row-label">Clear Cache</span>
+            <div class="row-ctrl"><button class="btn-sm" onclick="sendToPython('clear_cache','')">Clear</button></div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div id="disclaimerModal" class="modal-bg">
+    <div class="modal">
+      <h2>Important Notice</h2>
+      <div class="modal-body">
+        <p><strong>Free &amp; Open Source</strong> — This macro is completely free and should never be bought or resold.
+        </p>
+        <p>Created by <strong>KenNumi</strong>. If you redistribute or modify this software, credit the original
+          creator.</p>
+        <p class="warn-text">Anyone charging money for this software is scamming you. Only get this from official
+          sources.</p>
+      </div>
+      <div class="modal-footer">
+        <label class="check-label"><input type="checkbox" id="dontShowAgain"> Don't show again</label>
+        <button class="btn-primary" onclick="closeDisclaimer()">I Understand</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>

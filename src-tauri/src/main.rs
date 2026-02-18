@@ -68,16 +68,58 @@ fn get_python_and_script(app: &tauri::AppHandle) -> (PathBuf, PathBuf) {
     }
 }
 
+fn kill_existing_backend() {
+    log_to_file("Killing any existing backend processes...");
 
-fn wait_for_backend() -> bool {
-    log_to_file("Starting backend healthcheck...");
+    #[cfg(target_os = "windows")]
+    {
+        let _ = Command::new("wmic")
+            .args(&["process", "where", "CommandLine like '%backend.py%'", "delete"])
+            .output();
+        std::thread::sleep(std::time::Duration::from_millis(500));
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = Command::new("pkill")
+            .args(&["-f", "backend.py"])
+            .output();
+        std::thread::sleep(std::time::Duration::from_millis(500));
+    }
+
+    log_to_file("Existing backend processes killed.");
+}
+
+fn read_backend_port(resource_dir: &PathBuf, pid: u32) -> u16 {
+    let port_file = resource_dir.join(format!("port_{}.json", pid));
+    log_to_file(&format!("Looking for port file: {:?}", port_file));
+
+    for attempt in 1..=20 {
+        if let Ok(content) = std::fs::read_to_string(&port_file) {
+            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
+                if let Some(port) = val.get("port").and_then(|p| p.as_u64()) {
+                    log_to_file(&format!("Found port {} on attempt {}", port, attempt));
+                    return port as u16;
+                }
+            }
+        }
+        log_to_file(&format!("Port file not ready yet (attempt {}/20), retrying...", attempt));
+        std::thread::sleep(std::time::Duration::from_millis(500));
+    }
+
+    log_to_file("WARNING: Could not read port file, falling back to 8765");
+    8765
+}
+
+fn wait_for_backend(port: u16) -> bool {
+    log_to_file(&format!("Starting backend healthcheck on port {}...", port));
     let client = reqwest::blocking::Client::new();
     let max_attempts = 30;
     
     for i in 0..max_attempts {
         std::thread::sleep(std::time::Duration::from_millis(500));
         
-        match client.get("http://localhost:8765/health").send() {
+        match client.get(&format!("http://localhost:{}/health", port)).send() {
             Ok(_) => {
                 log_to_file(&format!("Backend ready after {} attempts", i + 1));
                 return true;
@@ -93,15 +135,31 @@ fn wait_for_backend() -> bool {
 }
 
 fn main() {
-    // Create logs directory and clear old debug log
     let logs_dir = get_logs_dir();
     let _ = std::fs::remove_file(logs_dir.join("debug.txt"));
     log_to_file("=== APP STARTING ===");
+
+    let launcher_pid = std::process::id();
+    log_to_file(&format!("Launcher PID: {}", launcher_pid));
     
     tauri::Builder::default()
-        .setup(|app| {
+        .setup(move |app| {
             log_to_file("In setup function");
-            
+            kill_existing_backend();
+
+            let resource_dir = {
+                #[cfg(not(debug_assertions))]
+                {
+                    app.path().resource_dir().expect("Failed to get resource directory")
+                }
+                #[cfg(debug_assertions)]
+                {
+                    std::env::current_dir().expect("Failed to get current dir")
+                }
+            };
+
+            log_to_file(&format!("Resource dir: {:?}", resource_dir));
+
             let python_process = if cfg!(debug_assertions) {
                 log_to_file("DEBUG MODE");
                 
@@ -113,6 +171,8 @@ fn main() {
                 
                 match Command::new(python_cmd)
                     .arg("backend.py")
+                    .arg("--pid")
+                    .arg(launcher_pid.to_string())
                     .spawn()
                 {
                     Ok(child) => {
@@ -128,7 +188,6 @@ fn main() {
                 log_to_file("PRODUCTION MODE");
                 
                 let (python_exe, script) = get_python_and_script(&app.handle());
-                let resource_dir = app.path().resource_dir().unwrap();
                 
                 log_to_file(&format!("Python exe: {:?}", python_exe));
                 log_to_file(&format!("Script: {:?}", script));
@@ -145,17 +204,11 @@ fn main() {
                     panic!("Backend script not found at: {:?}", script);
                 }
                 
-                log_to_file(&format!("Working directory: {:?}", resource_dir));
-                
-                // Create logs directory in resource_dir for production
                 let production_logs_dir = resource_dir.join("logs");
                 let _ = fs::create_dir_all(&production_logs_dir);
                 
                 let stdout_log = production_logs_dir.join("python_stdout.txt");
                 let stderr_log = production_logs_dir.join("python_stderr.txt");
-                
-                log_to_file(&format!("Python stdout will be in: {:?}", stdout_log));
-                log_to_file(&format!("Python stderr will be in: {:?}", stderr_log));
                 
                 let stdout_file = std::fs::File::create(&stdout_log)
                     .expect("Failed to create stdout log");
@@ -164,6 +217,8 @@ fn main() {
                 
                 match Command::new(&python_exe)
                     .arg(&script)
+                    .arg("--pid")
+                    .arg(launcher_pid.to_string())
                     .current_dir(&resource_dir)
                     .stdout(Stdio::from(stdout_file))
                     .stderr(Stdio::from(stderr_file))
@@ -181,12 +236,13 @@ fn main() {
             };
             
             app.manage(PythonProcess(Mutex::new(Some(python_process))));
-            
-            log_to_file("Waiting for backend...");
-            if !wait_for_backend() {
+
+            let backend_port = read_backend_port(&resource_dir, launcher_pid);
+            log_to_file(&format!("This instance will use port {}", backend_port));
+
+            if !wait_for_backend(backend_port) {
                 log_to_file("PANIC: Backend didn't start in time");
                 
-                let resource_dir = app.path().resource_dir().unwrap();
                 let stderr_log = resource_dir.join("logs").join("python_stderr.txt");
                 if let Ok(errors) = std::fs::read_to_string(&stderr_log) {
                     log_to_file(&format!("Python errors: {}", errors));
@@ -196,36 +252,89 @@ fn main() {
             }
             
             log_to_file("Backend is running!");
-            
+
             let main_window = app.get_webview_window("main").unwrap();
-            let stats_window = app.get_webview_window("stats");
-            
+
+            main_window
+                .eval(&format!(
+                    "window.__LAUNCHER_PID__ = '{}'; window.__BACKEND_PORT__ = {};",
+                    launcher_pid, backend_port
+                ))
+                .expect("Failed to inject launcher globals");
+
+            if let Ok(Some(monitor)) = main_window.current_monitor() {
+                let monitor_size = monitor.size();
+                let scale = monitor.scale_factor();
+                let width = (monitor_size.width as f64 / scale * 0.365) as u32;
+                let height = (monitor_size.height as f64 / scale * 0.475) as u32;
+                let _ = main_window.set_size(tauri::LogicalSize::new(width, height));
+                let _ = main_window.center();
+            }
+
             let main_window_clone = main_window.clone();
             std::thread::spawn(move || {
                 let client = reqwest::blocking::Client::new();
                 loop {
                     std::thread::sleep(std::time::Duration::from_secs(1));
                     
-                    if let Ok(response) = client.get("http://localhost:8765/state").send() {
+                    if let Ok(response) = client
+                        .get(&format!("http://localhost:{}/state", backend_port))
+                        .send()
+                    {
                         if let Ok(state) = response.json::<serde_json::Value>() {
-                            if let Some(always_on_top) = state.get("alwaysOnTop").and_then(|v| v.as_bool()) {
+                            if let Some(always_on_top) = state
+                                .get("alwaysOnTop")
+                                .and_then(|v| v.as_bool())
+                            {
                                 let _ = main_window_clone.set_always_on_top(always_on_top);
                             }
                         }
                     }
                 }
             });
-            
+
+            let stats_window = app.get_webview_window("stats");
+
             if let Some(stats_win) = stats_window {
-                // Position the window
                 if let Ok(Some(monitor)) = stats_win.current_monitor() {
-                    if let Ok(size) = stats_win.outer_size() {
-                        let screen_width = monitor.size().width as i32;
-                        let window_width = size.width as i32;
+                    let monitor_size = monitor.size();
+                    let scale = monitor.scale_factor();
+                    let width = (monitor_size.width as f64 / scale * 0.125) as u32;
+                    let height = (monitor_size.height as f64 / scale * 0.1) as u32;
+                    let _ = stats_win.set_size(tauri::LogicalSize::new(width, height));
+
+                    let store = tauri_plugin_store::StoreBuilder::new(app.handle(), "stats_position.json")
+                        .build()
+                        .expect("Failed to build store");
+
+                    if let (Some(x), Some(y)) = (
+                        store.get("x").and_then(|v: serde_json::Value| v.as_i64()),
+                        store.get("y").and_then(|v: serde_json::Value| v.as_i64()),
+                    ) {
+                        let _ = stats_win.set_position(PhysicalPosition::new(x as i32, y as i32));
+                    } else {
+                        let screen_width = monitor_size.width as i32;
+                        let window_width = (width as f64 * scale) as i32;
                         let x = (screen_width - window_width) / 2;
                         let _ = stats_win.set_position(PhysicalPosition::new(x, 20));
                     }
                 }
+
+                let stats_win_clone = stats_win.clone();
+                stats_win.on_window_event(move |event| {
+                    if let tauri::WindowEvent::Moved(pos) = event {
+                        if let Ok(store) = tauri_plugin_store::StoreBuilder::new(
+                            stats_win_clone.app_handle(),
+                            "stats_position.json",
+                        )
+                        .build()
+                        {
+                            store.set("x", serde_json::json!(pos.x));
+                            store.set("y", serde_json::json!(pos.y));
+                            let _ = store.save();
+                        }
+                    }
+                });
                 
                 std::thread::spawn(move || {
                     let client = reqwest::blocking::Client::new();
@@ -234,7 +343,10 @@ fn main() {
                     loop {
                         std::thread::sleep(std::time::Duration::from_secs(1));
 
-                        if let Ok(response) = client.get("http://localhost:8765/state").send() {
+                        if let Ok(response) = client
+                            .get(&format!("http://localhost:{}/state", backend_port))
+                            .send()
+                        {
                             if let Ok(state) = response.json::<serde_json::Value>() {
                                 let show_debug = state
                                     .get("showDebugOverlay")
@@ -255,39 +367,45 @@ fn main() {
             log_to_file("Setup complete!");
             Ok(())
         })
-        .on_window_event(|window, event| {
+        .on_window_event(move |window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 if window.label() == "main" {
-                    log_to_file("Main window close requested, terminating backend...");
-                    
+
                     api.prevent_close();
-                    
+
                     let app_handle = window.app_handle().clone();
-                    
+
+                    let resource_dir_for_cleanup = {
+                        #[cfg(not(debug_assertions))]
+                        { app_handle.path().resource_dir().ok() }
+                        #[cfg(debug_assertions)]
+                        { std::env::current_dir().ok() }
+                    };
+
+                    if let Some(dir) = &resource_dir_for_cleanup {
+                        let port_file = dir.join(format!("port_{}.json", launcher_pid));
+                        let _ = std::fs::remove_file(&port_file);
+                        log_to_file(&format!("Cleaned up port file for PID {}", launcher_pid));
+                    }
+
                     std::thread::spawn(move || {
-                        if let Some(python_process) = app_handle.try_state::<PythonProcess>() {
-                            if let Ok(mut process_guard) = python_process.0.lock() {
+                        if let Some(process) = app_handle.try_state::<PythonProcess>() {
+                            if let Ok(mut process_guard) = process.0.lock() {
                                 if let Some(mut child) = process_guard.take() {
                                     #[cfg(target_os = "windows")]
                                     {
                                         let pid = child.id();
-                                        log_to_file(&format!("Killing Python process PID: {}", pid));
                                         let _ = Command::new("taskkill")
                                             .args(&["/F", "/T", "/PID", &pid.to_string()])
                                             .output();
                                     }
-                                    
                                     #[cfg(not(target_os = "windows"))]
-                                    {
-                                        let _ = child.kill();
-                                    }
-                                    
+                                    { let _ = child.kill(); }
                                     let _ = child.wait();
                                     log_to_file("Backend terminated");
                                 }
                             }
                         }
-                        
                         log_to_file("Exiting application...");
                         app_handle.exit(0);
                     });
@@ -295,6 +413,7 @@ fn main() {
             }
         })
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_store::Builder::default().build())
         .invoke_handler(tauri::generate_handler![send_to_python])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

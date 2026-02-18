@@ -17,21 +17,24 @@
             background: transparent;
             overflow: hidden;
             -webkit-app-region: drag;
+            width: 100vw;
+            height: 100vh;
         }
 
         .StatsContainer {
             background: rgba(10, 10, 10, 0.9);
             color: #10b981;
-            padding: 16px 24px;
+            padding: 12px 18px;
             border-radius: 8px;
             font-weight: 700;
             font-size: 14px;
             backdrop-filter: blur(10px);
-            min-width: 200px;
+            width: 100%;
+            height: fit-content;
         }
 
         .StatLine {
-            margin-bottom: 8px;
+            margin-bottom: 6px;
             display: flex;
             justify-content: space-between;
             gap: 20px;
@@ -52,8 +55,8 @@
         }
 
         .StatusLine {
-            margin-top: 12px;
-            padding-top: 12px;
+            margin-top: 10px;
+            padding-top: 10px;
             border-top: 1px solid rgba(100, 100, 100, 0.3);
         }
 

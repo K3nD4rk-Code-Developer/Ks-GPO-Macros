@@ -50,30 +50,19 @@ fn main() {
     if BuildProfile == "release" {
         let PythonSourcePath = PathBuf::from(r"C:\Users\zomrd\AppData\Local\Programs\Python\Python314");
         
-        println!("cargo:warning=============================================");
-        println!("cargo:warning=Copying Python distribution for release build");
-        println!("cargo:warning=From: {:?}", PythonSourcePath);
-        println!("cargo:warning=To: {:?}", PythonDestinationPath);
-        println!("cargo:warning=============================================");
-        
         if !PythonSourcePath.exists() {
-            println!("cargo:warning=ERROR: Python source directory not found!");
-            println!("cargo:warning=Please ensure Python 3.14 is installed at the expected location");
             panic!("Python source directory not found at: {:?}", PythonSourcePath);
         }
         
         if PythonDestinationPath.exists() {
-            println!("cargo:warning=Removing old Python copy...");
             if let Err(Error) = fs::remove_dir_all(&PythonDestinationPath) {
                 println!("cargo:warning=Warning: Failed to remove old Python directory: {}", Error);
             }
         }
         
-        println!("cargo:warning=Copying Python files (this may take a moment)...");
         match CopyDirectoryRecursive(&PythonSourcePath, &PythonDestinationPath) {
             Ok(_) => {
-                println!("cargo:warning=Python copied successfully!");
-                println!("cargo:warning=============================================");
+                
             }
             Err(Error) => {
                 println!("cargo:warning=ERROR: Failed to copy Python: {}", Error);
@@ -81,10 +70,8 @@ fn main() {
             }
         }
     } else {
-        println!("cargo:warning=Debug build - creating placeholder Python314 directory");
         if !PythonDestinationPath.exists() {
             fs::create_dir_all(&PythonDestinationPath).unwrap();
-            println!("cargo:warning=Placeholder directory created at {:?}", PythonDestinationPath);
         }
     }
     
