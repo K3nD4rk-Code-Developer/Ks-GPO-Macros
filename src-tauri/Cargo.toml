@@ -23,6 +23,7 @@ image = "0.25"
 screenshots = "0.8"
 enigo = "0.2"
 rdev = "0.5"
+urlencoding = "2"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.58", features = [

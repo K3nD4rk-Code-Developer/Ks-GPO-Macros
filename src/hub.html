@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K's Macros — Hub</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="hub.css">
+</head>
+
+<body>
+    <div class="drag-region"></div>
+
+    <div class="shell">
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+
+        <div class="hub-header">
+            <div class="logo-mark">
+                <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g class="logo-ring">
+                        <circle cx="26" cy="26" r="24" stroke="rgba(0,212,255,0.2)" stroke-width="1" />
+                        <circle cx="26" cy="2" r="2.5" fill="#00d4ff" opacity="0.9" />
+                        <circle cx="50" cy="26" r="1.5" fill="#00d4ff" opacity="0.5" />
+                        <circle cx="26" cy="50" r="2" fill="#00d4ff" opacity="0.7" />
+                    </g>
+                </svg>
+                <img class="logo-img" src="assets/content.png" alt="K's Macros logo" />
+            </div>
+            <div>
+                <div class="brand-name">K's Macros</div>
+                <div class="brand-sub">GPO — Select a Macro</div>
+            </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="macro-grid" id="macroGrid">
+        </div>
+
+        <div class="hub-footer">
+            <div class="ver-tag" id="hubVer"></div>
+            <div class="status-dot-row">
+                <div class="sdot active"></div>
+                <span>Backend connected</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-backdrop" id="modalBackdrop" onclick="closeKeyModal()"></div>
+
+    <div class="key-modal" id="keyModal">
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+
+        <div class="modal-header">
+            <div class="modal-icon" id="modalIcon"></div>
+            <div>
+                <div class="modal-title" id="modalTitle">Enter Key</div>
+                <div class="modal-sub" id="modalSub">KeyAuth verification required</div>
+            </div>
+            <button class="modal-close" onclick="closeKeyModal()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+            </button>
+        </div>
+
+        <div class="modal-body">
+            <label class="key-label">License Key</label>
+            <div class="key-input-wrap" id="keyInputWrap">
+                <svg class="key-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path
+                        d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4" />
+                </svg>
+                <input type="text" id="keyInput" class="key-input" placeholder="XXXX-XXXX-XXXX-XXXX" spellcheck="false"
+                    autocomplete="off" onkeydown="handleKeyDown(event)" />
+                <button class="key-clear" id="keyClear" onclick="clearKey()" style="display:none">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                </button>
+            </div>
+            <div class="key-feedback" id="keyFeedback"></div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="closeKeyModal()">Cancel</button>
+            <button class="btn btn-verify" id="btnVerify" onclick="verifyKey()">
+                <span id="verifyLabel">Verify & Launch</span>
+                <div class="btn-spinner" id="verifySpinner" style="display:none"></div>
+            </button>
+        </div>
+    </div>
+
+    <div class="launch-ripple" id="launchRipple">
+        <div class="ripple-ring" id="rippleRing"></div>
+    </div>
+
+    <script src="hub.js"></script>
+</body>
+
+</html>

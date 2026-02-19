@@ -23,6 +23,17 @@
         "center": true
       },
       {
+        "label": "hub",
+        "title": "K's Macros — Hub",
+        "url": "hub.html",
+        "width": 860,
+        "height": 560,
+        "resizable": false,
+        "decorations": false,
+        "visible": false,
+        "center": true
+      },
+      {
         "title": "K's Fishing Macro",
         "resizable": true,
         "visible": false,
@@ -33,7 +44,7 @@
         "title": "Stats",
         "width": 300,
         "height": 200,
-        "resizable": false,
+        "resizable": true,
         "decorations": false,
         "transparent": true,
         "alwaysOnTop": true,

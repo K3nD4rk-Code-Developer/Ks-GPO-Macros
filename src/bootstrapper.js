@@ -212,7 +212,7 @@ async function launchApp() {
     try {
         await invoke('open_main_window');
     } catch (_) {
-        window.location.href = 'main.html';
+        window.location.href = 'hub.html';
     }
 
     setStatus('Ready', 'active');
