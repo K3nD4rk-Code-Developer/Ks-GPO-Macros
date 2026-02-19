@@ -1,40 +1,14 @@
-const CURRENT_VERSION = '2.0.1';
+let CURRENT_VERSION = '0.0.0';
 const GITHUB_REPO = 'K3nD4rk-Code-Developer/Grand-Piece-Online-Fishing';
 const CLIENT_ID = getClientId();
 
 let BackendPort = 8765;
-
-function BackendUrl(Path) {
-    return `http://localhost:${BackendPort}${Path}`;
-}
-
-async function InitBackendPort() {
-    if (typeof window.__BACKEND_PORT__ !== 'undefined') {
-        BackendPort = window.__BACKEND_PORT__;
-        return;
-    }
-    const Pid = window.__LAUNCHER_PID__;
-    if (Pid) {
-        for (let I = 0; I < 10; I++) {
-            try {
-                const Res = await fetch(`./port_${Pid}.json`);
-                if (Res.ok) {
-                    const Data = await Res.json();
-                    BackendPort = Data.port;
-                    return;
-                }
-            } catch (_) { }
-            await new Promise(R => setTimeout(R, 500));
-        }
-    }
-}
-
+let pollInterval = null;
 let activeCategoryIndex = 0;
 let activeSlideIndex = 0;
 let lastRenderedRecipes = null;
 let lastRenderedSessionsJSON = null;
 let lastSessionsUpdateTime = 0;
-let pollInterval;
 let activeElement = null;
 let skipNextUpdate = new Set();
 
@@ -93,19 +67,6 @@ function getClientId() {
     return id;
 }
 
-async function regenerateClientId() {
-    if (!confirm('This will generate a new Client ID and may disconnect this device from sync. Continue?')) return;
-    localStorage.removeItem('macroClientId');
-    const newId = getClientId();
-    document.getElementById('clientIdDisplay').textContent = newId;
-    try {
-        await sendToPython('set_client_id', newId);
-        showToast('Client ID regenerated. Please restart the macro.', 'warn');
-    } catch (e) {
-        showToast('Failed to regenerate Client ID', 'err');
-    }
-}
-
 function extractVersion(v) {
     const m = v.match(/(\d+)\.(\d+)\.(\d+)/);
     return m ? m[0] : v;
@@ -119,6 +80,184 @@ function compareVersions(v1, v2) {
         if ((a[i] || 0) < (b[i] || 0)) return -1;
     }
     return 0;
+}
+
+function BackendUrl(path) {
+    return `http://localhost:${BackendPort}${path}`;
+}
+
+async function InitBackendPort() {
+    if (typeof window.__BACKEND_PORT__ !== 'undefined') {
+        BackendPort = window.__BACKEND_PORT__;
+        return;
+    }
+    const pid = window.__LAUNCHER_PID__;
+    if (!pid) return;
+    for (let i = 0; i < 10; i++) {
+        try {
+            const res = await fetch(`./port_${pid}.json`);
+            if (res.ok) {
+                const data = await res.json();
+                BackendPort = data.port;
+                return;
+            }
+        } catch (_) { }
+        await new Promise(r => setTimeout(r, 500));
+    }
+}
+
+async function sendToPython(action, payload) {
+    try {
+        const res = await fetch(BackendUrl('/command'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action, payload, clientId: CLIENT_ID })
+        });
+        const result = await res.json();
+        if (result.status === 'error') showErrorNotification(`Error: ${result.message}`);
+        return result;
+    } catch (e) {
+        console.error('Failed to send to Python:', e);
+    }
+}
+
+function showToast(msg, type = 'warn') {
+    const el = document.createElement('div');
+    el.className = `notif-toast ${type}`;
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 5000);
+}
+
+function showWarningNotification(msg) { showToast(msg, 'warn'); }
+function showErrorNotification(msg) { showToast(msg, 'err'); }
+
+function setInputValue(id, value) {
+    const el = document.getElementById(id);
+    if (!el || document.activeElement === el) return;
+    el.value = value;
+}
+
+function setToggleState(id, isActive) {
+    const el = document.getElementById(id);
+    if (!el || activeElement === el || skipNextUpdate.has(id)) return;
+    el.classList.toggle('active', isActive);
+}
+
+function setExpandableSection(toggleId, expandId, isActive) {
+    const toggle = document.getElementById(toggleId);
+    const section = document.getElementById(expandId);
+    if (!toggle || !section) return;
+    if (activeElement === toggle || skipNextUpdate.has(toggleId)) return;
+    toggle.classList.toggle('active', isActive);
+    section.classList.toggle('expanded', isActive);
+}
+
+function updateStatus(isRunning) {
+    document.getElementById('statusDot').classList.toggle('active', isRunning);
+    document.getElementById('statusText').textContent = isRunning ? 'Active' : 'Inactive';
+}
+
+function updateHotkey(key, value) {
+    const el = document.getElementById(`hotkey-${key}`);
+    if (el) el.textContent = value.toUpperCase();
+}
+
+function updateRdpIndicator(isRdp, sessionState) {
+    const pill = document.getElementById('rdpIndicator');
+    const text = document.getElementById('rdpText');
+    const stEl = document.getElementById('sessionTypeText');
+    pill.classList.toggle('active', isRdp);
+    text.textContent = isRdp ? (sessionState === 'connected' ? 'RDP' : 'RDP?') : 'Local';
+    if (stEl) stEl.textContent = isRdp ? 'Remote Desktop' : 'Local Desktop';
+}
+
+function updatePointStatus(name, x, y) {
+    const el = document.getElementById(`${name}Status`);
+    if (!el) return;
+    if (x != null && y != null) {
+        el.textContent = `${x}, ${y}`;
+        el.className = 'point-badge set';
+    } else {
+        el.textContent = 'Not Set';
+        el.className = 'point-badge unset';
+    }
+}
+
+function navigateToLocations() {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelector('[data-view="locations"]').classList.add('active');
+    document.getElementById('locations').classList.add('active');
+}
+
+function checkRequirements(name) {
+    const warn = document.getElementById(`${name}Warning`);
+    const toggle = document.getElementById(`${name}Toggle`);
+    if (!warn) return;
+    const on = toggle && toggle.classList.contains('active');
+    let missing = false;
+    if (name === 'autoStoreFruit') {
+        if (document.getElementById('storeFruitPointStatus')?.classList.contains('unset')) missing = true;
+    }
+    if (name === 'autoBuyBait') {
+        ['leftPointStatus', 'middlePointStatus', 'rightPointStatus'].forEach(id => {
+            if (document.getElementById(id)?.classList.contains('unset')) missing = true;
+        });
+    }
+    if (name === 'autoCraftBait') {
+        ['craftLeftPointStatus', 'craftMiddlePointStatus', 'craftButtonPointStatus', 'craftConfirmPointStatus', 'closeMenuPointStatus', 'addRecipePointStatus', 'topRecipePointStatus'].forEach(id => {
+            if (document.getElementById(id)?.classList.contains('unset')) missing = true;
+        });
+    }
+    if (name === 'autoSelectBait') {
+        if (document.getElementById('baitPointStatus')?.classList.contains('unset')) missing = true;
+    }
+    warn.classList.toggle('hidden', !(on && missing));
+}
+
+function changeTheme(name) {
+    document.documentElement.setAttribute('data-theme', name === 'default' ? '' : name);
+    document.querySelectorAll('.theme-opt').forEach(o => o.classList.toggle('active', o.dataset.theme === name));
+    localStorage.setItem('selectedTheme', name);
+}
+
+function loadSavedTheme() {
+    changeTheme(localStorage.getItem('selectedTheme') || 'default');
+}
+
+async function toggleFastMode(enabled) {
+    document.documentElement.setAttribute('data-perf', enabled ? 'fast' : 'normal');
+    localStorage.setItem('fastMode', enabled ? 'true' : 'false');
+    try {
+        await fetch(BackendUrl('/set_fast_mode'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ enabled })
+        });
+    } catch (e) { }
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(pollPythonState, enabled ? 1000 : 500);
+}
+
+function loadFastMode() {
+    const saved = localStorage.getItem('fastMode') === 'true';
+    const toggle = document.getElementById('fastModeToggle');
+    if (toggle) toggle.classList.toggle('active', saved);
+    if (saved) document.documentElement.setAttribute('data-perf', 'fast');
+}
+
+function checkDisclaimer() {
+    if (localStorage.getItem('hideDisclaimer') === 'true') {
+        document.getElementById('disclaimerModal').classList.add('hidden');
+    }
+}
+
+function closeDisclaimer() {
+    if (document.getElementById('dontShowAgain').checked) {
+        localStorage.setItem('hideDisclaimer', 'true');
+    }
+    document.getElementById('disclaimerModal').classList.add('hidden');
 }
 
 async function checkForUpdates() {
@@ -150,60 +289,16 @@ function dismissBanner() {
     document.getElementById('updateBanner').classList.add('hidden');
 }
 
-function checkDisclaimer() {
-    if (localStorage.getItem('hideDisclaimer') === 'true') {
-        document.getElementById('disclaimerModal').classList.add('hidden');
-    }
-}
-
-function closeDisclaimer() {
-    if (document.getElementById('dontShowAgain').checked) {
-        localStorage.setItem('hideDisclaimer', 'true');
-    }
-    document.getElementById('disclaimerModal').classList.add('hidden');
-}
-
-function showToast(msg, type = 'warn') {
-    const el = document.createElement('div');
-    el.className = `notif-toast ${type}`;
-    el.textContent = msg;
-    document.body.appendChild(el);
-    setTimeout(() => el.remove(), 5000);
-}
-
-function showWarningNotification(msg) { showToast(msg, 'warn'); }
-function showErrorNotification(msg) { showToast(msg, 'err'); }
-
-function updateStatus(isRunning) {
-    const dot = document.getElementById('statusDot');
-    const text = document.getElementById('statusText');
-    dot.classList.toggle('active', isRunning);
-    text.textContent = isRunning ? 'Active' : 'Inactive';
-}
-
-function updateHotkey(key, value) {
-    const el = document.getElementById(`hotkey-${key}`);
-    if (el) el.textContent = value.toUpperCase();
-}
-
-function updateRdpIndicator(isRdp, sessionState) {
-    const pill = document.getElementById('rdpIndicator');
-    const text = document.getElementById('rdpText');
-    const stEl = document.getElementById('sessionTypeText');
-    pill.classList.toggle('active', isRdp);
-    text.textContent = isRdp ? (sessionState === 'connected' ? 'RDP' : 'RDP?') : 'Local';
-    if (stEl) stEl.textContent = isRdp ? 'Remote Desktop' : 'Local Desktop';
-}
-
-function updatePointStatus(name, x, y) {
-    const el = document.getElementById(`${name}Status`);
-    if (!el) return;
-    if (x != null && y != null) {
-        el.textContent = `${x}, ${y}`;
-        el.className = 'point-badge set';
-    } else {
-        el.textContent = 'Not Set';
-        el.className = 'point-badge unset';
+async function regenerateClientId() {
+    if (!confirm('This will generate a new Client ID and may disconnect this device from sync. Continue?')) return;
+    localStorage.removeItem('macroClientId');
+    const newId = getClientId();
+    document.getElementById('clientIdDisplay').textContent = newId;
+    try {
+        await sendToPython('set_client_id', newId);
+        showToast('Client ID regenerated. Please restart the macro.', 'warn');
+    } catch (e) {
+        showToast('Failed to regenerate Client ID', 'err');
     }
 }
 
@@ -335,6 +430,134 @@ function validateAndSetSecondarySlot(value) {
     sendToPython('set_anything_else_hotkey', value);
 }
 
+function toggleSetting(settingName) {
+    const toggle = document.getElementById(`${settingName}Toggle`);
+    activeElement = toggle;
+    skipNextUpdate.add(`${settingName}Toggle`);
+    toggle.classList.toggle('active');
+    const isActive = toggle.classList.contains('active');
+    sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
+    setTimeout(() => { activeElement = null; skipNextUpdate.delete(`${settingName}Toggle`); }, 1000);
+}
+
+function toggleExpandable(settingName, expandId) {
+    const toggle = document.getElementById(`${settingName}Toggle`);
+    const section = document.getElementById(expandId);
+    activeElement = toggle;
+    skipNextUpdate.add(`${settingName}Toggle`);
+    toggle.classList.toggle('active');
+    const isActive = toggle.classList.contains('active');
+    section.classList.toggle('expanded', isActive);
+    sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
+    setTimeout(() => { activeElement = null; skipNextUpdate.delete(`${settingName}Toggle`); }, 1000);
+}
+
+function toggleLoggingExpandable(toggleId, expandId) {
+    const toggle = document.getElementById(toggleId);
+    const section = document.getElementById(expandId);
+    activeElement = toggle;
+    skipNextUpdate.add(toggleId);
+    toggle.classList.toggle('active');
+    const isActive = toggle.classList.contains('active');
+    section.classList.toggle('expanded', isActive);
+    const nameMap = {
+        'logDevilFruitToggle': 'log_devil_fruit',
+        'logRecastTimeoutsToggle': 'log_recast_timeouts',
+        'logPeriodicStatsToggle': 'log_periodic_stats',
+        'logGeneralUpdatesToggle': 'log_general_updates',
+        'logMacroStateToggle': 'log_macro_state',
+        'logErrorsToggle': 'log_errors',
+        'logSpawnsToggle': 'log_spawns'
+    };
+    const name = nameMap[toggleId];
+    if (name) sendToPython(`toggle_${name}`, isActive.toString());
+    setTimeout(() => { activeElement = null; skipNextUpdate.delete(toggleId); }, 1000);
+}
+
+async function checkAndToggleMegalodon() {
+    const toggle = document.getElementById('megalodonSoundToggle');
+    const warning = document.getElementById('megalodonAudioWarning');
+    if (toggle.classList.contains('active')) {
+        activeElement = toggle;
+        skipNextUpdate.add('megalodonSoundToggle');
+        toggle.classList.remove('active');
+        warning.classList.add('hidden');
+        sendToPython('toggle_megalodon_sound', 'false');
+        setTimeout(() => { activeElement = null; skipNextUpdate.delete('megalodonSoundToggle'); }, 1000);
+        return;
+    }
+    try {
+        const res = await fetch(BackendUrl('/check_audio_device'));
+        const result = await res.json();
+        if (!result.found) { warning.classList.remove('hidden'); return; }
+        warning.classList.add('hidden');
+        activeElement = toggle;
+        skipNextUpdate.add('megalodonSoundToggle');
+        toggle.classList.add('active');
+        sendToPython('toggle_megalodon_sound', 'true');
+        setTimeout(() => { activeElement = null; skipNextUpdate.delete('megalodonSoundToggle'); }, 1000);
+    } catch (e) {
+        warning.classList.remove('hidden');
+        showErrorNotification('Could not check audio device: ' + e.message);
+    }
+}
+
+async function loadAudioDevices() {
+    try {
+        const res = await fetch(BackendUrl('/get_audio_devices'));
+        const data = await res.json();
+        const sel = document.getElementById('audioDeviceSelect');
+        if (!sel) return;
+        while (sel.options.length > 2) sel.remove(2);
+        if (data.devices?.length) {
+            data.devices.forEach(d => {
+                const opt = document.createElement('option');
+                opt.value = d.index;
+                opt.textContent = `${d.name} (${d.sampleRate}Hz)`;
+                opt.dataset.deviceName = d.name;
+                sel.appendChild(opt);
+            });
+            document.getElementById('megalodonAudioWarning')?.classList.add('hidden');
+        } else {
+            document.getElementById('megalodonAudioWarning')?.classList.remove('hidden');
+        }
+    } catch (e) { console.error('Failed to load audio devices:', e); }
+}
+
+async function refreshAudioDevices() {
+    await loadAudioDevices();
+}
+
+async function selectAudioDevice(value) {
+    const sel = document.getElementById('audioDeviceSelect');
+    const opt = sel.options[sel.selectedIndex];
+    try {
+        await fetch(BackendUrl('/command'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'set_audio_device',
+                payload: JSON.stringify({ index: value !== 'auto' ? parseInt(value) : null, name: opt.dataset.deviceName || '' }),
+                clientId: CLIENT_ID
+            })
+        });
+    } catch (e) { showErrorNotification('Failed to set audio device'); }
+}
+
+async function testWebhook() {
+    const url = document.getElementById('webhookUrl').value;
+    if (!url?.trim()) { showErrorNotification('Enter a Webhook URL first.'); return; }
+    try {
+        const res = await fetch(BackendUrl('/command'), {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'test_webhook', payload: '', clientId: CLIENT_ID })
+        });
+        const result = await res.json();
+        if (result.status !== 'success') showErrorNotification(`Webhook test failed: ${result.message}`);
+    } catch (e) { showErrorNotification('Failed to send test webhook.'); }
+}
+
 function renderRecipes(recipes) {
     const container = document.getElementById('RecipesContainer');
     if (!container) return;
@@ -404,150 +627,6 @@ async function updateRecipeValue(idx, field, value) {
     } catch (e) { console.error('Failed to update recipe value:', e); }
 }
 
-async function checkAndToggleMegalodon() {
-    const toggle = document.getElementById('megalodonSoundToggle');
-    const warning = document.getElementById('megalodonAudioWarning');
-    if (toggle.classList.contains('active')) {
-        activeElement = toggle; skipNextUpdate.add('megalodonSoundToggle');
-        toggle.classList.remove('active');
-        warning.classList.add('hidden');
-        sendToPython('toggle_megalodon_sound', 'false');
-        setTimeout(() => { activeElement = null; skipNextUpdate.delete('megalodonSoundToggle'); }, 1000);
-        return;
-    }
-    try {
-        const res = await fetch(BackendUrl('/check_audio_device'));
-        const result = await res.json();
-        if (!result.found) { warning.classList.remove('hidden'); return; }
-        warning.classList.add('hidden');
-        activeElement = toggle; skipNextUpdate.add('megalodonSoundToggle');
-        toggle.classList.add('active');
-        sendToPython('toggle_megalodon_sound', 'true');
-        setTimeout(() => { activeElement = null; skipNextUpdate.delete('megalodonSoundToggle'); }, 1000);
-    } catch (e) {
-        warning.classList.remove('hidden');
-        showErrorNotification('Could not check audio device: ' + e.message);
-    }
-}
-
-function toggleLoggingExpandable(toggleId, expandId) {
-    const toggle = document.getElementById(toggleId);
-    const section = document.getElementById(expandId);
-    activeElement = toggle; skipNextUpdate.add(toggleId);
-    toggle.classList.toggle('active');
-    const isActive = toggle.classList.contains('active');
-    section.classList.toggle('expanded', isActive);
-    const nameMap = {
-        'logDevilFruitToggle': 'log_devil_fruit',
-        'logRecastTimeoutsToggle': 'log_recast_timeouts',
-        'logPeriodicStatsToggle': 'log_periodic_stats',
-        'logGeneralUpdatesToggle': 'log_general_updates',
-        'logMacroStateToggle': 'log_macro_state',
-        'logErrorsToggle': 'log_errors',
-        'logSpawnsToggle': 'log_spawns'
-    };
-    const name = nameMap[toggleId];
-    if (name) sendToPython(`toggle_${name}`, isActive.toString());
-    setTimeout(() => { activeElement = null; skipNextUpdate.delete(toggleId); }, 1000);
-}
-
-function toggleExpandable(settingName, expandId) {
-    const toggle = document.getElementById(`${settingName}Toggle`);
-    const section = document.getElementById(expandId);
-    activeElement = toggle; skipNextUpdate.add(`${settingName}Toggle`);
-    toggle.classList.toggle('active');
-    const isActive = toggle.classList.contains('active');
-    section.classList.toggle('expanded', isActive);
-    sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
-    setTimeout(() => { activeElement = null; skipNextUpdate.delete(`${settingName}Toggle`); }, 1000);
-}
-
-function toggleSetting(settingName) {
-    const toggle = document.getElementById(`${settingName}Toggle`);
-    activeElement = toggle; skipNextUpdate.add(`${settingName}Toggle`);
-    toggle.classList.toggle('active');
-    const isActive = toggle.classList.contains('active');
-    sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
-    setTimeout(() => { activeElement = null; skipNextUpdate.delete(`${settingName}Toggle`); }, 1000);
-}
-
-function setExpandableSection(toggleId, expandId, isActive) {
-    const toggle = document.getElementById(toggleId);
-    const section = document.getElementById(expandId);
-    if (!toggle || !section) return;
-    if (activeElement === toggle || skipNextUpdate.has(toggleId)) return;
-    toggle.classList.toggle('active', isActive);
-    section.classList.toggle('expanded', isActive);
-}
-
-function setToggleState(id, isActive) {
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (activeElement === el || skipNextUpdate.has(id)) return;
-    el.classList.toggle('active', isActive);
-}
-
-function checkRequirements(name) {
-    const warn = document.getElementById(`${name}Warning`);
-    const toggle = document.getElementById(`${name}Toggle`);
-    if (!warn) return;
-    const on = toggle && toggle.classList.contains('active');
-    let missing = false;
-    if (name === 'autoStoreFruit') {
-        if (document.getElementById('storeFruitPointStatus')?.classList.contains('unset')) missing = true;
-    }
-    if (name === 'autoBuyBait') {
-        ['leftPointStatus', 'middlePointStatus', 'rightPointStatus'].forEach(id => {
-            if (document.getElementById(id)?.classList.contains('unset')) missing = true;
-        });
-    }
-    if (name === 'autoCraftBait') {
-        ['craftLeftPointStatus', 'craftMiddlePointStatus', 'craftButtonPointStatus', 'craftConfirmPointStatus', 'closeMenuPointStatus', 'addRecipePointStatus', 'topRecipePointStatus'].forEach(id => {
-            if (document.getElementById(id)?.classList.contains('unset')) missing = true;
-        });
-    }
-    if (name === 'autoSelectBait') {
-        if (document.getElementById('baitPointStatus')?.classList.contains('unset')) missing = true;
-    }
-    warn.classList.toggle('hidden', !(on && missing));
-}
-
-function navigateToLocations() {
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.querySelector('[data-view="locations"]').classList.add('active');
-    document.getElementById('locations').classList.add('active');
-}
-
-async function testWebhook() {
-    const url = document.getElementById('webhookUrl').value;
-    if (!url?.trim()) { showErrorNotification('Enter a Webhook URL first.'); return; }
-    try {
-        const res = await fetch(BackendUrl('/command'), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'test_webhook', payload: '', clientId: CLIENT_ID })
-        });
-        const result = await res.json();
-        if (result.status !== 'success') showErrorNotification(`Webhook test failed: ${result.message}`);
-    } catch (e) { showErrorNotification('Failed to send test webhook.'); }
-}
-
-async function sendToPython(action, payload) {
-    try {
-        const res = await fetch(BackendUrl('/command'), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action, payload, clientId: CLIENT_ID })
-        });
-        const result = await res.json();
-        if (result.status === 'error') showErrorNotification(`Error: ${result.message}`);
-        return result;
-    } catch (e) {
-        console.error('Failed to send to Python:', e);
-    }
-}
-
 function confirmResetSettings() {
     if (confirm('This will reset ALL settings to defaults. This cannot be undone. Continue?')) {
         if (confirm('Really reset everything?')) {
@@ -570,54 +649,6 @@ function confirmResetSettings() {
     }
 }
 
-function setInputValue(id, value) {
-    const el = document.getElementById(id);
-    if (!el || document.activeElement === el) return;
-    el.value = value;
-}
-
-async function loadAudioDevices() {
-    try {
-        const res = await fetch(BackendUrl('/get_audio_devices'));
-        const data = await res.json();
-        const sel = document.getElementById('audioDeviceSelect');
-        if (!sel) return;
-        while (sel.options.length > 2) sel.remove(2);
-        if (data.devices?.length) {
-            data.devices.forEach(d => {
-                const opt = document.createElement('option');
-                opt.value = d.index;
-                opt.textContent = `${d.name} (${d.sampleRate}Hz)`;
-                opt.dataset.deviceName = d.name;
-                sel.appendChild(opt);
-            });
-            document.getElementById('megalodonAudioWarning')?.classList.add('hidden');
-        } else {
-            document.getElementById('megalodonAudioWarning')?.classList.remove('hidden');
-        }
-    } catch (e) { console.error('Failed to load audio devices:', e); }
-}
-
-async function refreshAudioDevices() {
-    await loadAudioDevices();
-}
-
-async function selectAudioDevice(value) {
-    const sel = document.getElementById('audioDeviceSelect');
-    const opt = sel.options[sel.selectedIndex];
-    try {
-        await fetch(BackendUrl('/command'), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'set_audio_device',
-                payload: JSON.stringify({ index: value !== 'auto' ? parseInt(value) : null, name: opt.dataset.deviceName || '' }),
-                clientId: CLIENT_ID
-            })
-        });
-    } catch (e) { showErrorNotification('Failed to set audio device'); }
-}
-
 function loadAllSettings(state) {
     if (state.hotkeys) {
         updateHotkey('start', state.hotkeys.StartStop || state.hotkeys.start_stop || 'f1');
@@ -625,6 +656,7 @@ function loadAllSettings(state) {
     }
     setInputValue('rodHotkey', state.rodHotkey || '1');
     setInputValue('anythingElseHotkey', state.anythingElseHotkey || '2');
+
     let dfSlots = state.devilFruitHotkeys || state.devilFruitHotkey || ['3'];
     if (!Array.isArray(dfSlots)) dfSlots = [dfSlots];
     window.currentDevilFruitSlots = dfSlots;
@@ -718,7 +750,6 @@ function loadAllSettings(state) {
 async function loadInitialSettings() {
     const MAX_ATTEMPTS = 30;
     const RETRY_DELAY = 2000;
-
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
         try {
             const res = await fetch(BackendUrl('/state'));
@@ -729,9 +760,7 @@ async function loadInitialSettings() {
             return;
         } catch (e) {
             console.log(`Backend not ready (attempt ${attempt}/${MAX_ATTEMPTS}), retrying in ${RETRY_DELAY}ms...`);
-            if (attempt < MAX_ATTEMPTS) {
-                await new Promise(r => setTimeout(r, RETRY_DELAY));
-            }
+            if (attempt < MAX_ATTEMPTS) await new Promise(r => setTimeout(r, RETRY_DELAY));
         }
     }
     console.error('Failed to load settings after max attempts — backend may be down.');
@@ -741,6 +770,7 @@ async function pollPythonState() {
     try {
         const res = await fetch(BackendUrl(`/state?clientId=${CLIENT_ID}`));
         const state = await res.json();
+
         updateStatus(state.isRunning);
 
         if (state.hotkeys) {
@@ -749,10 +779,8 @@ async function pollPythonState() {
         }
 
         if (state.is_admin !== undefined) {
-            const ind = document.getElementById('adminIndicator');
-            const text = document.getElementById('adminText');
-            ind.classList.toggle('active', state.is_admin);
-            text.textContent = state.is_admin ? 'Running as Admin' : 'Not Admin';
+            document.getElementById('adminIndicator').classList.toggle('active', state.is_admin);
+            document.getElementById('adminText').textContent = state.is_admin ? 'Running as Admin' : 'Not Admin';
         }
 
         const portEl = document.getElementById('backendPortDisplay');
@@ -795,16 +823,15 @@ async function pollPythonState() {
         setInputValue('periodicStatsInterval', state.periodicStatsInterval || 5);
 
         ['logDevilFruit', 'logSpawns', 'logRecastTimeouts', 'logPeriodicStats', 'logGeneralUpdates', 'logMacroState', 'logErrors'].forEach(k => {
-            const toggleId = `${k}Toggle`;
-            const expandId = `${k}Expand`;
-            if (state[k] !== undefined) setExpandableSection(toggleId, expandId, state[k]);
+            if (state[k] !== undefined) setExpandableSection(`${k}Toggle`, `${k}Expand`, state[k]);
         });
-        
+
         ['pingDevilFruit', 'pingSpawns', 'pingRecastTimeouts', 'pingPeriodicStats', 'pingGeneralUpdates', 'pingMacroState', 'pingErrors'].forEach(k => {
             if (state[k] !== undefined) setToggleState(`${k}Toggle`, state[k]);
         });
 
         if (state.baitRecipes !== undefined) renderRecipes(state.baitRecipes);
+
         checkRequirements('autoStoreFruit');
         checkRequirements('autoBuyBait');
         checkRequirements('autoCraftBait');
@@ -844,38 +871,11 @@ function startPolling() {
     pollInterval = setInterval(pollPythonState, 500);
 }
 
-function changeTheme(name) {
-    document.documentElement.setAttribute('data-theme', name === 'default' ? '' : name);
-    document.querySelectorAll('.theme-opt').forEach(o => o.classList.toggle('active', o.dataset.theme === name));
-    localStorage.setItem('selectedTheme', name);
-}
-
-function loadSavedTheme() {
-    changeTheme(localStorage.getItem('selectedTheme') || 'default');
-}
-
-async function toggleFastMode(enabled) {
-    document.documentElement.setAttribute('data-perf', enabled ? 'fast' : 'normal');
-    localStorage.setItem('fastMode', enabled ? 'true' : 'false');
-    try {
-        await fetch(BackendUrl('/set_fast_mode'), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ enabled })
-        });
-    } catch (e) { }
-    if (pollInterval) clearInterval(pollInterval);
-    pollInterval = setInterval(pollPythonState, enabled ? 1000 : 500);
-}
-
-function loadFastMode() {
-    const saved = localStorage.getItem('fastMode') === 'true';
-    const toggle = document.getElementById('fastModeToggle');
-    if (toggle) toggle.classList.toggle('active', saved);
-    if (saved) document.documentElement.setAttribute('data-perf', 'fast');
-}
-
 window.addEventListener('DOMContentLoaded', async () => {
+    CURRENT_VERSION = (await fetch('./version.json').then(r => r.json())).version;
+    document.getElementById('brandVer').textContent = `v${CURRENT_VERSION}`;
+    document.getElementById('appVer').textContent = CURRENT_VERSION;
+
     await InitBackendPort();
     loadFastMode();
     loadSavedTheme();
@@ -891,6 +891,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     }, 500);
 
     startPolling();
+
     document.querySelectorAll('.nav-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));

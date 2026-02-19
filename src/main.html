@@ -27,7 +27,7 @@
         <div class="brand-mark"></div>
         <div class="brand-info">
           <span class="brand-name">K's Macros</span>
-          <span class="brand-ver">v2.0.1</span>
+          <span class="brand-ver" id="brandVer"></span>
         </div>
       </div>
 
@@ -990,10 +990,9 @@
         <div class="section-title">App Info</div>
         <div class="panel">
           <div class="row-item"><span class="row-label">Version</span>
-            <div class="row-ctrl"><span class="mono-badge">2.0.1</span></div>
-          </div>
-          <div class="row-item"><span class="row-label">Build Hash</span>
-            <div class="row-ctrl"><span class="mono-badge small">878c2642a0f1fb55bcff0af356f5bcdf</span></div>
+            <div class="row-ctrl">
+              <span class="mono-badge" id="appVer"></span>
+            </div>
           </div>
           <div class="row-item"><span class="row-label">Config Folder</span>
             <div class="row-ctrl"><button class="btn-sm" onclick="sendToPython('open_config_folder','')">Open</button>
