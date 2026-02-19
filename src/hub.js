@@ -6,11 +6,6 @@ const invoke = window.__TAURI__?.core?.invoke ?? (async (cmd, args) => {
     return null;
 });
 
-// ─────────────────────────────────────────────
-//  MACRO CONFIG — edit this to add/remove/hide
-//  visible: false  →  hides the card
-//  free: true      →  no key required
-// ─────────────────────────────────────────────
 const MACROS = [
     {
         id: 'fishing',
