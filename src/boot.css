@@ -316,6 +316,24 @@ body::after {
     min-height: 14px;
 }
 
+.step-icon svg {
+    display: block;
+    color: var(--muted);
+    transition: color 0.2s;
+}
+
+.step.active .step-icon svg {
+    color: var(--accent);
+}
+
+.step.done .step-icon svg {
+    color: var(--success);
+}
+
+.step.error .step-icon svg {
+    color: var(--danger);
+}
+
 .spinner {
     width: 14px;
     height: 14px;
