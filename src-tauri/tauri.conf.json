@@ -12,8 +12,20 @@
     "withGlobalTauri": true,
     "windows": [
       {
+        "label": "launcher",
+        "title": "K's Macros — Launcher",
+        "url": "bootstrapper.html",
+        "width": 520,
+        "height": 700,
+        "resizable": false,
+        "decorations": false,
+        "visible": false,
+        "center": true
+      },
+      {
         "title": "K's Fishing Macro",
         "resizable": true,
+        "visible": false,
         "url": "main.html",
         "label": "main"
       },

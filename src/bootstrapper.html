@@ -7,782 +7,107 @@
     <title>K's Macros — Launcher</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link
-        href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;500;600;700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap"
         rel="stylesheet">
-    <style>
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        :root {
-            --bg: #09090c;
-            --bg2: #0f1016;
-            --bg3: #14151f;
-            --bg4: #1b1d2a;
-            --border: #222435;
-            --border2: #2d3048;
-            --accent: #4f8ef7;
-            --accent2: #3a7ae8;
-            --accent-dim: #0d1e42;
-            --text: #cdd2e8;
-            --text2: #7a80a0;
-            --text3: #3e4260;
-            --green: #36c46a;
-            --green-dim: #0a2018;
-            --red: #e05555;
-            --red-dim: #260d0d;
-            --yellow: #dba84a;
-            --yellow-dim: #261c08;
-            --font-mono: 'DM Mono', monospace;
-            --font-ui: 'Syne', system-ui, sans-serif;
-        }
-
-        html,
-        body {
-            height: 100%;
-            background: var(--bg);
-            color: var(--text);
-            font-family: var(--font-ui);
-            font-size: 13px;
-            line-height: 1.5;
-            -webkit-font-smoothing: antialiased;
-            overflow: hidden;
-            user-select: none;
-        }
-
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: repeating-linear-gradient(0deg,
-                    transparent,
-                    transparent 3px,
-                    rgba(0, 0, 0, 0.07) 3px,
-                    rgba(0, 0, 0, 0.07) 4px);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        body::after {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background:
-                radial-gradient(ellipse 60% 50% at 50% 0%, rgba(79, 142, 247, 0.07) 0%, transparent 70%),
-                radial-gradient(ellipse 40% 30% at 80% 100%, rgba(79, 142, 247, 0.04) 0%, transparent 60%);
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .shell {
-            position: relative;
-            z-index: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            padding: 20px;
-        }
-
-        .brand-mark {
-            width: 45px;
-            height: 45px;
-            background-color: var(--accent);
-            border-radius: 5px;
-            flex-shrink: 0;
-
-            -webkit-mask: url("assets/content.png") no-repeat center;
-            -webkit-mask-size: 80%;
-            mask: url("assets/content.png") no-repeat center;
-            mask-size: 100%;
-        }
-
-        .card {
-            background: var(--bg2);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            width: 100%;
-            max-width: 480px;
-            overflow: hidden;
-            box-shadow:
-                0 0 0 1px rgba(79, 142, 247, 0.05),
-                0 32px 80px rgba(0, 0, 0, 0.7);
-            animation: cardIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
-        }
-
-        @keyframes cardIn {
-            from {
-                opacity: 0;
-                transform: translateY(24px) scale(0.96);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .card-header {
-            padding: 24px 26px 22px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            background: linear-gradient(135deg, var(--bg3) 0%, var(--bg2) 100%);
-            position: relative;
-        }
-
-        .card-header::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            width: 120px;
-            height: 1px;
-            background: linear-gradient(90deg, var(--accent), transparent);
-        }
-
-        .logo-wrap {
-            width: 44px;
-            height: 44px;
-            background: var(--accent-dim);
-            border: 1px solid rgba(79, 142, 247, 0.25);
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            flex-shrink: 0;
-            position: relative;
-        }
-
-        .logo-wrap::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 10px;
-            background: radial-gradient(circle at 35% 35%, rgba(79, 142, 247, 0.2), transparent 65%);
-        }
-
-        .header-text h1 {
-            font-size: 15px;
-            font-weight: 700;
-            color: var(--text);
-            letter-spacing: -0.2px;
-        }
-
-        .header-text p {
-            font-size: 11px;
-            color: var(--text3);
-            font-family: var(--font-mono);
-            margin-top: 1px;
-        }
-
-        .ver-chip {
-            margin-left: auto;
-            font-family: var(--font-mono);
-            font-size: 10px;
-            padding: 3px 8px;
-            background: var(--bg4);
-            border: 1px solid var(--border2);
-            border-radius: 5px;
-            color: var(--text3);
-            flex-shrink: 0;
-        }
-
-        .card-body {
-            padding: 20px 24px 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .step-track {
-            display: flex;
-            gap: 5px;
-        }
-
-        .step-seg {
-            flex: 1;
-            height: 2px;
-            border-radius: 2px;
-            background: var(--border2);
-            transition: background 0.4s ease;
-        }
-
-        .step-seg.done {
-            background: var(--green);
-        }
-
-        .step-seg.active {
-            background: var(--accent);
-            animation: segPulse 1.4s ease-in-out infinite;
-        }
-
-        @keyframes segPulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.45;
-            }
-        }
-
-        .row-checking {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .row-checking.hidden {
-            display: none;
-        }
-
-        .row-checking span {
-            font-family: var(--font-mono);
-            font-size: 11.5px;
-            color: var(--text3);
-        }
-
-        .spinner {
-            width: 13px;
-            height: 13px;
-            border: 2px solid var(--border2);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 0.65s linear infinite;
-            flex-shrink: 0;
-        }
-
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
-        }
-
-        .notice {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            padding: 13px 15px;
-            border-radius: 8px;
-            animation: fadeUp 0.25s ease both;
-        }
-
-        .notice.hidden {
-            display: none;
-        }
-
-        @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(6px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .notice.update {
-            background: rgba(54, 196, 106, 0.06);
-            border: 1px solid rgba(54, 196, 106, 0.18);
-        }
-
-        .notice.ok {
-            background: rgba(54, 196, 106, 0.05);
-            border: 1px solid rgba(54, 196, 106, 0.12);
-        }
-
-        .notice.err {
-            background: var(--red-dim);
-            border: 1px solid rgba(224, 85, 85, 0.18);
-        }
-
-        .notice-icon {
-            width: 28px;
-            height: 28px;
-            border-radius: 7px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 13px;
-            flex-shrink: 0;
-        }
-
-        .notice.update .notice-icon {
-            background: var(--green-dim);
-            border: 1px solid rgba(54, 196, 106, 0.2);
-        }
-
-        .notice.ok .notice-icon {
-            background: var(--green-dim);
-            border: 1px solid rgba(54, 196, 106, 0.15);
-        }
-
-        .notice.err .notice-icon {
-            background: var(--red-dim);
-            border: 1px solid rgba(224, 85, 85, 0.2);
-        }
-
-        .notice-body {
-            flex: 1;
-            min-width: 0;
-        }
-
-        .notice-body strong {
-            display: block;
-            font-size: 12.5px;
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-
-        .notice.update .notice-body strong {
-            color: var(--green);
-        }
-
-        .notice.ok .notice-body strong {
-            color: var(--green);
-        }
-
-        .notice.err .notice-body strong {
-            color: var(--red);
-        }
-
-        .notice-body span {
-            font-size: 11.5px;
-            color: var(--text2);
-        }
-
-        .notice-actions {
-            display: flex;
-            gap: 6px;
-            margin-top: 10px;
-        }
-
-        .log-box {
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            padding: 10px 13px;
-            min-height: 90px;
-            max-height: 130px;
-            overflow-y: auto;
-            font-family: var(--font-mono);
-            font-size: 10.5px;
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
-
-        .log-box::-webkit-scrollbar {
-            width: 3px;
-        }
-
-        .log-box::-webkit-scrollbar-thumb {
-            background: var(--border2);
-            border-radius: 2px;
-        }
-
-        .log-line {
-            display: flex;
-            gap: 8px;
-            animation: fadeUp 0.18s ease both;
-        }
-
-        .log-t {
-            color: var(--text3);
-            flex-shrink: 0;
-        }
-
-        .log-m {
-            color: var(--text2);
-        }
-
-        .log-m.ok {
-            color: var(--green);
-        }
-
-        .log-m.warn {
-            color: var(--yellow);
-        }
-
-        .log-m.err {
-            color: var(--red);
-        }
-
-        .log-m.info {
-            color: var(--accent);
-        }
-
-        .progress-wrap {
-            height: 2px;
-            background: var(--border);
-            border-radius: 2px;
-            overflow: hidden;
-        }
-
-        .progress-wrap.hidden {
-            display: none;
-        }
-
-        .progress-bar {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent2), var(--accent), #7eb5ff);
-            border-radius: 2px;
-            width: 0%;
-            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 0 8px rgba(79, 142, 247, 0.5);
-        }
-
-        .action-row {
-            display: flex;
-            gap: 8px;
-        }
-
-        .action-row.hidden {
-            display: none;
-        }
-
-        .btn {
-            flex: 1;
-            padding: 10px 18px;
-            border-radius: 8px;
-            font-family: var(--font-ui);
-            font-size: 12.5px;
-            font-weight: 600;
-            cursor: pointer;
-            border: 1px solid transparent;
-            transition: all 0.15s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            letter-spacing: 0.1px;
-        }
-
-        .btn:disabled {
-            opacity: 0.35;
-            cursor: not-allowed;
-            pointer-events: none;
-        }
-
-        .btn-primary {
-            background: var(--accent);
-            color: #fff;
-            border-color: var(--accent2);
-        }
-
-        .btn-primary:hover {
-            background: var(--accent2);
-            box-shadow: 0 0 18px rgba(79, 142, 247, 0.35);
-            transform: translateY(-1px);
-        }
-
-        .btn-ghost {
-            background: transparent;
-            color: var(--text2);
-            border-color: var(--border2);
-            font-size: 11.5px;
-            flex: none;
-        }
-
-        .btn-ghost:hover {
-            color: var(--text);
-            border-color: var(--border2);
-            background: var(--bg4);
-        }
-
-        .btn-green {
-            background: rgba(54, 196, 106, 0.1);
-            color: var(--green);
-            border-color: rgba(54, 196, 106, 0.22);
-        }
-
-        .btn-green:hover {
-            background: rgba(54, 196, 106, 0.18);
-            box-shadow: 0 0 14px rgba(54, 196, 106, 0.2);
-            transform: translateY(-1px);
-        }
-
-        .footer-note {
-            text-align: center;
-            font-size: 10.5px;
-            color: var(--text3);
-            font-family: var(--font-mono);
-        }
-    </style>
+    <link rel="stylesheet" href="boot.css">
 </head>
 
 <body>
+
+    <div class="drag-region"></div>
+
     <div class="shell">
-        <div class="card">
-            <div class="card-header">
-                <div class="brand-mark"></div>
-                <div class="header-text">
-                    <h1>K's Macros</h1>
-                    <p>gpo-fishing / launcher</p>
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+
+        <div class="header">
+            <div class="logo-mark">
+                <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <g class="logo-ring">
+                        <circle cx="26" cy="26" r="24" stroke="rgba(0,212,255,0.2)" stroke-width="1" />
+                        <circle cx="26" cy="2" r="2.5" fill="#00d4ff" opacity="0.9" />
+                        <circle cx="50" cy="26" r="1.5" fill="#00d4ff" opacity="0.5" />
+                        <circle cx="26" cy="50" r="2" fill="#00d4ff" opacity="0.7" />
+                    </g>
+                </svg>
+                <img class="logo-img" src="assets/content.png" alt="K's Macros logo" />
+            </div>
+            <div class="brand-name">K's Macros</div>
+            <div class="brand-sub">GPO Fishing — Launcher</div>
+        </div>
+
+        <div class="update-badge" id="updateBadge">
+            <div class="badge-icon">⚡</div>
+            <div class="badge-text">
+                <div class="badge-title">Update Available — <span id="newVer">v0.0.0</span></div>
+                <div class="badge-desc">You are on <span id="curVer">v2.0.1</span> · Download to get the latest</div>
+            </div>
+        </div>
+
+        <div class="progress-wrap">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+
+        <div class="steps" id="stepsContainer">
+            <div class="step" id="step-update" data-idx="0">
+                <div class="step-icon" id="icon-update">🔍</div>
+                <div class="step-body">
+                    <div class="step-label">Checking for updates</div>
+                    <div class="step-detail" id="detail-update">Contacting GitHub…</div>
                 </div>
-                <div class="ver-chip" id="verChip">v2.0.1</div>
             </div>
 
-            <div class="card-body">
-
-                <div class="step-track">
-                    <div class="step-seg active" id="seg0"></div>
-                    <div class="step-seg" id="seg1"></div>
-                    <div class="step-seg" id="seg2"></div>
-                    <div class="step-seg" id="seg3"></div>
+            <div class="step skipped" id="step-kill" data-idx="1">
+                <div class="step-icon" id="icon-kill">🧹</div>
+                <div class="step-body">
+                    <div class="step-label">Cleaning up old processes</div>
+                    <div class="step-detail" id="detail-kill">Waiting…</div>
                 </div>
+            </div>
 
-                <div class="row-checking" id="rowChecking">
-                    <div class="spinner"></div>
-                    <span>Checking for updates…</span>
+            <div class="step skipped" id="step-backend" data-idx="2">
+                <div class="step-icon" id="icon-backend">⚙️</div>
+                <div class="step-body">
+                    <div class="step-label">Starting backend</div>
+                    <div class="step-detail" id="detail-backend">Waiting…</div>
                 </div>
+            </div>
 
-                <div class="notice update hidden" id="noticeUpdate">
-                    <div class="notice-icon">🆕</div>
-                    <div class="notice-body">
-                        <strong>Update available — <span id="newVerSpan">v?.?.?</span></strong>
-                        <span>A newer version is ready on GitHub.</span>
-                        <div class="notice-actions">
-                            <button class="btn btn-green" onclick="openGitHub()">⬇ Download update</button>
-                            <button class="btn btn-ghost" onclick="skipUpdate()">Skip</button>
-                        </div>
-                    </div>
+            <div class="step skipped" id="step-settings" data-idx="3">
+                <div class="step-icon" id="icon-settings">🗂️</div>
+                <div class="step-body">
+                    <div class="step-label">Loading settings</div>
+                    <div class="step-detail" id="detail-settings">Waiting…</div>
                 </div>
+            </div>
+        </div>
 
-                <div class="notice ok hidden" id="noticeOk">
-                    <div class="notice-icon">✓</div>
-                    <div class="notice-body">
-                        <strong id="okTitle">You're up to date</strong>
-                        <span id="okSub">Running v2.0.1</span>
-                    </div>
-                </div>
+        <div class="launch-area">
+            <div class="update-row" id="updateRow">
+                <button class="btn btn-warn" onclick="downloadUpdate()">Download Update</button>
+                <button class="btn btn-ghost" onclick="dismissUpdate()">Skip</button>
+            </div>
+            <button class="btn btn-launch" id="btnLaunch" disabled onclick="launchApp()">
+                Preparing…
+            </button>
+        </div>
 
-                <div class="notice err hidden" id="noticeErr">
-                    <div class="notice-icon">✕</div>
-                    <div class="notice-body">
-                        <strong>Launch failed</strong>
-                        <span id="errText">An error occurred.</span>
-                    </div>
-                </div>
-
-                <div class="log-box" id="logBox"></div>
-
-                <div class="progress-wrap hidden" id="progressWrap">
-                    <div class="progress-bar" id="progressBar"></div>
-                </div>
-
-                <div class="action-row" id="actionRow">
-                    <button class="btn btn-primary" id="btnLaunch" onclick="beginLaunch()" disabled>
-                        Launch
-                    </button>
-                </div>
-
-                <div class="footer-note" id="footerNote">Bootstrapper closes automatically when the app is ready.</div>
-
+        <div class="footer">
+            <div class="ver-tag" id="footerVer">v2.0.1</div>
+            <div class="status-dot-row">
+                <div class="sdot pulse" id="statusDot"></div>
+                <span id="statusLabel">Initializing…</span>
             </div>
         </div>
     </div>
 
-    <script>
-        const CURRENT_VERSION = '2.0.1';
-        const GITHUB_REPO = 'K3nD4rk-Code-Developer/Grand-Piece-Online-Fishing';
-        let releaseUrl = `https://github.com/${GITHUB_REPO}/releases/latest`;
+    <div class="launch-ripple" id="launchRipple">
+        <div class="ripple-ring" id="rippleRing"></div>
+    </div>
 
-        function ts() {
-            return new Date().toTimeString().slice(0, 8);
-        }
-
-        function log(msg, type = '') {
-            const box = document.getElementById('logBox');
-            const line = document.createElement('div');
-            line.className = 'log-line';
-            line.innerHTML = `<span class="log-t">${ts()}</span><span class="log-m ${type}">${msg}</span>`;
-            box.appendChild(line);
-            box.scrollTop = box.scrollHeight;
-        }
-
-        function seg(i, state) {
-            const el = document.getElementById('seg' + i);
-            if (el) el.className = 'step-seg' + (state ? ' ' + state : '');
-        }
-
-        function setProgress(pct) {
-            document.getElementById('progressWrap').classList.remove('hidden');
-            document.getElementById('progressBar').style.width = pct + '%';
-        }
-
-        function sleep(ms) {
-            return new Promise(r => setTimeout(r, ms));
-        }
-
-        function compareVersions(a, b) {
-            const p = v => v.replace(/[^0-9.]/g, '').split('.').map(Number);
-            const x = p(a), y = p(b);
-            for (let i = 0; i < Math.max(x.length, y.length); i++) {
-                if ((x[i] || 0) > (y[i] || 0)) return 1;
-                if ((x[i] || 0) < (y[i] || 0)) return -1;
-            }
-            return 0;
-        }
-
-        async function invoke(cmd, args = {}) {
-            return window.__TAURI__.core.invoke(cmd, args);
-        }
-
-        async function checkUpdates() {
-            log('Contacting GitHub…', 'info');
-            try {
-                const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
-                    signal: AbortSignal.timeout(7000)
-                });
-                if (!res.ok) throw new Error('HTTP ' + res.status);
-                const data = await res.json();
-                const tag = (data.tag_name || '').replace(/[^0-9.]/g, '');
-                releaseUrl = data.html_url || releaseUrl;
-
-                document.getElementById('rowChecking').classList.add('hidden');
-                seg(0, 'done');
-                seg(1, 'active');
-
-                if (compareVersions(tag, CURRENT_VERSION) > 0) {
-                    document.getElementById('newVerSpan').textContent = 'v' + tag;
-                    document.getElementById('noticeUpdate').classList.remove('hidden');
-                    log(`Update found: v${tag} (yours: v${CURRENT_VERSION})`, 'warn');
-                } else {
-                    document.getElementById('okTitle').textContent = 'You\'re up to date';
-                    document.getElementById('okSub').textContent = 'Running v' + CURRENT_VERSION;
-                    document.getElementById('noticeOk').classList.remove('hidden');
-                    log(`Up to date — v${CURRENT_VERSION}`, 'ok');
-                    document.getElementById('btnLaunch').disabled = false;
-                }
-            } catch {
-                document.getElementById('rowChecking').classList.add('hidden');
-                document.getElementById('okTitle').textContent = 'Update check failed';
-                document.getElementById('okSub').textContent = 'Continuing offline — v' + CURRENT_VERSION;
-                document.getElementById('noticeOk').classList.remove('hidden');
-                log('Could not reach GitHub, continuing offline', 'warn');
-                seg(0, 'done');
-                seg(1, 'active');
-                document.getElementById('btnLaunch').disabled = false;
-            }
-        }
-
-        function openGitHub() {
-            invoke('open_url', { url: releaseUrl });
-            log('Opened GitHub releases page', 'info');
-        }
-
-        function skipUpdate() {
-            document.getElementById('noticeUpdate').classList.add('hidden');
-            document.getElementById('okTitle').textContent = 'Skipping update';
-            document.getElementById('okSub').textContent = 'Continuing with v' + CURRENT_VERSION;
-            document.getElementById('noticeOk').classList.remove('hidden');
-            log('Update skipped', 'warn');
-            document.getElementById('btnLaunch').disabled = false;
-        }
-
-        async function killStaleProcesses() {
-            log('Killing stale processes…');
-            seg(1, 'done');
-            seg(2, 'active');
-            setProgress(20);
-            await invoke('kill_stale_processes');
-            log('Stale processes cleared', 'ok');
-            await sleep(500);
-        }
-
-        async function waitForBackend() {
-            const port = window.__BACKEND_PORT__ || 8765;
-            const timeout = 30000;
-            const start = Date.now();
-
-            while (Date.now() - start < timeout) {
-                try {
-                    const r = await fetch(`http://localhost:${port}/health`, {
-                        signal: AbortSignal.timeout(1000)
-                    });
-                    if (r.ok) break;
-                } catch { }
-                await sleep(400);
-            }
-
-            while (Date.now() - start < timeout) {
-                try {
-                    const r = await fetch(`http://localhost:${port}/ready`, {
-                        signal: AbortSignal.timeout(1000)
-                    });
-                    if (r.ok) {
-                        const data = await r.json();
-                        if (data.ready) return true;
-                    }
-                } catch { }
-                await sleep(300);
-            }
-
-            throw new Error('Backend config did not load within 30s');
-        }
-
-        async function beginLaunch() {
-            const btn = document.getElementById('btnLaunch');
-            btn.disabled = true;
-            btn.textContent = 'Launching…';
-
-            document.getElementById('noticeErr').classList.add('hidden');
-
-            try {
-                setProgress(5);
-                log('Starting backend…', 'info');
-                setProgress(30);
-                await invoke('start_backend');
-                log('Backend spawned', 'ok');
-                setProgress(50);
-
-                log('Waiting for backend to be ready…');
-                await waitForBackend();
-                log('Backend is ready', 'ok');
-                setProgress(80);
-
-                seg(2, 'done');
-                seg(3, 'active');
-
-                log('Opening main window…', 'info');
-                await sleep(300);
-                await invoke('show_main_window');
-                setProgress(100);
-                seg(3, 'done');
-
-                log('Done ✓', 'ok');
-                document.getElementById('footerNote').textContent = 'App is open — launcher closing.';
-                await sleep(600);
-                await invoke('close_bootstrapper');
-
-            } catch (e) {
-                log('Error: ' + e.message, 'err');
-                document.getElementById('errText').textContent = e.message;
-                document.getElementById('noticeErr').classList.remove('hidden');
-                btn.disabled = false;
-                btn.textContent = 'Retry';
-                seg(2, 'active');
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            log('Bootstrapper ready', 'info');
-            checkUpdates();
-        });
-    </script>
+    <script src="bootstrapper.js"></script>
 </body>
 
 </html>

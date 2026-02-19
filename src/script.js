@@ -742,16 +742,22 @@ async function pollPythonState() {
         const res = await fetch(BackendUrl(`/state?clientId=${CLIENT_ID}`));
         const state = await res.json();
         updateStatus(state.isRunning);
+
         if (state.hotkeys) {
             updateHotkey('start', state.hotkeys.StartStop || state.hotkeys.start_stop || 'f1');
             updateHotkey('exit', state.hotkeys.Exit || state.hotkeys.exit || 'f3');
         }
+
         if (state.is_admin !== undefined) {
             const ind = document.getElementById('adminIndicator');
             const text = document.getElementById('adminText');
             ind.classList.toggle('active', state.is_admin);
             text.textContent = state.is_admin ? 'Running as Admin' : 'Not Admin';
         }
+
+        const portEl = document.getElementById('backendPortDisplay');
+        if (portEl) portEl.textContent = `:${BackendPort}`;
+
         if (state.activeSessions) renderActiveSessions(state.activeSessions);
         if (state.rdp_detected !== undefined) updateRdpIndicator(state.rdp_detected, state.rdp_session_state);
         if (state.megalodonSoundEnabled !== undefined) setToggleState('megalodonSoundToggle', state.megalodonSoundEnabled);
@@ -765,6 +771,7 @@ async function pollPythonState() {
         setToggleState('syncSettingsToggle', state.sync_settings !== false);
         setToggleState('syncStatsToggle', state.sync_stats !== false);
         setToggleState('sharesFishCountToggle', state.share_fish_count || false);
+
         if (state.sync_interval) setInputValue('syncInterval', state.sync_interval);
         if (state.device_name) setInputValue('deviceName', state.device_name);
         if (state.enableSpawnDetection !== undefined) setExpandableSection('enableSpawnDetectionToggle', 'spawnDetectionExpand', state.enableSpawnDetection);
@@ -792,6 +799,7 @@ async function pollPythonState() {
             const expandId = `${k}Expand`;
             if (state[k] !== undefined) setExpandableSection(toggleId, expandId, state[k]);
         });
+        
         ['pingDevilFruit', 'pingSpawns', 'pingRecastTimeouts', 'pingPeriodicStats', 'pingGeneralUpdates', 'pingMacroState', 'pingErrors'].forEach(k => {
             if (state[k] !== undefined) setToggleState(`${k}Toggle`, state[k]);
         });
