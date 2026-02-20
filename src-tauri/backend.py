@@ -37,6 +37,7 @@ import win32gui
 import win32con
 import win32api
 import win32ts
+import cv2
 
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
@@ -601,7 +602,12 @@ class OCRManager:
                 def LoadOCR():
                     try:
                         import easyocr
-                        self.Reader = easyocr.Reader(['en'], gpu=False, verbose=False)
+                        self.Reader = easyocr.Reader(
+                            ['en'],
+                            gpu=True,
+                            verbose=False,
+                            recognizer='standard',
+                        )
                     except Exception as E:
                         print(f"OCR Initialization Error: {E}")
                         self.Enabled = False
@@ -641,14 +647,9 @@ class DevilFruitDetector:
             if self.OcrManager.Reader is None:
                 if not self.OcrManager.Enabled:
                     return None
-                
                 self.OcrManager.Initialize()
                 if not self.OcrManager.WaitForInitialization():
                     return None
-            
-            DisplayMetrics = ctypes.windll.user32
-            MonitorWidth = DisplayMetrics.GetSystemMetrics(0)
-            MonitorHeight = DisplayMetrics.GetSystemMetrics(1)
 
             ScanRegion = {
                 "top": self.Config.Settings['OCRSettings']['Y1'],
@@ -662,50 +663,60 @@ class DevilFruitDetector:
                 Image = np.array(Screenshot)
 
             ImageRGB = Image[:, :, [2, 1, 0]]
-            
-            Results = self.OcrManager.Reader.readtext(ImageRGB, detail=1, paragraph=False)
-            
-            FullText = ""
-            for Index, (BBox, Text, Confidence) in enumerate(Results):
-                if Confidence > 0.2:
-                    FullText += Text + " "
-            
+
+            Img = PILImage.fromarray(ImageRGB)
+            W, H = Img.size
+            Img = Img.resize((W * 3, H * 3), PILImage.LANCZOS)
+            ImgCV = np.array(Img)
+            Gray = cv2.cvtColor(ImgCV, cv2.COLOR_RGB2GRAY)
+            _, WhiteOnly = cv2.threshold(Gray, 180, 255, cv2.THRESH_BINARY)
+            Kernel = np.ones((2, 2), np.uint8)
+            Dilated = cv2.dilate(WhiteOnly, Kernel, iterations=1)
+            ProcessedImage = cv2.cvtColor(Dilated, cv2.COLOR_GRAY2RGB)
+
+            Results = self.OcrManager.Reader.readtext(
+                ProcessedImage,
+                detail=1,
+                paragraph=True,
+                text_threshold=0.6,
+                contrast_ths=0.1,
+                adjust_contrast=0.8,
+                blocklist='@#$%^&*()+=[]{}|\\~`',
+            )
+
+            FullText = " ".join(Text for _, Text, Conf in Results if Conf > 0.4)
             FullText = FullText.strip()
             FullTextLower = FullText.lower()
-            
+
             HasNew = any(Keyword in FullTextLower for Keyword in [
                 'new', 'nev', 'ncv', 'ncw', 'naw', 'ner'
             ])
-            
             HasItem = 'item' in FullTextLower or 'ltem' in FullTextLower
 
-            if FullText and HasNew and HasItem:
-                BracketMatch = re.search(r'<([^>?]+)', FullText, re.IGNORECASE)
-                if BracketMatch:
-                    ItemName = BracketMatch.group(1).strip()
-                    ItemName = ItemName.rstrip('?>')
-                    
-                    ClosestMatch = self.GetClosestFruit(ItemName, Cutoff=0.5)
+            if not (FullText and HasNew and HasItem):
+                return None
+
+            BracketMatch = re.search(r'[<(\[{]([A-Za-z]+)[>\)\]}]?', FullText)
+            if BracketMatch:
+                Candidate = BracketMatch.group(1).strip()
+                if len(Candidate) >= 3:
+                    ClosestMatch = self.GetClosestFruit(Candidate, Cutoff=0.55)
                     if ClosestMatch:
                         return ClosestMatch
-                    else:
-                        return ItemName
-                
-                AfterItemMatch = re.search(r'(?:item|ltem)\s+(.+)', FullText, re.IGNORECASE)
-                if AfterItemMatch:
-                    ItemName = AfterItemMatch.group(1).strip()
-                    ItemName = ItemName.replace('<', '').replace('>', '').replace('?', '').strip()
-                    if ItemName:
-                        ClosestMatch = self.GetClosestFruit(ItemName, Cutoff=0.5)
+
+            AfterItemMatch = re.search(r'(?:item|ltem)\s+(.+)', FullText, re.IGNORECASE)
+            if AfterItemMatch:
+                Remainder = AfterItemMatch.group(1).strip()
+                Remainder = re.sub(r'[<>(\[{\])}?]', '', Remainder).strip()
+                Words = Remainder.split()
+                for Word in Words:
+                    if len(Word) >= 3:
+                        ClosestMatch = self.GetClosestFruit(Word, Cutoff=0.55)
                         if ClosestMatch:
                             return ClosestMatch
-                        else:
-                            return ItemName
-                
-                return FullText
-                        
+
             return None
-            
+
         except Exception as E:
             print(f"OCR Check Error: {E}")
             traceback.print_exc()
@@ -716,11 +727,10 @@ class DevilFruitDetector:
             if self.OcrManager.Reader is None:
                 if not self.OcrManager.Enabled:
                     return None
-                
                 self.OcrManager.Initialize()
                 if not self.OcrManager.WaitForInitialization():
                     return None
-            
+
             ScanRegion = {
                 "top": self.Config.Settings['OCRSettings']['Y1'],
                 "left": self.Config.Settings['OCRSettings']['X1'],
@@ -733,54 +743,46 @@ class DevilFruitDetector:
                 Image = np.array(Screenshot)
 
             ImageRGB = Image[:, :, [2, 1, 0]]
-            
-            Results = self.OcrManager.Reader.readtext(ImageRGB, detail=1, paragraph=False)
-            
-            FullText = ""
-            for Index, (BBox, Text, Confidence) in enumerate(Results):
-                if Confidence > 0.2:
-                    FullText += Text + " "
-            
+
+            Img = PILImage.fromarray(ImageRGB)
+            W, H = Img.size
+            Img = Img.resize((W * 3, H * 3), PILImage.LANCZOS)
+            ImgCV = np.array(Img)
+            Gray = cv2.cvtColor(ImgCV, cv2.COLOR_RGB2GRAY)
+            _, WhiteOnly = cv2.threshold(Gray, 180, 255, cv2.THRESH_BINARY)
+            Kernel = np.ones((2, 2), np.uint8)
+            Dilated = cv2.dilate(WhiteOnly, Kernel, iterations=1)
+            ProcessedImage = cv2.cvtColor(Dilated, cv2.COLOR_GRAY2RGB)
+
+            Results = self.OcrManager.Reader.readtext(
+                ProcessedImage,
+                detail=1,
+                paragraph=True,
+                text_threshold=0.6,
+                contrast_ths=0.1,
+                adjust_contrast=0.8,
+                blocklist='@#$%^&*()+=[]{}|\\~`',
+            )
+
+            FullText = " ".join(Text for _, Text, Conf in Results if Conf > 0.4)
             FullText = FullText.strip()
             FullTextLower = FullText.lower()
-            
-            SpawnKeywords = [
-                'spawned',
-                'has spawned',
-                'spown',
-                'spavned',
-                'spawmed',
-                'spavned',
-                'spawneo',
-                'spawred',
-                'spavned',
-                'spawbed'
-            ]
 
-            HasSpawnKeyword = any(keyword in FullTextLower for keyword in SpawnKeywords)
-            
-            if FullText and HasSpawnKeyword:
-                Words = FullText.split()
-                BestMatch = None
-                BestScore = 0
-                
-                for Word in Words:
-                    CleanWord = Word.strip('.,!?<>[]{}()')
-                    ClosestMatch = self.GetClosestFruit(CleanWord, Cutoff=0.6)
-                    if ClosestMatch:
-                        from difflib import SequenceMatcher
-                        Score = SequenceMatcher(None, CleanWord.lower(), ClosestMatch.lower()).ratio()
-                        if Score > BestScore:
-                            BestScore = Score
-                            BestMatch = ClosestMatch
-                
-                if BestMatch and BestScore >= 0.6:
-                    return BestMatch
-                
+            HasSpawn = 'spawn' in FullTextLower
+
+            if not (FullText and HasSpawn):
                 return None
-                        
+
+            Words = FullText.split()
+            for Word in Words:
+                Clean = re.sub(r'[^A-Za-z]', '', Word)
+                if len(Clean) >= 3:
+                    Match = self.GetClosestFruit(Clean, Cutoff=0.6)
+                    if Match:
+                        return Match
+
             return None
-            
+
         except Exception as E:
             print(f"Spawn detection error: {E}")
             traceback.print_exc()
