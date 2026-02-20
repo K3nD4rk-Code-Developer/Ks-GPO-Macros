@@ -47,7 +47,7 @@ const MACROS = [
         name: 'Roger Macro',
         comingSoon: true,
         desc: 'Full Roger raid loop with phase detection and auto-heal.',
-        tag: 'RODGER',
+        tag: 'ROGER',
         free: false,
         visible: true,
         color: '#ef4444',

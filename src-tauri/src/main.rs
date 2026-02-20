@@ -513,7 +513,7 @@ fn keyauth_app_for(macro_name: &str) -> Option<KeyAuthApp> {
         "fishing" => None,
         "juzo"    => Some(KeyAuthApp { name: "K's Juzo Macro",   ownerid: "5ZmAhBPrGX" }),
         "mihawk"  => Some(KeyAuthApp { name: "K's Mihawk Macro", ownerid: "5ZmAhBPrGX" }),
-        "rodger"  => Some(KeyAuthApp { name: "K's Roger Macro",  ownerid: "5ZmAhBPrGX" }),
+        "roger"  => Some(KeyAuthApp { name: "K's Roger Macro",  ownerid: "5ZmAhBPrGX" }),
         _         => None,
     }
 }
