@@ -320,9 +320,8 @@ fn setup_stats_window(app: &AppHandle, backend_port: u16) {
 
     std::thread::spawn(move || {
         let client = reqwest::blocking::Client::new();
-        std::thread::sleep(std::time::Duration::from_secs(2));
         loop {
-            std::thread::sleep(std::time::Duration::from_secs(1));
+            std::thread::sleep(std::time::Duration::from_millis(250));
             if let Ok(res) = client
                 .get(&format!("http://localhost:{backend_port}/state"))
                 .send()

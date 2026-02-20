@@ -142,7 +142,7 @@
     },
     "AutomationFrequencies": {
         "LoopsPerPurchase": 100,
-        "LoopsPerStore": 15,
+        "LoopsPerStore": 50,
         "LoopsPerCraft": 5,
         "CraftsPerCycle": 40,
         "FishCountPerCraft": 0
