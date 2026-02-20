@@ -24,3 +24,4 @@ dist-ssr
 /src-tauri/build
 /src-tauri/Python314
 /src-tauri/__pycache__
+/~
