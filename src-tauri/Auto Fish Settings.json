@@ -211,19 +211,19 @@
             "RobloxPostFocusDelay": 0.2
         },
         "PreCast": {
-            "SetPrecastEDelay": 0.75,
-            "PreCastClickDelay": 0.5,
-            "PreCastTypeDelay": 0.25,
+            "SetPrecastEDelay": 0.5,
+            "PreCastClickDelay": 0.3,
+            "PreCastTypeDelay": 0.1,
             "PreCastAntiDetectDelay": 0.05
         },
         "Inventory": {
-            "RodSelectDelay": 0.2,
+            "RodSelectDelay": 0.15,
             "AutoSelectBaitDelay": 0.1
         },
         "DevilFruitStorage": {
             "StoreFruitHotkeyDelay": 0.015,
             "StoreFruitClickDelay": 0.025,
-            "StoreFruitShiftDelay": 0.35,
+            "StoreFruitShiftDelay": 0.1,
             "StoreFruitBackspaceDelay": 0.2
         },
         "AntiDetection": {

@@ -321,7 +321,7 @@ fn setup_stats_window(app: &AppHandle, backend_port: u16) {
     std::thread::spawn(move || {
         let client = reqwest::blocking::Client::new();
         loop {
-            std::thread::sleep(std::time::Duration::from_millis(250));
+            std::thread::sleep(std::time::Duration::from_millis(1000));
             if let Ok(res) = client
                 .get(&format!("http://localhost:{backend_port}/state"))
                 .send()
@@ -745,6 +745,7 @@ fn main() {
         })
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_store::Builder::default().build())
+        .plugin(tauri_plugin_updater::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             send_to_python,
             kill_conflicting_processes,
