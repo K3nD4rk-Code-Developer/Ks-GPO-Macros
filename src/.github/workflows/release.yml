@@ -21,5 +21,5 @@ jobs:
           tagName: Release-v__VERSION__
           releaseName: Release-v__VERSION__
           releaseBody: "See changelog"
-          releaseDraft: false
+          releaseDraft: true
           updaterJsonPreferNsis: true
