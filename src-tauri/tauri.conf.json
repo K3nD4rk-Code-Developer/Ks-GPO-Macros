@@ -89,7 +89,7 @@
     "installer": {
       "windows": {
         "nsis": {
-          "customScript": "!macro customUnInstall\n  CopyFiles \"$INSTDIR\\Auto Fish Settings.json\" \"$TEMP\\Auto Fish Settings.json.backup\"\n  RMDir /r \"$INSTDIR\"\n  IfFileExists \"$TEMP\\Auto Fish Settings.json.backup\" 0 +3\n    CreateDirectory \"$INSTDIR\"\n    CopyFiles \"$TEMP\\Auto Fish Settings.json.backup\" \"$INSTDIR\\Auto Fish Settings.json\"\n    Delete \"$TEMP\\Auto Fish Settings.json.backup\"\n!macroend"
+          "customScript": "!macro customUnInstall\n  CopyFiles \"$INSTDIR\\Auto Fish Settings.json\" \"$TEMP\\Auto Fish Settings.json.backup\"\n  nsExec::Exec 'taskkill /F /IM pythonw.exe /T'\n  nsExec::Exec 'taskkill /F /IM python.exe /T'\n  Sleep 1000\n  RMDir /r \"$INSTDIR\"\n  IfFileExists \"$TEMP\\Auto Fish Settings.json.backup\" 0 +3\n    CreateDirectory \"$INSTDIR\"\n    CopyFiles \"$TEMP\\Auto Fish Settings.json.backup\" \"$INSTDIR\\Auto Fish Settings.json\"\n    Delete \"$TEMP\\Auto Fish Settings.json.backup\"\n!macroend"
         }
       }
     },

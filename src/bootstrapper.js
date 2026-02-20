@@ -219,30 +219,31 @@ async function launchApp() {
 }
 
 async function boot() {
-    if (window.__TAURI__) {
-        try {
-            const { check } = await import('@tauri-apps/plugin-updater');
-            const update = await check();
-            if (update) {
-                setStatus('Downloading update…');
-                await update.downloadAndInstall((progress) => {
-                    if (progress.event === 'Downloaded') {
-                        setStatus('Installing update…');
-                    }
-                });
-                return;
-            }
-        } catch (e) {
-            console.log('Update check failed:', e);
-        }
-    }
-
     CURRENT_VERSION = (await fetch('./version.json').then(r => r.json())).version;
     document.getElementById('footerVer').textContent = `v${CURRENT_VERSION}`;
 
     setProgress(0);
     setLaunchBtn('Preparing…', false);
 
+    await checkForUpdates();
+    
+    if (window.__TAURI__) {
+        try {
+            const { check } = await import('@tauri-apps/plugin-updater');
+            const update = await check();
+            if (update) {
+                const yes = confirm(`Update ${update.version} available. Install now?`);
+                if (yes) {
+                    setStatus('Downloading update…');
+                    await update.downloadAndInstall();
+                    return;
+                }
+            }
+        } catch (e) {
+            console.log('Update check failed:', e);
+        }
+    }
+    
     await killConflictingProcesses();
     await startBackend();
 
