@@ -1869,28 +1869,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "gpo-fish-macro"
-version = "2.0.1"
-dependencies = [
- "enigo",
- "image 0.25.9",
- "rdev",
- "reqwest 0.11.27",
- "screenshots",
- "serde",
- "serde_json",
- "tauri",
- "tauri-build",
- "tauri-plugin-opener",
- "tauri-plugin-shell",
- "tauri-plugin-store",
- "urlencoding",
- "windows 0.58.0",
- "winit",
- "winres",
-]
-
-[[package]]
 name = "gtk"
 version = "0.18.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2594,6 +2572,28 @@ dependencies = [
  "bitflags 2.10.0",
  "serde",
  "unicode-segmentation",
+]
+
+[[package]]
+name = "ks-macro-launcher"
+version = "2.0.1"
+dependencies = [
+ "enigo",
+ "image 0.25.9",
+ "rdev",
+ "reqwest 0.11.27",
+ "screenshots",
+ "serde",
+ "serde_json",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-opener",
+ "tauri-plugin-shell",
+ "tauri-plugin-store",
+ "urlencoding",
+ "windows 0.58.0",
+ "winit",
+ "winres",
 ]
 
 [[package]]

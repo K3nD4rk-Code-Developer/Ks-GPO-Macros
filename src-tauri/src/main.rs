@@ -37,6 +37,23 @@ fn resource_dir(app: &AppHandle) -> PathBuf {
     }
 }
 
+fn is_position_visible(x: i64, y: i64, app: &AppHandle) -> bool {
+    if let Ok(monitors) = app.available_monitors() {
+        for monitor in monitors {
+            let pos  = monitor.position();
+            let size = monitor.size();
+            let mx = pos.x as i64;
+            let my = pos.y as i64;
+            let mw = size.width as i64;
+            let mh = size.height as i64;
+            if x >= mx && x < mx + mw && y >= my && y < my + mh {
+                return true;
+            }
+        }
+    }
+    false
+}
+
 fn kill_existing_backend() {
     log("Killing existing backend processes");
     #[cfg(target_os = "windows")]
@@ -154,20 +171,26 @@ fn setup_main_window(app: &AppHandle, backend_port: u16, launcher_pid: u32) {
         .build()
         .expect("Failed to build store");
 
-    let restored = match (
+    let mut restored = false;
+
+    if let (Some(w), Some(h), Some(x), Some(y)) = (
         store.get("w").and_then(|v: serde_json::Value| v.as_f64()),
         store.get("h").and_then(|v: serde_json::Value| v.as_f64()),
         store.get("x").and_then(|v: serde_json::Value| v.as_i64()),
         store.get("y").and_then(|v: serde_json::Value| v.as_i64()),
     ) {
-        (Some(w), Some(h), Some(x), Some(y)) => {
-            let _ = win.set_size(tauri::LogicalSize::new(w, h));
+        let safe_w = w.max(400.0);
+        let safe_h = h.max(300.0);
+
+        if is_position_visible(x, y, app) {
+            let _ = win.set_size(tauri::LogicalSize::new(safe_w, safe_h));
             let _ = win.set_position(tauri::LogicalPosition::new(x as f64, y as f64));
-            log(&format!("main window: restored size={w}x{h} pos={x},{y}"));
-            true
+            log(&format!("main window: restored size={safe_w}x{safe_h} pos={x},{y}"));
+            restored = true;
+        } else {
+            log(&format!("main window: saved position ({x},{y}) is off-screen, using default"));
         }
-        _ => false,
-    };
+    }
 
     if !restored {
         if let Ok(Some(monitor)) = win.current_monitor() {
@@ -242,24 +265,25 @@ fn setup_stats_window(app: &AppHandle, backend_port: u16) {
         let saved_h = store.get("h").and_then(|v: serde_json::Value| v.as_f64());
 
         let (width, height) = match (saved_w, saved_h) {
-            (Some(w), Some(h)) => (w as u32, h as u32),
+            (Some(w), Some(h)) => (w.max(100.0) as u32, h.max(50.0) as u32),
             _ => (default_width, default_height),
         };
 
         let _ = stats_win.set_size(tauri::LogicalSize::new(width, height));
         log(&format!("stats window: size={width}x{height}"));
 
-        match (
-            store.get("x").and_then(|v: serde_json::Value| v.as_i64()),
-            store.get("y").and_then(|v: serde_json::Value| v.as_i64()),
-        ) {
-            (Some(x), Some(y)) => {
+        let saved_x = store.get("x").and_then(|v: serde_json::Value| v.as_i64());
+        let saved_y = store.get("y").and_then(|v: serde_json::Value| v.as_i64());
+
+        match (saved_x, saved_y) {
+            (Some(x), Some(y)) if is_position_visible(x, y, app) => {
                 let _ = stats_win.set_position(PhysicalPosition::new(x as i32, y as i32));
                 log(&format!("stats window: restored pos={x},{y}"));
             }
             _ => {
                 let x = ((msize.width as i32) - (width as f64 * scale) as i32) / 2;
                 let _ = stats_win.set_position(PhysicalPosition::new(x, 20));
+                log("stats window: using default position");
             }
         }
     }
@@ -358,22 +382,35 @@ fn send_to_python(action: String, payload: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-fn kill_conflicting_processes() -> serde_json::Value {
+fn kill_conflicting_processes(app: AppHandle) -> serde_json::Value {
     let mut killed: u32 = 0;
     let own_pid = std::process::id().to_string();
+    let res_dir = resource_dir(&app);
+    let res_dir_str = res_dir.to_string_lossy().to_lowercase();
 
     #[cfg(target_os = "windows")]
     {
-        if let Ok(output) = Command::new("tasklist").args(&["/FO", "CSV", "/NH"]).output() {
+        if let Ok(output) = Command::new("wmic")
+            .args(&["process", "get", "ProcessId,Name,ExecutablePath", "/FORMAT:CSV"])
+            .output()
+        {
             let text = String::from_utf8_lossy(&output.stdout);
             for line in text.lines() {
                 let parts: Vec<&str> = line.split(',').collect();
-                if parts.len() < 2 { continue; }
-                let name    = parts[0].trim_matches('"').to_lowercase();
-                let pid_str = parts[1].trim_matches('"');
+                if parts.len() < 4 { continue; }
+                let exe_path = parts[1].trim().to_lowercase();
+                let name     = parts[2].trim().to_lowercase();
+                let pid_str  = parts[3].trim();
+
                 if pid_str == own_pid { continue; }
-                if (name.starts_with("python") || name.starts_with("gpo")) && !pid_str.is_empty() {
+                if exe_path.is_empty() { continue; }
+
+                let in_our_dir = exe_path.starts_with(&res_dir_str);
+                let is_target  = name.starts_with("python") || name.starts_with("gpo");
+
+                if in_our_dir && is_target && !pid_str.is_empty() {
                     let _ = Command::new("taskkill").args(&["/F", "/PID", pid_str]).output();
+                    log(&format!("Killed process {pid_str} ({name}) from {exe_path}"));
                     killed += 1;
                 }
             }
@@ -387,10 +424,16 @@ fn kill_conflicting_processes() -> serde_json::Value {
             if let Ok(output) = Command::new("pgrep").args(&["-i", "-l", pattern]).output() {
                 let text = String::from_utf8_lossy(&output.stdout);
                 for line in text.lines() {
-                    if let Some(pid) = line.split_whitespace().next() {
-                        if pid == own_pid { continue; }
-                        let _ = Command::new("kill").args(&["-9", pid]).output();
-                        killed += 1;
+                    let mut parts = line.split_whitespace();
+                    let (Some(pid), Some(_name)) = (parts.next(), parts.next()) else { continue };
+                    if pid == own_pid { continue; }
+
+                    if let Ok(exe_link) = fs::read_link(format!("/proc/{pid}/exe")) {
+                        let exe_str = exe_link.to_string_lossy().to_lowercase();
+                        if exe_str.starts_with(&res_dir_str) {
+                            let _ = Command::new("kill").args(&["-9", pid]).output();
+                            killed += 1;
+                        }
                     }
                 }
             }
@@ -400,6 +443,15 @@ fn kill_conflicting_processes() -> serde_json::Value {
 
     log(&format!("kill_conflicting_processes: terminated {killed} process(es)"));
     serde_json::json!({ "killed": killed })
+}
+
+#[tauri::command]
+fn reset_window_position(app: AppHandle) -> Result<(), String> {
+    let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
+    let _ = fs::remove_file(app_dir.join("main_window.json"));
+    let _ = fs::remove_file(app_dir.join("stats_position.json"));
+    log("Window position data reset");
+    Ok(())
 }
 
 #[tauri::command]
@@ -511,9 +563,9 @@ struct KeyAuthApp {
 fn keyauth_app_for(macro_name: &str) -> Option<KeyAuthApp> {
     match macro_name {
         "fishing" => None,
-        "juzo"    => Some(KeyAuthApp { name: "K's Juzo Macro",   ownerid: "5ZmAhBPrGX" }),
-        "mihawk"  => Some(KeyAuthApp { name: "K's Mihawk Macro", ownerid: "5ZmAhBPrGX" }),
-        "roger"  => Some(KeyAuthApp { name: "K's Roger Macro",  ownerid: "5ZmAhBPrGX" }),
+        "juzo"    => Some(KeyAuthApp { name: "Ks Juzo Macro",   ownerid: "5ZmAhBPrGX" }),
+        "mihawk"  => Some(KeyAuthApp { name: "Ks Mihawk Macro", ownerid: "5ZmAhBPrGX" }),
+        "roger"   => Some(KeyAuthApp { name: "Ks Roger Macro",  ownerid: "5ZmAhBPrGX" }),
         _         => None,
     }
 }
@@ -697,6 +749,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             send_to_python,
             kill_conflicting_processes,
+            reset_window_position,
             start_backend,
             open_main_window,
             open_macro_window,

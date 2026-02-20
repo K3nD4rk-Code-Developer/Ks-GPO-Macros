@@ -1,4 +1,4 @@
-# K's GPO Fishing Macro
+# K's Macro Launcher
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)

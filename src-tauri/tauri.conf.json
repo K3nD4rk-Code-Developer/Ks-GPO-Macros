@@ -1,6 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "GPO Fishing Macro",
+  "productName": "Ks Fishing Macro",
   "version": "../src/version.json",
   "identifier": "com.gpo.fishmacro",
   "build": {
