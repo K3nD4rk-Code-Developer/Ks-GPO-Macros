@@ -3,7 +3,7 @@ const invoke = window.__TAURI__?.core?.invoke ?? (async (cmd, args) => {
     if (cmd === 'keyauth_verify') return { success: true };
     if (cmd === 'open_macro_window') return true;
     if (cmd === 'get_saved_key') return null;
-    if (cmd === 'launch_macro') return { port: 8765 };
+    if (cmd === 'launch_macro') return { port: window.__BACKEND_PORT__ || 8765 };
     return null;
 });
 

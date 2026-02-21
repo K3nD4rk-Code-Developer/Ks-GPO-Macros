@@ -120,10 +120,23 @@
     </div>
 
     <script>
-        async function PollStats() {
+        let StatsPort = null;
+
+        async function GetPort() {
+            for (let i = 0; i < 30; i++) {
+                if (typeof window.__BACKEND_PORT__ !== 'undefined') {
+                    StatsPort = window.__BACKEND_PORT__;
+                    return;
+                }
+                await new Promise(r => setTimeout(r, 100));
+            }
+            StatsPort = 8765;
+        }
+
+       async function PollStats() {
+            if (!StatsPort) return;
             try {
-                const port = window.__BACKEND_PORT__ || 8765;
-                const Response = await fetch(`http://localhost:${port}/state`);
+                const Response = await fetch(`http://localhost:${StatsPort}/state`);
                 const State = await Response.json();
 
                 document.getElementById('FishCount').textContent = State.fishCaught || 0;
@@ -136,8 +149,10 @@
             }
         }
 
-        setInterval(PollStats, 500);
-        PollStats();
+        GetPort().then(() => {
+            setInterval(PollStats, 500);
+            PollStats();
+        });
     </script>
 </body>
 

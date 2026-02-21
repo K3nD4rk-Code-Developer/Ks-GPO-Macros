@@ -37,6 +37,12 @@ fn resource_dir(app: &AppHandle) -> PathBuf {
     }
 }
 
+fn normalize_path(path: &PathBuf) -> PathBuf {
+    let s = path.to_string_lossy();
+    let stripped = s.trim_start_matches("\\\\?\\");
+    PathBuf::from(stripped)
+}
+
 fn is_position_visible(x: i64, y: i64, app: &AppHandle) -> bool {
     if let Ok(monitors) = app.available_monitors() {
         for monitor in monitors {
@@ -54,40 +60,104 @@ fn is_position_visible(x: i64, y: i64, app: &AppHandle) -> bool {
     false
 }
 
+fn get_current_username() -> String {
+    String::from_utf8_lossy(
+        &Command::new("whoami")
+            .output()
+            .unwrap_or_else(|_| Command::new("cmd").args(&["/C", "echo %USERNAME%"]).output().unwrap())
+            .stdout
+    ).trim().to_string()
+}
+
 fn kill_existing_backend() {
-    log("Killing existing backend processes");
+    log("Killing existing backend processes for current user");
     #[cfg(target_os = "windows")]
     {
-        let _ = Command::new("wmic")
-            .args(&["process", "where", "CommandLine like '%backend.py%'", "delete"])
-            .output();
+        let username = get_current_username();
+
+        if username.is_empty() {
+            log("WARNING: Could not determine current user, skipping kill");
+            return;
+        }
+
+        log(&format!("Killing backend for user: {}", username));
+
+        for image in &["pythonw.exe", "python.exe"] {
+            if let Ok(output) = Command::new("tasklist")
+                .args(&[
+                    "/FI", &format!("USERNAME eq {}", username),
+                    "/FI", &format!("IMAGENAME eq {}", image),
+                    "/FO", "CSV",
+                    "/NH"
+                ])
+                .output()
+            {
+                let text = String::from_utf8_lossy(&output.stdout);
+                for line in text.lines() {
+                    let parts: Vec<&str> = line.split(',').collect();
+                    if parts.len() >= 2 {
+                        let pid = parts[1].trim().trim_matches('"');
+                        if pid.is_empty() { continue; }
+                        let _ = Command::new("taskkill")
+                            .args(&["/F", "/PID", pid])
+                            .output();
+                        log(&format!("Killed {} PID {} for user {}", image, pid, username));
+                    }
+                }
+            }
+        }
     }
     #[cfg(not(target_os = "windows"))]
     {
         let _ = Command::new("pkill").args(&["-f", "backend.py"]).output();
     }
     std::thread::sleep(std::time::Duration::from_millis(500));
-    log("Existing backend processes killed");
+    log("User-scoped backend kill complete");
 }
 
 fn kill_all_backend_processes(launcher_pid: u32) {
-    log("Nuclear kill: all backend processes");
+    log("Nuclear kill: all backend processes for current user");
     #[cfg(target_os = "windows")]
     {
-        let _ = Command::new("wmic")
-            .args(&["process", "where", "CommandLine like '%backend.py%'", "delete"])
-            .output();
-        let pid_pattern = format!("CommandLine like '%--pid {}%'", launcher_pid);
-        let _ = Command::new("wmic")
-            .args(&["process", "where", &pid_pattern, "delete"])
-            .output();
-        let _ = Command::new("taskkill")
-            .args(&["/F", "/IM", "pythonw.exe", "/T"])
-            .output();
+        let username = get_current_username();
+
+        if username.is_empty() {
+            log("WARNING: Could not determine current user, skipping nuclear kill");
+            return;
+        }
+
+        log(&format!("Nuclear kill for user: {}", username));
+
+        for image in &["pythonw.exe", "python.exe"] {
+            if let Ok(output) = Command::new("tasklist")
+                .args(&[
+                    "/FI", &format!("USERNAME eq {}", username),
+                    "/FI", &format!("IMAGENAME eq {}", image),
+                    "/FO", "CSV",
+                    "/NH"
+                ])
+                .output()
+            {
+                let text = String::from_utf8_lossy(&output.stdout);
+                for line in text.lines() {
+                    let parts: Vec<&str> = line.split(',').collect();
+                    if parts.len() >= 2 {
+                        let pid = parts[1].trim().trim_matches('"');
+                        if pid.is_empty() { continue; }
+                        let _ = Command::new("taskkill")
+                            .args(&["/F", "/T", "/PID", pid])
+                            .output();
+                        log(&format!("Nuclear killed {} PID {} for user {}", image, pid, username));
+                    }
+                }
+            }
+        }
     }
     #[cfg(not(target_os = "windows"))]
     {
-        let _ = Command::new("pkill").args(&["-f", "backend.py"]).output();
+        let _ = Command::new("pkill")
+            .args(&["-u", &std::env::var("USER").unwrap_or_default(), "-f", "backend.py"])
+            .output();
         let _ = Command::new("pkill")
             .args(&["-f", &format!("--pid {}", launcher_pid)])
             .output();
@@ -98,7 +168,7 @@ fn kill_all_backend_processes(launcher_pid: u32) {
 
 #[cfg_attr(debug_assertions, allow(dead_code))]
 fn spawn_backend_process(app: &AppHandle, launcher_pid: u32) -> Child {
-    let res_dir = resource_dir(app);
+    let res_dir = normalize_path(&resource_dir(app));
     let python_exe = res_dir.join("Python314").join("pythonw.exe");
     let script = res_dir.join("backend.py");
 
@@ -132,6 +202,7 @@ fn spawn_backend_process(app: &AppHandle, launcher_pid: u32) -> Child {
 }
 
 fn read_backend_port(res_dir: &PathBuf, pid: u32) -> u16 {
+    let res_dir = normalize_path(res_dir);
     let port_file = res_dir.join(format!("port_{pid}.json"));
     log(&format!("Looking for port file: {port_file:?}"));
 
@@ -247,6 +318,7 @@ fn full_shutdown(app: &AppHandle, launcher_pid: u32, res_dir: &PathBuf) {
 }
 
 fn cleanup_port_file(res_dir: &PathBuf, pid: u32) {
+    let res_dir = normalize_path(res_dir);
     let port_file = res_dir.join(format!("port_{pid}.json"));
     let _ = fs::remove_file(&port_file);
     log(&format!("Cleaned up port file for PID {pid}"));
@@ -447,7 +519,7 @@ fn send_to_python(app: AppHandle, action: String, payload: String) -> Result<Str
 fn kill_conflicting_processes(app: AppHandle) -> serde_json::Value {
     let mut killed: u32 = 0;
     let own_pid = std::process::id().to_string();
-    let res_dir = resource_dir(&app);
+    let res_dir = normalize_path(&resource_dir(&app));
     let res_dir_str = res_dir.to_string_lossy().to_lowercase();
 
     #[cfg(target_os = "windows")]
@@ -554,7 +626,8 @@ fn launch_macro(app: AppHandle, macro_name: String) -> Result<serde_json::Value,
             *g = port;
         }
     }
-
+    
+    log(&format!("About to inject port {} into windows", port));
     for label in &["fish", "hub", "stats"] {
         if let Some(win) = app.get_webview_window(label) {
             inject_backend_globals(&win, launcher_pid, port);

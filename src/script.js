@@ -2,7 +2,7 @@ let CURRENT_VERSION = '0.0.0';
 const GITHUB_REPO = 'K3nD4rk-Code-Developer/Grand-Piece-Online-Fishing';
 const CLIENT_ID = getClientId();
 
-let BackendPort = 8765;
+let BackendPort = window.__BACKEND_PORT__ || 8765;
 let pollInterval = null;
 let activeCategoryIndex = 0;
 let activeSlideIndex = 0;
@@ -87,10 +87,16 @@ function BackendUrl(path) {
 }
 
 async function InitBackendPort() {
-    if (typeof window.__BACKEND_PORT__ !== 'undefined') {
-        BackendPort = window.__BACKEND_PORT__;
-        return;
+    document.title = `PORT:${window.__BACKEND_PORT__}`;
+    for (let i = 0; i < 30; i++) {
+        if (typeof window.__BACKEND_PORT__ !== 'undefined') {
+            BackendPort = window.__BACKEND_PORT__;
+            console.log(`Backend port set to ${BackendPort}`);
+            return;
+        }
+        await new Promise(r => setTimeout(r, 100));
     }
+
     const pid = window.__LAUNCHER_PID__;
     if (!pid) return;
     for (let i = 0; i < 10; i++) {
@@ -99,11 +105,14 @@ async function InitBackendPort() {
             if (res.ok) {
                 const data = await res.json();
                 BackendPort = data.port;
+                console.log(`Backend port from file: ${BackendPort}`);
                 return;
             }
         } catch (_) { }
         await new Promise(r => setTimeout(r, 500));
     }
+
+    console.warn('Could not determine backend port, staying on', BackendPort);
 }
 
 async function sendToPython(action, payload) {
@@ -872,11 +881,15 @@ function startPolling() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
+    document.title = `PRE-INIT:${window.__BACKEND_PORT__}`;
+
     CURRENT_VERSION = (await fetch('./version.json').then(r => r.json())).version;
     document.getElementById('brandVer').textContent = `v${CURRENT_VERSION}`;
     document.getElementById('appVer').textContent = CURRENT_VERSION;
 
     await InitBackendPort();
+    console.log(`Backend port set to ${BackendPort}`);
+    document.title = `POST-INIT:${BackendPort}`;
     loadFastMode();
     loadSavedTheme();
     checkForUpdates();
