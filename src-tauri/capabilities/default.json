@@ -3,7 +3,7 @@
   "identifier": "default",
   "description": "Default capabilities",
   "windows": [
-    "main",
+    "fish",
     "hub",
     "bootstrapper",
     "stats"

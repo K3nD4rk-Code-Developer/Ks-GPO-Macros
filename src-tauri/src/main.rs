@@ -253,7 +253,7 @@ fn cleanup_port_file(res_dir: &PathBuf, pid: u32) {
 }
 
 fn setup_main_window(app: &AppHandle, backend_port: u16, launcher_pid: u32) {
-    let Some(win) = app.get_webview_window("main") else { return };
+    let Some(win) = app.get_webview_window("fish") else { return };
 
     inject_backend_globals(&win, launcher_pid, backend_port);
 
@@ -555,7 +555,7 @@ fn launch_macro(app: AppHandle, macro_name: String) -> Result<serde_json::Value,
         }
     }
 
-    for label in &["main", "hub", "stats"] {
+    for label in &["fish", "hub", "stats"] {
         if let Some(win) = app.get_webview_window(label) {
             inject_backend_globals(&win, launcher_pid, port);
         }
@@ -566,7 +566,7 @@ fn launch_macro(app: AppHandle, macro_name: String) -> Result<serde_json::Value,
             if let Some(hub) = app.get_webview_window("hub") {
                 let _ = hub.hide();
             }
-            if let Some(win) = app.get_webview_window("main") {
+            if let Some(win) = app.get_webview_window("fish") {
                 win.show().map_err(|e| e.to_string())?;
                 win.set_focus().map_err(|e| e.to_string())?;
                 setup_main_window(&app, port, launcher_pid);
@@ -775,7 +775,7 @@ fn main() {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 let label = window.label();
 
-                if label == "main" || label == "hub" {
+                if label == "fish" || label == "hub" {
                     api.prevent_close();
 
                     let app_handle = window.app_handle().clone();

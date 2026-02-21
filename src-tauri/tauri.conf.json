@@ -37,8 +37,8 @@
         "title": "K's Fishing Macro",
         "resizable": true,
         "visible": false,
-        "url": "main.html",
-        "label": "main"
+        "url": "fish.html",
+        "label": "fish"
       },
       {
         "title": "Stats",
