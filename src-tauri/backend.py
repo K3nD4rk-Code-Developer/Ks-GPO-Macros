@@ -37,6 +37,7 @@ import win32gui
 import win32con
 import win32api
 import win32ts
+import winreg
 import cv2
 
 import tkinter as tk
@@ -1829,10 +1830,51 @@ class AutomatedFishingSystem:
         self.SpawnDetectionRunning = False
         self.LastSpawnCheck = time.time()
         
+        self.ApplyCompatibilityFixes()
         self.RegisterHotkeys()
 
         threading.Thread(target=self.SpawnDetectionLoop, daemon=True).start()
 
+    def ApplyCompatibilityFixes(self):
+        try:            
+            LocalAppData = os.environ.get('LOCALAPPDATA', '')
+            ProgramFiles = os.environ.get('PROGRAMFILES', 'C:\\Program Files')
+            ProgramFilesX86 = os.environ.get('PROGRAMFILES(X86)', 'C:\\Program Files (x86)')
+            
+            SearchPaths = [
+                os.path.join(LocalAppData, 'Roblox', 'Versions'),
+                os.path.join(LocalAppData, 'Bloxstrap', 'Versions'),
+                os.path.join(LocalAppData, 'Fishstrap', 'Versions'),
+            ]
+            
+            FoundPaths = []
+            for BasePath in SearchPaths:
+                if os.path.exists(BasePath):
+                    for VersionFolder in os.listdir(BasePath):
+                        Candidate = os.path.join(BasePath, VersionFolder, 'RobloxPlayerBeta.exe')
+                        if os.path.exists(Candidate):
+                            FoundPaths.append(Candidate)
+            
+            if not FoundPaths:
+                print("No Roblox executable found (standard/Bloxstrap/Fishstrap) - skipping.")
+                return
+            
+            RegPath = r"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"
+            Flags = "~ DISABLEDXMAXIMIZEDWINDOWEDMODE DISABLEUSELEGACYDISPLAYICC"
+            
+            try:
+                Key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, RegPath, 0, winreg.KEY_SET_VALUE)
+            except FileNotFoundError:
+                Key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, RegPath)
+            
+            with Key:
+                for ExePath in FoundPaths:
+                    winreg.SetValueEx(Key, ExePath, 0, winreg.REG_SZ, Flags)
+                    print(f"Compatibility flags applied: {ExePath}")
+            
+        except Exception as E:
+            print(f"Could not apply Roblox compatibility flags: {E}")
+    
     def SpawnDetectionLoop(self):
         while True:
             try:
@@ -2073,6 +2115,14 @@ class AutomatedFishingSystem:
                             self.Notifier.SendNotification(f"10 consecutive recast timeouts — macro may be stuck. Total: {self.State.TotalRecastTimeouts}")
                         elif self.State.ConsecutiveRecastTimeouts > 10 and self.State.ConsecutiveRecastTimeouts % 10 == 0:
                             self.Notifier.SendNotification(f"{self.State.ConsecutiveRecastTimeouts} consecutive timeouts. Total: {self.State.TotalRecastTimeouts}")
+                    
+                    if self.State.ConsecutiveRecastTimeouts >= 3:
+                        print(f"{self.State.ConsecutiveRecastTimeouts} consecutive recast timeouts - attempting pre-execution reset")
+                        self.State.UpdateStatus(f"[{self.State.ConsecutiveRecastTimeouts} timeouts] Running pre-execution reset...")
+                        self.State.RobloxWindowFocused = False
+                        if not self.ExecutePreCast(ForcePreCast=True):
+                            self.State.UpdateStatus("Pre-execution reset failed - continuing anyway")
+                    
                     continue
 
                 self.State.ResetConsecutiveTimeouts()
@@ -2173,7 +2223,7 @@ class AutomatedFishingSystem:
         
         self.State.UpdateStatus("Idle")
 
-    def ExecutePreCast(self):
+    def ExecutePreCast(self, ForcePreCast=False):
         if not self.State.RobloxWindowFocused:
             self.State.UpdateStatus("Focusing Roblox window")
             FocusRetries = 0
@@ -2200,7 +2250,7 @@ class AutomatedFishingSystem:
         if self.Config.Settings['AutomationFeatures']['AutoCraftBait']:
             Points = self.Config.Settings['ClickPoints']
             if all([Points['CraftLeft'], Points['CraftMiddle'], Points['CraftButton'], Points['CloseMenu'], Points['AddRecipe'], Points['TopRecipe'], len(self.Config.Settings['BaitRecipes']) > 0]):
-                if self.State.FishSinceLastCraft >= self.Config.Settings['AutomationFrequencies']['FishCountPerCraft']:
+                if ForcePreCast or self.State.FishSinceLastCraft >= self.Config.Settings['AutomationFrequencies']['FishCountPerCraft']:
                     self.ExecuteCraftingCycle()
                     if not self.State.IsRunning:
                         return False
@@ -2208,7 +2258,7 @@ class AutomatedFishingSystem:
         if self.Config.Settings['AutomationFeatures']['AutoBuyBait']:
             Points = self.Config.Settings['ClickPoints']
             if Points['ShopLeft'] and Points['ShopCenter'] and Points['ShopRight']:
-                if self.State.BaitPurchaseCounter == 0 or self.State.BaitPurchaseCounter >= self.Config.Settings['AutomationFrequencies']['LoopsPerPurchase']:
+                if ForcePreCast or self.State.BaitPurchaseCounter == 0 or self.State.BaitPurchaseCounter >= self.Config.Settings['AutomationFrequencies']['LoopsPerPurchase']:
                     self.ExecuteBaitPurchase()
                     if not self.State.IsRunning:
                         return False
@@ -2221,7 +2271,7 @@ class AutomatedFishingSystem:
             return False
         
         if self.Config.Settings['AutomationFeatures']['AutoStoreFruit']:
-            if self.State.FruitStorageCounter == 0 or self.State.FruitStorageCounter >= self.Config.Settings['AutomationFrequencies']['LoopsPerStore']:
+            if ForcePreCast or self.State.FruitStorageCounter == 0 or self.State.FruitStorageCounter >= self.Config.Settings['AutomationFrequencies']['LoopsPerStore']:
                 self.ExecuteFruitStorage()
                 if not self.State.IsRunning:
                     return False
