@@ -3,6 +3,7 @@ const invoke = window.__TAURI__?.core?.invoke ?? (async (cmd, args) => {
     if (cmd === 'keyauth_verify') return { success: true };
     if (cmd === 'open_macro_window') return true;
     if (cmd === 'get_saved_key') return null;
+    if (cmd === 'launch_macro') return { port: 8765 };
     return null;
 });
 
@@ -58,6 +59,7 @@ const MACROS = [
 
 let activeMacro = null;
 let verifying = false;
+let backendReady = false;
 
 function hexToRgb(hex) {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -80,7 +82,7 @@ function buildGrid() {
         if (m.comingSoon) {
             card.classList.add('coming-soon');
         } else {
-            card.onclick = () => openKeyModal(m.id, m.name);
+            card.onclick = () => handleCardClick(card, m.id, m.name);
         }
         card.innerHTML = `
             <div class="card-thumb">
@@ -105,12 +107,56 @@ function buildGrid() {
     grid.style.gridTemplateColumns = `repeat(${Math.min(visible.length, 4)}, 1fr)`;
 }
 
+function setToast(text, visible) {
+    const toast = document.getElementById('backendToast');
+    const toastText = document.getElementById('backendToastText');
+    toastText.textContent = text;
+    if (visible) {
+        toast.classList.add('show');
+    } else {
+        toast.classList.remove('show');
+    }
+}
+
+async function handleCardClick(cardEl, macro_id, displayName) {
+    if (cardEl.classList.contains('card-loading')) return;
+
+    const macro = MACROS.find(m => m.id === macro_id);
+
+    if (!macro?.free) {
+        cardEl.classList.add('card-loading');
+        setToast(`Loading ${displayName}…`, true);
+        await new Promise(r => setTimeout(r, 700));
+        setToast('', false);
+        cardEl.classList.remove('card-loading');
+        openKeyModal(macro_id, displayName);
+        return;
+    }
+
+    cardEl.classList.add('card-loading');
+    setToast('Starting backend…', true);
+
+    try {
+        await invoke('launch_macro', { macroName: macro_id });
+        document.getElementById('rippleRing').classList.add('go');
+        await new Promise(r => setTimeout(r, 400));
+        setToast('', false);
+    } catch (e) {
+        console.error('launch_macro failed:', e);
+        setToast(`Error: ${e?.toString().replace('Error: ', '') || 'Failed to start'}`, true);
+        setTimeout(() => setToast('', false), 3000);
+    } finally {
+        cardEl.classList.remove('card-loading');
+    }
+}
+
 async function openKeyModal(macro_id, displayName) {
     activeMacro = macro_id;
     const macro = MACROS.find(m => m.id === macro_id);
 
     if (macro?.free) {
-        await launchMacro(macro_id);
+        await invoke('launch_macro', { macroName: macro_id });
+        document.getElementById('rippleRing').classList.add('go');
         return;
     }
 
@@ -123,12 +169,6 @@ async function openKeyModal(macro_id, displayName) {
     } catch (_) { }
 
     showModal(macro_id, displayName);
-}
-
-async function launchMacro(macro_id) {
-    document.getElementById('rippleRing').classList.add('go');
-    await new Promise(r => setTimeout(r, 300));
-    await invoke('open_macro_window', { macroName: macro_id });
 }
 
 function applyModalColors(macro_id) {
@@ -166,9 +206,10 @@ async function autoLogin(macro_id, displayName, key) {
             document.getElementById('keyInputWrap').className = 'key-input-wrap success';
             setFeedback('Verified — launching…', 'success');
             await new Promise(r => setTimeout(r, 500));
+            setToast('Starting backend…', true);
+            await invoke('launch_macro', { macroName: macro_id });
+            setToast('', false);
             document.getElementById('rippleRing').classList.add('go');
-            await new Promise(r => setTimeout(r, 300));
-            await invoke('open_macro_window', { macroName: macro_id });
         } else {
             document.getElementById('modalSub').textContent = 'Saved key rejected — enter a new one';
             document.getElementById('keyInput').value = '';
@@ -265,9 +306,10 @@ async function verifyKey() {
             document.getElementById('keyInputWrap').className = 'key-input-wrap success';
             setFeedback('Key verified — launching…', 'success');
             await new Promise(r => setTimeout(r, 600));
+            setToast('Starting backend…', true);
+            await invoke('launch_macro', { macroName: activeMacro });
+            setToast('', false);
             document.getElementById('rippleRing').classList.add('go');
-            await new Promise(r => setTimeout(r, 300));
-            await invoke('open_macro_window', { macroName: activeMacro });
         } else {
             document.getElementById('keyInputWrap').className = 'key-input-wrap error';
             setFeedback('Invalid or expired key.', 'error');

@@ -109,7 +109,7 @@ class ConfigurationManager:
                 'DevilFruits': ['3']
             },
             'AutomationFeatures': {
-                'AutoBuyBait': True,
+                'AutoBuyBait': False,
                 'AutoCraftBait': False,
                 'AutoStoreFruit': False,
                 'AutoSelectTopBait': False
@@ -322,7 +322,7 @@ class ConfigurationManager:
         
         if "AutomationFeatures" in LoadedData:
             Auto = LoadedData["AutomationFeatures"]
-            self.Settings['AutomationFeatures']['AutoBuyBait'] = Auto.get("AutoBuyCommonBait", True)
+            self.Settings['AutomationFeatures']['AutoBuyBait'] = Auto.get("AutoBuyCommonBait", False)
             self.Settings['AutomationFeatures']['AutoCraftBait'] = Auto.get("AutoCraftBait", False)
             self.Settings['AutomationFeatures']['AutoStoreFruit'] = Auto.get("AutoStoreDevilFruit", False)
             self.Settings['AutomationFeatures']['AutoSelectTopBait'] = Auto.get("AutoSelectTopBait", False)

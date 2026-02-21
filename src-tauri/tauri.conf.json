@@ -16,8 +16,8 @@
         "title": "K's Macros — Launcher",
         "url": "bootstrapper.html",
         "width": 520,
-        "height": 700,
-        "resizable": false,
+        "height": 605,
+        "resizable": true,
         "decorations": false,
         "visible": true,
         "center": true
