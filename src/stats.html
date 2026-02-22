@@ -127,13 +127,12 @@
             if (!port || port <= 0) return;
             if (StatsPort === port) return;
             StatsPort = port;
-            // Restart poll loop on the new port
+
             if (pollTimer) clearInterval(pollTimer);
             pollTimer = setInterval(PollStats, 500);
             PollStats();
         }
 
-        // Layer 1: event push from Rust
         if (window.__TAURI__?.event?.listen) {
             window.__TAURI__.event.listen('backend-port-ready', (event) => {
                 const port = event?.payload?.port;
@@ -141,7 +140,6 @@
             });
         }
 
-        // Layer 2: pull from Rust state
         async function InitStatsPort() {
             const invoke = window.__TAURI__?.core?.invoke;
             if (invoke) {
@@ -150,11 +148,10 @@
                     if (port && port > 0) { ApplyStatsPort(port); return; }
                 } catch (_) { }
             }
-            // Layer 3: global (set by Rust after port is confirmed)
+
             if (window.__BACKEND_PORT__ && window.__BACKEND_PORT__ > 0) {
                 ApplyStatsPort(window.__BACKEND_PORT__);
             }
-            // If still 0, the backend-port-ready event will arrive shortly
         }
 
         async function PollStats() {

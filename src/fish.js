@@ -12,51 +12,7 @@ let lastSessionsUpdateTime = 0;
 let activeElement = null;
 let skipNextUpdate = new Set();
 
-const SLIDESHOW_DATA = [
-    {
-        label: "Setup",
-        slides: [
-            { url: "https://i.postimg.cc/SK3FDVrW/Water-Point.png", title: "Step 1 – Launch & Configure", desc: "Open the macro and set your water target point first in the Locations tab." },
-            { url: "https://i.postimg.cc/hvqFqjN2/Assign-Slots.png", title: "Step 2 – Assign Hotkey Slots", desc: "Make sure your fishing rod is in the correct inventory slot, and your alternative slot too." }
-        ]
-    },
-    {
-        label: "Auto Craft",
-        slides: [
-            { url: "https://i.postimg.cc/QtYB62PL/Auto-Craft-Position.png", title: "Position Setup", desc: "Position where the interact with Blacksmith Sen is available and you have a clear sight of the water." },
-            { url: "https://i.postimg.cc/LXj9Prpq/Auto-Craft-Left-DIalog.png", title: "Configure Left Dialog", desc: "Go to Locations → Crafting Interface Points and configure." },
-            { url: "https://i.postimg.cc/GtZxf8Nr/Middle-Dialog-Option.png", title: "Configure Middle Dialog", desc: "Go to Locations → Crafting Interface Points and configure." },
-            { url: "https://i.postimg.cc/qvHGXKyz/Add-Ingredient.png", title: "Configure Add Ingredient", desc: "Go to Locations → Crafting Interface Points and configure." },
-            { url: "https://i.postimg.cc/ZqTFXhf4/Top-Recipe-Slot.png", title: "Configure Top Recipe Slot", desc: "Go to Locations → Crafting Interface Points and configure." },
-            { url: "https://i.postimg.cc/wB0cpbZd/Click-Craft-Confirm.png", title: "Configure Craft Button", desc: "Go to Locations → Crafting Interface Points and configure." },
-            { url: "https://i.postimg.cc/MZ9X4fDD/Screenshot-2026-02-14-214908.png", title: "Configure Craft Selected", desc: "Go to Locations → Crafting Interface Points and configure." },
-            { url: "https://i.postimg.cc/k4GNXvPb/Menu-Close.png", title: "Configure Menu Close", desc: "Go to Locations → Crafting Interface Points and configure." },
-            { url: "https://i.postimg.cc/Xqyw9NJM/Add-and-Configure-Recipes.png", title: "Add and Configure Recipes", desc: "Go to Locations and click Add Recipe, then configure the recipe location." },
-            { url: "https://i.postimg.cc/MGK3VRJ1/Add.png", title: "", desc: "" }
-        ]
-    },
-    {
-        label: "Auto Buy",
-        slides: [
-            { url: "https://i.postimg.cc/YqDzZP5R/Position.png", title: "Position Setup", desc: "Position where Common Fish Bait Purchase interaction is available." },
-            { url: "https://i.postimg.cc/PrvjvgQP/Left-Dialog-Bait.png", title: "Configure Left Dialog", desc: "Go to Locations → Bait Shop Interaction Points and configure." },
-            { url: "https://i.postimg.cc/NjLp0t6S/Middle-Dialog-Bait.png", title: "Configure Middle Dialog", desc: "Go to Locations → Bait Shop Interaction Points and configure." },
-            { url: "https://i.postimg.cc/W1tX4VGY/Right-Dialog-Bait.png", title: "Configure Right Dialog", desc: "Go to Locations → Bait Shop Interaction Points and configure." }
-        ]
-    },
-    {
-        label: "Auto Store",
-        slides: [
-            { url: "https://i.postimg.cc/cHccJwWf/Item-Store.png", title: "Set up the store location", desc: "" }
-        ]
-    },
-    {
-        label: "Auto Select",
-        slides: [
-            { url: "https://i.postimg.cc/wjscmSH2/Select-Top-Bait.png", title: "Enable Auto Select", desc: "Toggle 'Auto Select Top Bait' in the Automation tab." }
-        ]
-    }
-];
+let SLIDESHOW_DATA = [];
 
 const invoke = window.__TAURI__?.core?.invoke ?? (async (cmd, args) => {
     if (cmd === 'get_backend_port') return window.__BACKEND_PORT__ || 0;
@@ -105,7 +61,6 @@ function ApplyBackendPort(port) {
     if (BackendPort === port) return;
     BackendPort = port;
     flog(`BackendPort updated to ${BackendPort}`);
-    // If polling was already running with the wrong port, restart it
     if (pollInterval) {
         clearInterval(pollInterval);
         pollInterval = setInterval(pollPythonState, 500);
@@ -113,7 +68,6 @@ function ApplyBackendPort(port) {
     }
 }
 
-// Layer 1: Listen for the push event from Rust (fires after launch_macro confirms port)
 if (window.__TAURI__?.event?.listen) {
     window.__TAURI__.event.listen('backend-port-ready', (event) => {
         const port = event?.payload?.port;
@@ -123,7 +77,6 @@ if (window.__TAURI__?.event?.listen) {
 }
 
 async function InitBackendPort() {
-    // Layer 2: Pull the port from Rust state directly — always accurate
     try {
         const port = await invoke('get_backend_port');
         flog(`get_backend_port returned: ${port}`);
@@ -338,6 +291,13 @@ async function regenerateClientId() {
     } catch (e) {
         showToast('Failed to regenerate Client ID', 'err');
     }
+}
+
+async function loadAndBuildSlideshow() {
+    const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/src-tauri/visual-guide.json`;
+    const res = await fetch(url, { cache: 'no-cache' });
+    SLIDESHOW_DATA = await res.json();
+    buildSlideshow();
 }
 
 function buildSlideshow() {
@@ -920,7 +880,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     loadSavedTheme();
     checkForUpdates();
     checkDisclaimer();
-    buildSlideshow();
+    loadAndBuildSlideshow();
     loadAudioDevices();
     loadInitialSettings();
 

@@ -1,0 +1,45 @@
+[
+    {
+        "label": "Setup",
+        "slides": [
+            { "url": "https://i.postimg.cc/SK3FDVrW/Water-Point.png", "title": "Step 1 – Launch & Configure", "desc": "Open the macro and set your water target point first in the Locations tab." },
+            { "url": "https://i.postimg.cc/hvqFqjN2/Assign-Slots.png", "title": "Step 2 – Assign Hotkey Slots", "desc": "Make sure your fishing rod is in the correct inventory slot, and your alternative slot too." }
+        ]
+    },
+    {
+        "label": "Auto Craft",
+        "slides": [
+            { "url": "https://i.postimg.cc/QtYB62PL/Auto-Craft-Position.png", "title": "Position Setup", "desc": "Position where the interact with Blacksmith Sen is available and you have a clear sight of the water." },
+            { "url": "https://i.postimg.cc/LXj9Prpq/Auto-Craft-Left-DIalog.png", "title": "Configure Left Dialog", "desc": "Go to Locations → Crafting Interface Points and configure." },
+            { "url": "https://i.postimg.cc/GtZxf8Nr/Middle-Dialog-Option.png", "title": "Configure Middle Dialog", "desc": "Go to Locations → Crafting Interface Points and configure." },
+            { "url": "https://i.postimg.cc/qvHGXKyz/Add-Ingredient.png", "title": "Configure Add Ingredient", "desc": "Go to Locations → Crafting Interface Points and configure." },
+            { "url": "https://i.postimg.cc/ZqTFXhf4/Top-Recipe-Slot.png", "title": "Configure Top Recipe Slot", "desc": "Go to Locations → Crafting Interface Points and configure." },
+            { "url": "https://i.postimg.cc/wB0cpbZd/Click-Craft-Confirm.png", "title": "Configure Craft Button", "desc": "Go to Locations → Crafting Interface Points and configure." },
+            { "url": "https://i.postimg.cc/MZ9X4fDD/Screenshot-2026-02-14-214908.png", "title": "Configure Craft Selected", "desc": "Go to Locations → Crafting Interface Points and configure." },
+            { "url": "https://i.postimg.cc/k4GNXvPb/Menu-Close.png", "title": "Configure Menu Close", "desc": "Go to Locations → Crafting Interface Points and configure." },
+            { "url": "https://i.postimg.cc/Xqyw9NJM/Add-and-Configure-Recipes.png", "title": "Add and Configure Recipes", "desc": "Go to Locations and click Add Recipe, then configure the recipe location." },
+            { "url": "https://i.postimg.cc/MGK3VRJ1/Add.png", "title": "", "desc": "" }
+        ]
+    },
+    {
+        "label": "Auto Buy",
+        "slides": [
+            { "url": "https://i.postimg.cc/YqDzZP5R/Position.png", "title": "Position Setup", "desc": "Position where Common Fish Bait Purchase interaction is available." },
+            { "url": "https://i.postimg.cc/PrvjvgQP/Left-Dialog-Bait.png", "title": "Configure Left Dialog", "desc": "Go to Locations → Bait Shop Interaction Points and configure." },
+            { "url": "https://i.postimg.cc/NjLp0t6S/Middle-Dialog-Bait.png", "title": "Configure Middle Dialog", "desc": "Go to Locations → Bait Shop Interaction Points and configure." },
+            { "url": "https://i.postimg.cc/W1tX4VGY/Right-Dialog-Bait.png", "title": "Configure Right Dialog", "desc": "Go to Locations → Bait Shop Interaction Points and configure." }
+        ]
+    },
+    {
+        "label": "Auto Store",
+        "slides": [
+            { "url": "https://i.postimg.cc/cHccJwWf/Item-Store.png", "title": "Set up the store location", "desc": "" }
+        ]
+    },
+    {
+        "label": "Auto Select",
+        "slides": [
+            { "url": "https://i.postimg.cc/wjscmSH2/Select-Top-Bait.png", "title": "Enable Auto Select", "desc": "Toggle 'Auto Select Top Bait' in the Automation tab." }
+        ]
+    }
+]

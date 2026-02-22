@@ -198,7 +198,7 @@ fn read_backend_port(res_dir: &PathBuf, pid: u32) -> u16 {
     let port_file = res_dir.join(format!("port_{pid}.json"));
     log(&format!("Looking for port file: {port_file:?}"));
 
-    for attempt in 1..=50 {
+    for attempt in 1..=100 {
         if let Ok(content) = fs::read_to_string(&port_file) {
             if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
                 if let Some(port) = val.get("port").and_then(|p| p.as_u64()) {
@@ -207,7 +207,7 @@ fn read_backend_port(res_dir: &PathBuf, pid: u32) -> u16 {
                 }
             }
         }
-        log(&format!("Port file not ready (attempt {attempt}/50), retrying..."));
+        log(&format!("Port file not ready (attempt {attempt}/100), retrying..."));
         std::thread::sleep(std::time::Duration::from_millis(500));
     }
 
@@ -595,8 +595,6 @@ fn launch_macro(app: AppHandle, macro_name: String) -> Result<serde_json::Value,
         return Err("Backend did not start in time".to_string());
     }
 
-    // Single authoritative call: updates Rust state + emits event to all windows
-    // + injects __BACKEND_PORT__ global. Every frontend gets the correct port.
     publish_backend_port(&app, port);
 
     match macro_name.as_str() {
@@ -657,8 +655,6 @@ fn start_backend(app: AppHandle) -> Result<serde_json::Value, String> {
 
 #[tauri::command]
 fn open_main_window(app: AppHandle) -> Result<(), String> {
-    // Port is not known yet at this stage — do NOT inject it here.
-    // publish_backend_port() called inside launch_macro will handle all windows.
     if let Some(hub) = app.get_webview_window("hub") {
         hub.show().map_err(|e| e.to_string())?;
         hub.set_focus().map_err(|e| e.to_string())?;
