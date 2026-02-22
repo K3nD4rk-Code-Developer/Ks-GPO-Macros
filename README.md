@@ -18,7 +18,7 @@
 ## Installation
 ```bash
 git clone https://github.com/K3nD4rk-Code-Developer/Grand-Piece-Online-Fishing.git
-cd gpo-fishing-macro
+cd Grand-Piece-Online-Fishing
 pip install -r requirements.txt
 python -m PyInstaller backend.py
 ```
