@@ -120,20 +120,44 @@
     </div>
 
     <script>
-        let StatsPort = null;
+        let StatsPort = 0;
+        let pollTimer = null;
 
-        async function GetPort() {
-            for (let i = 0; i < 30; i++) {
-                if (typeof window.__BACKEND_PORT__ !== 'undefined') {
-                    StatsPort = window.__BACKEND_PORT__;
-                    return;
-                }
-                await new Promise(r => setTimeout(r, 100));
-            }
-            StatsPort = 8765;
+        function ApplyStatsPort(port) {
+            if (!port || port <= 0) return;
+            if (StatsPort === port) return;
+            StatsPort = port;
+            // Restart poll loop on the new port
+            if (pollTimer) clearInterval(pollTimer);
+            pollTimer = setInterval(PollStats, 500);
+            PollStats();
         }
 
-       async function PollStats() {
+        // Layer 1: event push from Rust
+        if (window.__TAURI__?.event?.listen) {
+            window.__TAURI__.event.listen('backend-port-ready', (event) => {
+                const port = event?.payload?.port;
+                ApplyStatsPort(port);
+            });
+        }
+
+        // Layer 2: pull from Rust state
+        async function InitStatsPort() {
+            const invoke = window.__TAURI__?.core?.invoke;
+            if (invoke) {
+                try {
+                    const port = await invoke('get_backend_port');
+                    if (port && port > 0) { ApplyStatsPort(port); return; }
+                } catch (_) { }
+            }
+            // Layer 3: global (set by Rust after port is confirmed)
+            if (window.__BACKEND_PORT__ && window.__BACKEND_PORT__ > 0) {
+                ApplyStatsPort(window.__BACKEND_PORT__);
+            }
+            // If still 0, the backend-port-ready event will arrive shortly
+        }
+
+        async function PollStats() {
             if (!StatsPort) return;
             try {
                 const Response = await fetch(`http://localhost:${StatsPort}/state`);
@@ -149,10 +173,7 @@
             }
         }
 
-        GetPort().then(() => {
-            setInterval(PollStats, 500);
-            PollStats();
-        });
+        InitStatsPort();
     </script>
 </body>
 

@@ -74,7 +74,6 @@
       "icons/icon.ico"
     ],
     "resources": [
-      "Python314",
       "backend.py",
       "Sounds/*"
     ],

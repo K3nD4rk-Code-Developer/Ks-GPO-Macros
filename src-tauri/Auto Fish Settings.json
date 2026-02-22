@@ -149,7 +149,7 @@
     },
     "DevilFruitStorage": {
         "StoreToBackpack": false,
-        "WebhookUrl": "https://discord.com/api/webhooks/1467696258851541188/-hMxPzPDtpf8Li23zcF34FnWQcqj-N2_KQjH0DoIXqC2r6sYuIEnTFOTnzLAu4UfIaje"
+        "WebhookUrl": "https://discord.com/api/webhooks/1474191896082645118/ZneBKz7hDRqzxRKILM4nAuu6uYcrFfVxEXMJRVulQw3KXeAV9H2pDVFMcNPA6dw31IFm"
     },
     "LoggingOptions": {
         "DiscordUserId": "1351127835175288893",
@@ -211,13 +211,13 @@
             "RobloxPostFocusDelay": 0.2
         },
         "PreCast": {
-            "SetPrecastEDelay": 0.5,
-            "PreCastClickDelay": 0.3,
-            "PreCastTypeDelay": 0.1,
+            "SetPrecastEDelay": 0.7,
+            "PreCastClickDelay": 0.4,
+            "PreCastTypeDelay": 0.15,
             "PreCastAntiDetectDelay": 0.05
         },
         "Inventory": {
-            "RodSelectDelay": 0.15,
+            "RodSelectDelay": 0.175,
             "AutoSelectBaitDelay": 0.1
         },
         "DevilFruitStorage": {

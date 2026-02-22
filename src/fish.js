@@ -2,7 +2,7 @@ let CURRENT_VERSION = '0.0.0';
 const GITHUB_REPO = 'K3nD4rk-Code-Developer/Grand-Piece-Online-Fishing';
 const CLIENT_ID = getClientId();
 
-let BackendPort = window.__BACKEND_PORT__ || 8765;
+let BackendPort = 0;
 let pollInterval = null;
 let activeCategoryIndex = 0;
 let activeSlideIndex = 0;
@@ -58,6 +58,11 @@ const SLIDESHOW_DATA = [
     }
 ];
 
+const invoke = window.__TAURI__?.core?.invoke ?? (async (cmd, args) => {
+    if (cmd === 'get_backend_port') return window.__BACKEND_PORT__ || 0;
+    return null;
+});
+
 function getClientId() {
     let id = localStorage.getItem('macroClientId');
     if (!id) {
@@ -82,37 +87,61 @@ function compareVersions(v1, v2) {
     return 0;
 }
 
+const tauriInvoke = window.__TAURI__?.core?.invoke;
+
+function flog(msg) {
+    if (tauriInvoke) {
+        tauriInvoke('frontend_log', { message: `[${new Date().toISOString()}] ${msg}` });
+    }
+    console.log(msg);
+}
+
 function BackendUrl(path) {
     return `http://localhost:${BackendPort}${path}`;
 }
 
+function ApplyBackendPort(port) {
+    if (!port || port <= 0) return;
+    if (BackendPort === port) return;
+    BackendPort = port;
+    flog(`BackendPort updated to ${BackendPort}`);
+    // If polling was already running with the wrong port, restart it
+    if (pollInterval) {
+        clearInterval(pollInterval);
+        pollInterval = setInterval(pollPythonState, 500);
+        flog('Polling restarted on new port');
+    }
+}
+
+// Layer 1: Listen for the push event from Rust (fires after launch_macro confirms port)
+if (window.__TAURI__?.event?.listen) {
+    window.__TAURI__.event.listen('backend-port-ready', (event) => {
+        const port = event?.payload?.port;
+        flog(`backend-port-ready event received: port=${port}`);
+        ApplyBackendPort(port);
+    });
+}
+
 async function InitBackendPort() {
-    document.title = `PORT:${window.__BACKEND_PORT__}`;
-    for (let i = 0; i < 30; i++) {
-        if (typeof window.__BACKEND_PORT__ !== 'undefined') {
-            BackendPort = window.__BACKEND_PORT__;
-            console.log(`Backend port set to ${BackendPort}`);
+    // Layer 2: Pull the port from Rust state directly — always accurate
+    try {
+        const port = await invoke('get_backend_port');
+        flog(`get_backend_port returned: ${port}`);
+        if (port && port > 0) {
+            ApplyBackendPort(port);
             return;
         }
-        await new Promise(r => setTimeout(r, 100));
+    } catch (e) {
+        flog(`get_backend_port failed: ${e}`);
     }
 
-    const pid = window.__LAUNCHER_PID__;
-    if (!pid) return;
-    for (let i = 0; i < 10; i++) {
-        try {
-            const res = await fetch(`./port_${pid}.json`);
-            if (res.ok) {
-                const data = await res.json();
-                BackendPort = data.port;
-                console.log(`Backend port from file: ${BackendPort}`);
-                return;
-            }
-        } catch (_) { }
-        await new Promise(r => setTimeout(r, 500));
+    if (window.__BACKEND_PORT__ && window.__BACKEND_PORT__ > 0) {
+        flog(`BackendPort from __BACKEND_PORT__ global: ${window.__BACKEND_PORT__}`);
+        ApplyBackendPort(window.__BACKEND_PORT__);
+        return;
     }
 
-    console.warn('Could not determine backend port, staying on', BackendPort);
+    flog('WARNING: Could not resolve backend port at startup — waiting for event');
 }
 
 async function sendToPython(action, payload) {
@@ -881,15 +910,12 @@ function startPolling() {
 }
 
 window.addEventListener('DOMContentLoaded', async () => {
-    document.title = `PRE-INIT:${window.__BACKEND_PORT__}`;
-
     CURRENT_VERSION = (await fetch('./version.json').then(r => r.json())).version;
     document.getElementById('brandVer').textContent = `v${CURRENT_VERSION}`;
     document.getElementById('appVer').textContent = CURRENT_VERSION;
 
     await InitBackendPort();
-    console.log(`Backend port set to ${BackendPort}`);
-    document.title = `POST-INIT:${BackendPort}`;
+    flog(`Backend port resolved to ${BackendPort} at DOMContentLoaded`);
     loadFastMode();
     loadSavedTheme();
     checkForUpdates();
