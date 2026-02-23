@@ -248,7 +248,7 @@ fn publish_backend_port(app: &AppHandle, port: u16) {
     }
 
     let payload = serde_json::json!({ "port": port });
-    for label in &["fish", "hub", "stats"] {
+    for label in &["fish", "hub", "stats", "juzo"] {
         if let Some(win) = app.get_webview_window(label) {
             if let Err(e) = win.emit("backend-port-ready", &payload) {
                 log(&format!("Failed to emit backend-port-ready to {label}: {e}"));
@@ -258,7 +258,7 @@ fn publish_backend_port(app: &AppHandle, port: u16) {
         }
     }
 
-    for label in &["fish", "hub", "stats"] {
+    for label in &["fish", "hub", "stats", "juzo"] {
         if let Some(win) = app.get_webview_window(label) {
             let _ = win.eval(&format!(
                 "window.__BACKEND_PORT__ = {}; window.__LAUNCHER_PID__ = '{}';",
@@ -388,6 +388,64 @@ fn setup_main_window(app: &AppHandle, backend_port: u16, launcher_pid: u32) {
                 if let Ok(state) = res.json::<serde_json::Value>() {
                     if let Some(on_top) = state.get("alwaysOnTop").and_then(|v| v.as_bool()) {
                         let _ = win_clone2.set_always_on_top(on_top);
+                    }
+                }
+            }
+        }
+    });
+}
+
+fn setup_juzo_window(app: &AppHandle) {
+    let Some(win) = app.get_webview_window("juzo") else { return };
+
+    let store = tauri_plugin_store::StoreBuilder::new(app, "juzo_window.json")
+        .build()
+        .expect("Failed to build store");
+
+    let mut restored = false;
+
+    if let (Some(w), Some(h), Some(x), Some(y)) = (
+        store.get("w").and_then(|v: serde_json::Value| v.as_f64()),
+        store.get("h").and_then(|v: serde_json::Value| v.as_f64()),
+        store.get("x").and_then(|v: serde_json::Value| v.as_i64()),
+        store.get("y").and_then(|v: serde_json::Value| v.as_i64()),
+    ) {
+        let safe_w = w.max(400.0);
+        let safe_h = h.max(300.0);
+        if is_position_visible(x, y, app) {
+            let _ = win.set_size(tauri::LogicalSize::new(safe_w, safe_h));
+            let _ = win.set_position(tauri::LogicalPosition::new(x as f64, y as f64));
+            log(&format!("juzo window: restored size={safe_w}x{safe_h} pos={x},{y}"));
+            restored = true;
+        } else {
+            log("juzo window: saved position off-screen, using default");
+        }
+    }
+
+    if !restored {
+        if let Ok(Some(monitor)) = win.current_monitor() {
+            let scale  = monitor.scale_factor();
+            let msize  = monitor.size();
+            let width  = (msize.width  as f64 / scale * 0.365) as u32;
+            let height = (msize.height as f64 / scale * 0.475) as u32;
+            let _ = win.set_size(tauri::LogicalSize::new(width, height));
+            let _ = win.center();
+            log("juzo window: using default size");
+        }
+    }
+
+    let win_clone = win.clone();
+    win.on_window_event(move |event| {
+        if let tauri::WindowEvent::Resized(_) | tauri::WindowEvent::Moved(_) = event {
+            if let (Ok(size), Ok(pos)) = (win_clone.inner_size(), win_clone.outer_position()) {
+                if let Ok(Some(monitor)) = win_clone.current_monitor() {
+                    let scale = monitor.scale_factor();
+                    if let Ok(store) = tauri_plugin_store::StoreBuilder::new(win_clone.app_handle(), "juzo_window.json").build() {
+                        store.set("w", serde_json::json!(size.width as f64 / scale));
+                        store.set("h", serde_json::json!(size.height as f64 / scale));
+                        store.set("x", serde_json::json!(pos.x));
+                        store.set("y", serde_json::json!(pos.y));
+                        let _ = store.save();
                     }
                 }
             }
@@ -557,6 +615,7 @@ fn reset_window_position(app: AppHandle) -> Result<(), String> {
     let app_dir = app.path().app_data_dir().map_err(|e| e.to_string())?;
     let _ = fs::remove_file(app_dir.join("main_window.json"));
     let _ = fs::remove_file(app_dir.join("stats_position.json"));
+    let _ = fs::remove_file(app_dir.join("juzo_window.json"));
     log("Window position data reset");
     Ok(())
 }
@@ -616,6 +675,7 @@ fn launch_macro(app: AppHandle, macro_name: String) -> Result<serde_json::Value,
             if let Some(win) = app.get_webview_window("juzo") {
                 win.show().map_err(|e| e.to_string())?;
                 win.set_focus().map_err(|e| e.to_string())?;
+                setup_juzo_window(&app);
             }
         }
         _ => {
@@ -715,7 +775,6 @@ fn keyauth_verify(app: AppHandle, key: String, macro_name: String) -> Result<ser
         .build()
         .map_err(|e| format!("Failed to build client: {e}"))?;
 
-    // ── Init ──────────────────────────────────────────────────────────────────
     let params = [("type", "init"), ("name", ka.name), ("ownerid", ka.ownerid), ("ver", "1.0")];
 
     let init_raw = client
@@ -740,7 +799,6 @@ fn keyauth_verify(app: AppHandle, key: String, macro_name: String) -> Result<ser
     let session_id = init_res.get("sessionid").and_then(|v| v.as_str()).unwrap_or("").to_string();
     log(&format!("KeyAuth init success, sessionid={session_id}"));
 
-    // ── License ───────────────────────────────────────────────────────────────
     let license_params = [
         ("type", "license"), ("key", key.as_str()), ("name", ka.name),
         ("ownerid", ka.ownerid), ("sessionid", session_id.as_str()),
@@ -808,7 +866,7 @@ fn main() {
         .on_window_event(move |window, event| {
             if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                 let label = window.label();
-                if label == "fish" || label == "hub" {
+                if label == "fish" || label == "hub" || label == "juzo" {
                     api.prevent_close();
                     let app_handle = window.app_handle().clone();
                     let res_dir = resource_dir(&app_handle);
