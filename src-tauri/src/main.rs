@@ -609,6 +609,15 @@ fn launch_macro(app: AppHandle, macro_name: String) -> Result<serde_json::Value,
                 setup_stats_window(&app, port);
             }
         }
+        "juzo" => {
+            if let Some(hub) = app.get_webview_window("hub") {
+                let _ = hub.hide();
+            }
+            if let Some(win) = app.get_webview_window("juzo") {
+                win.show().map_err(|e| e.to_string())?;
+                win.set_focus().map_err(|e| e.to_string())?;
+            }
+        }
         _ => {
             log(&format!("launch_macro: no window configured for '{macro_name}'"));
         }
@@ -676,9 +685,9 @@ struct KeyAuthApp {
 fn keyauth_app_for(macro_name: &str) -> Option<KeyAuthApp> {
     match macro_name {
         "fishing" => None,
-        "juzo"    => Some(KeyAuthApp { name: "Ks Juzo Macro",   ownerid: "5ZmAhBPrGX" }),
-        "mihawk"  => Some(KeyAuthApp { name: "Ks Mihawk Macro", ownerid: "5ZmAhBPrGX" }),
-        "roger"   => Some(KeyAuthApp { name: "Ks Roger Macro",  ownerid: "5ZmAhBPrGX" }),
+        "juzo"    => Some(KeyAuthApp { name: "K's Juzo Macro",   ownerid: "5ZmAhBPrGX" }),
+        "mihawk"  => Some(KeyAuthApp { name: "K's Mihawk Macro", ownerid: "5ZmAhBPrGX" }),
+        "roger"   => Some(KeyAuthApp { name: "K's Roger Macro",  ownerid: "5ZmAhBPrGX" }),
         _         => None,
     }
 }
@@ -706,35 +715,49 @@ fn keyauth_verify(app: AppHandle, key: String, macro_name: String) -> Result<ser
         .build()
         .map_err(|e| format!("Failed to build client: {e}"))?;
 
+    // ── Init ──────────────────────────────────────────────────────────────────
     let params = [("type", "init"), ("name", ka.name), ("ownerid", ka.ownerid), ("ver", "1.0")];
 
-    let init_res: serde_json::Value = client
+    let init_raw = client
         .post("https://keyauth.win/api/1.2/")
         .form(&params)
         .send()
         .map_err(|e| format!("Init request failed: {e}"))?
-        .json()
-        .map_err(|e| format!("Init parse failed: {e}"))?;
+        .text()
+        .map_err(|e| format!("Init read failed: {e}"))?;
+
+    log(&format!("KeyAuth init raw: {init_raw}"));
+
+    let init_res: serde_json::Value = serde_json::from_str(&init_raw)
+        .map_err(|e| format!("Init parse failed: {e} — raw: [{init_raw}]"))?;
 
     if !init_res.get("success").and_then(|v| v.as_bool()).unwrap_or(false) {
         let msg = init_res.get("message").and_then(|v| v.as_str()).unwrap_or("Init failed");
+        log(&format!("KeyAuth init failed: {msg}"));
         return Err(msg.to_string());
     }
 
     let session_id = init_res.get("sessionid").and_then(|v| v.as_str()).unwrap_or("").to_string();
+    log(&format!("KeyAuth init success, sessionid={session_id}"));
 
+    // ── License ───────────────────────────────────────────────────────────────
     let license_params = [
         ("type", "license"), ("key", key.as_str()), ("name", ka.name),
         ("ownerid", ka.ownerid), ("sessionid", session_id.as_str()),
     ];
 
-    let license_res: serde_json::Value = client
+    let license_raw = client
         .post("https://keyauth.win/api/1.2/")
         .form(&license_params)
         .send()
         .map_err(|e| format!("License request failed: {e}"))?
-        .json()
-        .map_err(|e| format!("License parse failed: {e}"))?;
+        .text()
+        .map_err(|e| format!("License read failed: {e}"))?;
+
+    log(&format!("KeyAuth license raw: {license_raw}"));
+
+    let license_res: serde_json::Value = serde_json::from_str(&license_raw)
+        .map_err(|e| format!("License parse failed: {e} — raw: [{license_raw}]"))?;
 
     let success = license_res.get("success").and_then(|v| v.as_bool()).unwrap_or(false);
 
@@ -743,9 +766,11 @@ fn keyauth_verify(app: AppHandle, key: String, macro_name: String) -> Result<ser
             store.set(macro_name.clone(), serde_json::json!(key));
             let _ = store.save();
         }
+        log("KeyAuth license verified, key saved");
         Ok(serde_json::json!({ "success": true }))
     } else {
         let msg = license_res.get("message").and_then(|v| v.as_str()).unwrap_or("Invalid or expired key");
+        log(&format!("KeyAuth license failed: {msg}"));
         Err(msg.to_string())
     }
 }

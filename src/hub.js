@@ -22,8 +22,8 @@ const MACROS = [
     {
         id: 'juzo',
         name: 'Juzo Macro',
-        comingSoon: true,
-        desc: 'Automated Juzo combat with skill rotation and targeting.',
+        comingSoon: false,
+        desc: 'Automated Juzo boss fights with smart dodge and attack patterns.',
         tag: 'JUZO',
         free: false,
         visible: true,

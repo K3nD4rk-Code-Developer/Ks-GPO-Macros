@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Ks Fishing Macro",
+  "productName": "Ks GPO Macros",
   "version": "../src/version.json",
-  "identifier": "com.gpo.fishmacro",
+  "identifier": "com.gpo.ksmacro",
   "build": {
     "frontendDist": "../src",
     "beforeBuildCommand": "",
@@ -39,6 +39,13 @@
         "visible": false,
         "url": "fish.html",
         "label": "fish"
+      },
+      {
+        "title": "K's Juzo Macro",
+        "resizable": true,
+        "visible": false,
+        "url": "juzo.html",
+        "label": "juzo"
       },
       {
         "title": "Stats",

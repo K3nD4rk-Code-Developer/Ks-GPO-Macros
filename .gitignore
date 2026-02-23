@@ -25,3 +25,6 @@ dist-ssr
 /src-tauri/Python314
 /src-tauri/__pycache__
 /~
+src/juzo.html
+src/juzo.css
+src/juzo.js

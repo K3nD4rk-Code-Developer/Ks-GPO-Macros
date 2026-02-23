@@ -135,7 +135,7 @@
         ]
     },
     "AutomationFeatures": {
-        "AutoBuyCommonBait": true,
+        "AutoBuyCommonBait": false,
         "AutoStoreDevilFruit": true,
         "AutoSelectTopBait": false,
         "AutoCraftBait": false
