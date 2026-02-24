@@ -118,6 +118,7 @@ fn kill_existing_backend() {
     log("User-scoped backend kill complete");
 }
 
+#[allow(unused_variables)]
 fn kill_all_backend_processes(launcher_pid: u32) {
     log("Nuclear kill: all backend processes for current user");
     #[cfg(target_os = "windows")]
@@ -308,11 +309,9 @@ fn terminate_child(app: &AppHandle) {
 }
 
 fn full_shutdown(app: &AppHandle, launcher_pid: u32, res_dir: &PathBuf) {
-    log("=== FULL SHUTDOWN INITIATED ===");
     terminate_child(app);
     kill_all_backend_processes(launcher_pid);
     cleanup_port_file(res_dir, launcher_pid);
-    log("=== FULL SHUTDOWN COMPLETE ===");
 }
 
 fn cleanup_port_file(res_dir: &PathBuf, pid: u32) {
@@ -322,6 +321,7 @@ fn cleanup_port_file(res_dir: &PathBuf, pid: u32) {
     log(&format!("Cleaned up port file for PID {pid}"));
 }
 
+#[allow(unused_variables)]
 fn setup_main_window(app: &AppHandle, backend_port: u16, launcher_pid: u32) {
     let Some(win) = app.get_webview_window("fish") else { return };
 
@@ -846,7 +846,6 @@ fn open_browser(url: String) -> Result<(), String> {
 
 fn main() {
     let _ = fs::remove_file(logs_dir().join("debug.txt"));
-    log("=== APP STARTING ===");
 
     let launcher_pid = std::process::id();
     log(&format!("Launcher PID: {launcher_pid}"));
