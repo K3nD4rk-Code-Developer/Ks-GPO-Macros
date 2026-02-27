@@ -113,6 +113,7 @@ fn kill_existing_backend() {
     #[cfg(not(target_os = "windows"))]
     {
         let _ = Command::new("pkill").args(&["-f", "backend.py"]).output();
+        let _ = Command::new("pkill").args(&["-f", "juzo.py"]).output();
     }
     std::thread::sleep(std::time::Duration::from_millis(500));
     log("User-scoped backend kill complete");
@@ -158,6 +159,9 @@ fn kill_all_backend_processes(launcher_pid: u32) {
             .args(&["-u", &std::env::var("USER").unwrap_or_default(), "-f", "backend.py"])
             .output();
         let _ = Command::new("pkill")
+            .args(&["-u", &std::env::var("USER").unwrap_or_default(), "-f", "juzo.py"])
+            .output();
+        let _ = Command::new("pkill")
             .args(&["-f", &format!("--pid {}", launcher_pid)])
             .output();
     }
@@ -165,11 +169,18 @@ fn kill_all_backend_processes(launcher_pid: u32) {
     log("Nuclear kill complete");
 }
 
+fn backend_script_for(macro_name: &str) -> &'static str {
+    match macro_name {
+        "juzo" => "juzo.py",
+        _      => "backend.py",
+    }
+}
+
 #[cfg_attr(debug_assertions, allow(dead_code))]
-fn spawn_backend_process(app: &AppHandle, launcher_pid: u32) -> Child {
+fn spawn_backend_process(app: &AppHandle, launcher_pid: u32, script_name: &str) -> Child {
     let res_dir = normalize_path(&resource_dir(app));
     let python_exe = res_dir.join("Python314").join("pythonw.exe");
-    let script = res_dir.join("backend.py");
+    let script = res_dir.join(script_name);
 
     log(&format!("Python exe: {:?} (exists: {})", python_exe, python_exe.exists()));
     log(&format!("Script:     {:?} (exists: {})", script, script.exists()));
@@ -180,8 +191,9 @@ fn spawn_backend_process(app: &AppHandle, launcher_pid: u32) -> Child {
     let prod_logs = res_dir.join("logs");
     let _ = fs::create_dir_all(&prod_logs);
 
-    let stdout_file = fs::File::create(prod_logs.join("python_stdout.txt")).expect("Failed to create stdout log");
-    let stderr_file = fs::File::create(prod_logs.join("python_stderr.txt")).expect("Failed to create stderr log");
+    let log_stem = script_name.trim_end_matches(".py");
+    let stdout_file = fs::File::create(prod_logs.join(format!("{log_stem}_stdout.txt"))).expect("Failed to create stdout log");
+    let stderr_file = fs::File::create(prod_logs.join(format!("{log_stem}_stderr.txt"))).expect("Failed to create stderr log");
 
     Command::new(&python_exe)
         .arg(&script)
@@ -191,7 +203,7 @@ fn spawn_backend_process(app: &AppHandle, launcher_pid: u32) -> Child {
         .stdout(Stdio::from(stdout_file))
         .stderr(Stdio::from(stderr_file))
         .spawn()
-        .unwrap_or_else(|e| panic!("Failed to spawn backend: {e}"))
+        .unwrap_or_else(|e| panic!("Failed to spawn backend ({script_name}): {e}"))
 }
 
 fn read_backend_port(res_dir: &PathBuf, pid: u32) -> u16 {
@@ -624,8 +636,9 @@ fn reset_window_position(app: AppHandle) -> Result<(), String> {
 fn launch_macro(app: AppHandle, macro_name: String) -> Result<serde_json::Value, String> {
     let launcher_pid = std::process::id();
     let res_dir = resource_dir(&app);
+    let script_name = backend_script_for(&macro_name);
 
-    log(&format!("launch_macro: {macro_name}"));
+    log(&format!("launch_macro: {macro_name} -> {script_name}"));
 
     kill_existing_backend();
 
@@ -633,18 +646,18 @@ fn launch_macro(app: AppHandle, macro_name: String) -> Result<serde_json::Value,
     {
         let python_cmd = if cfg!(target_os = "windows") { "python" } else { "python3" };
         let child = Command::new(python_cmd)
-            .arg("backend.py")
+            .arg(script_name)
             .arg("--pid")
             .arg(launcher_pid.to_string())
             .spawn()
-            .map_err(|e| format!("Failed to start debug backend: {e}"))?;
-        log("DEBUG: backend spawned via launch_macro");
+            .map_err(|e| format!("Failed to start debug backend ({script_name}): {e}"))?;
+        log(&format!("DEBUG: {script_name} spawned via launch_macro"));
         store_child(&app, child);
     }
 
     #[cfg(not(debug_assertions))]
     {
-        let child = spawn_backend_process(&app, launcher_pid);
+        let child = spawn_backend_process(&app, launcher_pid, script_name);
         store_child(&app, child);
     }
 
@@ -708,7 +721,7 @@ fn start_backend(app: AppHandle) -> Result<serde_json::Value, String> {
 
     #[cfg(not(debug_assertions))]
     {
-        let child = spawn_backend_process(&app, launcher_pid);
+        let child = spawn_backend_process(&app, launcher_pid, "backend.py");
         store_child(&app, child);
     }
 

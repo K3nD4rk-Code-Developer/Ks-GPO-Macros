@@ -1,0 +1,36 @@
+{
+    "Hotkeys": {
+        "StartStop": "f1",
+        "Exit": "f3"
+    },
+    "WindowSettings": {
+        "AlwaysOnTop": true,
+        "ShowDebugOverlay": false
+    },
+    "Detection": {
+        "ScanArea": {
+            "X1": 0,
+            "Y1": 0,
+            "X2": 2560,
+            "Y2": 1440
+        },
+        "ConfidenceThreshold": 0.5,
+        "ScanIntervalSeconds": 0.1
+    },
+    "Actions": {
+        "AttackHoldDuration": 0.05,
+        "AttackCooldown": 0.1,
+        "AttackKeys": [
+            "z",
+            "x",
+            "c"
+        ],
+        "ClickOnDetection": true
+    },
+    "Logging": {
+        "WebhookUrl": "",
+        "DiscordUserId": "",
+        "LogDetections": false,
+        "PingDetections": false
+    }
+}

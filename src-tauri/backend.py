@@ -991,7 +991,7 @@ class MegalodonSoundDetector:
         else:
             AppPath = os.path.dirname(os.path.abspath(__file__))
         
-        self.SoundPath = os.path.join(AppPath, "Sounds", "Megalodon.wav")
+        self.SoundPath = os.path.join(AppPath, "sounds", "Megalodon.wav")
         
         self.ModelCoefficients = [1.0902, 0.7471, 0.3720, -1.1829, -1.0433, -0.6251, -0.4898]
         self.ModelIntercept = -3.2025
