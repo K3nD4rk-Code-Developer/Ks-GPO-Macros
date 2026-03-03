@@ -88,12 +88,12 @@
                 "y": 1307
             },
             "SellSelectTopPoint": {
-                "x": 1451,
-                "y": 869
+                "x": 1450,
+                "y": 878
             },
             "SellAcceptPoint": {
-                "x": 1467,
-                "y": 745
+                "x": 1135,
+                "y": 744
             },
             "SellClosePoint": {
                 "x": 1531,
