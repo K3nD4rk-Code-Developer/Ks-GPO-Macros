@@ -1,7 +1,11 @@
 {
     "Hotkeys": {
         "StartStop": "f1",
-        "Exit": "f3"
+        "Exit": "f3",
+        "Panic": "f4",
+        "ToggleOverlay": "f2",
+        "Dodge": "q",
+        "Heal": ""
     },
     "WindowSettings": {
         "AlwaysOnTop": true,
@@ -14,8 +18,78 @@
             "X2": 2560,
             "Y2": 1440
         },
+        "Confidence": 0.5,
+        "ScanInterval": 0.0,
         "ConfidenceThreshold": 0.5,
         "ScanIntervalSeconds": 0.1
+    },
+    "Controls": {
+        "Geppo": true,
+        "GeppoDelay": 80,
+        "GeppoCharges": 2
+    },
+    "Behavior": {
+        "CloseRangeThreshold": 180,
+        "ApproachDistance": 350,
+        "PrioritizeGuardBreak": true,
+        "GbBuffer": 400,
+        "AutoHeal": true,
+        "HealThreshold": 40,
+        "BailThreshold": 10,
+        "AutoDodge": true,
+        "DodgeTiming": 150,
+        "DoubleDodge": false,
+        "AutoLoot": true,
+        "LootDelay": 1500,
+        "PostKillPause": 1000,
+        "StopOnRare": false,
+        "WatchItems": ""
+    },
+    "Timing": {
+        "StartupDelay": 1000,
+        "PostSpawnWait": 2000,
+        "InputRandom": 30,
+        "AutoRejoin": true
+    },
+    "Movesets": [
+        {
+            "enabled": true,
+            "name": "Moveset 1",
+            "range": "any",
+            "skills": [
+                {
+                    "name": "Skill 1",
+                    "key": "",
+                    "cooldown": 3000,
+                    "range": "any",
+                    "guardBreak": false,
+                    "hold": false,
+                    "holdDuration": 600,
+                    "priority": 1,
+                    "enabled": true,
+                    "open": true,
+                    "lastUsed": 0
+                }
+            ]
+        },
+        {
+            "enabled": false,
+            "name": "Moveset 2",
+            "range": "close",
+            "skills": []
+        },
+        {
+            "enabled": false,
+            "name": "Moveset 3",
+            "range": "far",
+            "skills": []
+        }
+    ],
+    "Logging": {
+        "WebhookUrl": "",
+        "DiscordUserId": "",
+        "LogDetections": false,
+        "PingDetections": false
     },
     "Actions": {
         "AttackHoldDuration": 0.05,
@@ -26,11 +100,5 @@
             "c"
         ],
         "ClickOnDetection": true
-    },
-    "Logging": {
-        "WebhookUrl": "",
-        "DiscordUserId": "",
-        "LogDetections": false,
-        "PingDetections": false
     }
 }
