@@ -204,6 +204,21 @@ function checkRequirements(name) {
     if (name === 'autoSelectBait') {
         if (document.getElementById('baitPointStatus')?.classList.contains('unset')) missing = true;
     }
+    if (name === 'enableSpawnDetection') {
+        const warn = document.getElementById('enableSpawnDetectionWarning');
+        const toggle = document.getElementById('enableSpawnDetectionToggle');
+        if (toggle && toggle.classList.contains('active')) {
+            warn?.classList.remove('hidden');
+        } else {
+            warn?.classList.add('hidden');
+        }
+        return;
+    }
+    if (name === 'autoSellFish') {
+        ['sellLeftPointStatus', 'sellMiddlePointStatus', 'sellAcceptPointStatus', 'sellClosePointStatus'].forEach(id => {
+            if (document.getElementById(id)?.classList.contains('unset')) missing = true;
+        });
+    }
     warn.classList.toggle('hidden', !(on && missing));
 }
 
@@ -673,6 +688,15 @@ function loadAllSettings(state) {
     setToggleState('autoSelectBaitToggle', state.autoSelectTopBait);
     setToggleState('storeToBackpackToggle', state.storeToBackpack);
 
+    // --- AUTO SELL SETTINGS ---
+    setExpandableSection('autoSellToggle', 'autoSellExpand', state.autoSellFish || false);
+    setInputValue('sellRepeatCount', state.sellRepeatCount != null ? state.sellRepeatCount : 3);
+    setInputValue('loopsPerSell', state.loopsPerSell != null ? state.loopsPerSell : 50);
+    updatePointStatus('sellLeftPoint', state.sellLeftPoint?.x, state.sellLeftPoint?.y);
+    updatePointStatus('sellMiddlePoint', state.sellMiddlePoint?.x, state.sellMiddlePoint?.y);
+    updatePointStatus('sellAcceptPoint', state.sellAcceptPoint?.x, state.sellAcceptPoint?.y);
+    updatePointStatus('sellClosePoint', state.sellClosePoint?.x, state.sellClosePoint?.y);
+
     setInputValue('kp', state.kp);
     setInputValue('kd', state.kd);
     setInputValue('pdClamp', state.pdClamp);
@@ -802,6 +826,15 @@ async function pollPythonState() {
         if (state.device_name) setInputValue('deviceName', state.device_name);
         if (state.enableSpawnDetection !== undefined) setExpandableSection('enableSpawnDetectionToggle', 'spawnDetectionExpand', state.enableSpawnDetection);
 
+        // --- AUTO SELL POLL ---
+        if (state.autoSellFish !== undefined) setExpandableSection('autoSellToggle', 'autoSellExpand', state.autoSellFish);
+        if (state.sellRepeatCount !== undefined) setInputValue('sellRepeatCount', state.sellRepeatCount);
+        if (state.loopsPerSell !== undefined) setInputValue('loopsPerSell', state.loopsPerSell);
+        updatePointStatus('sellLeftPoint', state.sellLeftPoint?.x, state.sellLeftPoint?.y);
+        updatePointStatus('sellMiddlePoint', state.sellMiddlePoint?.x, state.sellMiddlePoint?.y);
+        updatePointStatus('sellAcceptPoint', state.sellAcceptPoint?.x, state.sellAcceptPoint?.y);
+        updatePointStatus('sellClosePoint', state.sellClosePoint?.x, state.sellClosePoint?.y);
+
         updatePointStatus('waterPoint', state.waterPoint?.x, state.waterPoint?.y);
         updatePointStatus('leftPoint', state.leftPoint?.x, state.leftPoint?.y);
         updatePointStatus('middlePoint', state.middlePoint?.x, state.middlePoint?.y);
@@ -834,6 +867,8 @@ async function pollPythonState() {
         checkRequirements('autoBuyBait');
         checkRequirements('autoCraftBait');
         checkRequirements('autoSelectBait');
+        checkRequirements('autoSellFish');
+        checkRequirements('enableSpawnDetection');
     } catch (e) { }
 }
 

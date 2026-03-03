@@ -137,7 +137,8 @@
             <i class="fab fa-discord"></i>
             <span>Discord</span>
           </a>
-          <a href="https://docs.google.com/document/d/1X1hqX0QCRZjt3ex76ZkpgzjB90Da2UwDGWM8MLJVNOg/edit?usp=sharing" target="_blank" class="link-card">
+          <a href="https://docs.google.com/document/d/1X1hqX0QCRZjt3ex76ZkpgzjB90Da2UwDGWM8MLJVNOg/edit?usp=sharing"
+            target="_blank" class="link-card">
             <i class="fab fa-google"></i>
             <span>Help</span>
           </a>
@@ -413,6 +414,39 @@
         </div>
         <div id="RecipesContainer"></div>
 
+        <div class="section-title">Fish Sell Shop</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Left Dialog Point</span>
+            <div class="row-ctrl">
+              <span class="point-badge unset" id="sellLeftPointStatus">Not Set</span>
+              <button class="btn-sm" onclick="sendToPython('set_sell_left_point','')">Set</button>
+            </div>
+          </div>
+          <div class="row-item">
+            <span class="row-label">Middle Dialog Point</span>
+            <div class="row-ctrl">
+              <span class="point-badge unset" id="sellMiddlePointStatus">Not Set</span>
+              <button class="btn-sm" onclick="sendToPython('set_sell_middle_point','')">Set</button>
+            </div>
+          </div>
+          <div class="row-item">
+            <span class="row-label">Accept Button Point</span>
+            <div class="row-ctrl">
+              <span class="point-badge unset" id="sellAcceptPointStatus">Not Set</span>
+              <button class="btn-sm" onclick="sendToPython('set_sell_accept_point','')">Set</button>
+            </div>
+          </div>
+          <div class="row-item">
+            <span class="row-label">Close Shop Point</span>
+            <div class="row-ctrl">
+              <span class="point-badge unset" id="sellClosePointStatus">Not Set</span>
+              <button class="btn-sm" onclick="sendToPython('set_sell_close_point','')">Set</button>
+            </div>
+          </div>
+          <div class="row-hint">Configure these points before enabling Auto Sell in Automation</div>
+        </div>
+
         <div class="section-title">Devil Fruit</div>
         <div class="panel">
           <div class="row-item"><span class="row-label">Store Location</span>
@@ -549,6 +583,39 @@
             </div>
           </div>
         </div>
+
+        <div class="section-title">Auto Sell Fish</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Enable Auto Sell</span>
+            <div class="row-ctrl">
+              <div class="toggle" id="autoSellFishToggle" onclick="toggleExpandable('autoSellFish','autoSellExpand')">
+              </div>
+            </div>
+          </div>
+          <div class="warn-box hidden" id="autoSellWarning">
+            Set all sell points in Locations → Fish Sell Shop before enabling.
+          </div>
+          <div class="expandable" id="autoSellExpand">
+            <div class="row-item sub">
+              <span class="row-label">Repeat Sell Count</span>
+              <div class="row-ctrl">
+                <input type="number" class="inp" id="sellRepeatCount" value="3" step="1" min="1"
+                  onchange="sendToPython('set_sell_repeat_count',this.value)">
+                <span class="unit">times</span>
+              </div>
+            </div>
+            <div class="row-item sub">
+              <span class="row-label">Sell every N loops</span>
+              <div class="row-ctrl">
+                <input type="number" class="inp" id="loopsPerSell" value="50" step="1" min="1"
+                  onchange="sendToPython('set_loops_per_sell',this.value)">
+                <span class="unit">loops</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
 
       <div class="view" id="tuning">
