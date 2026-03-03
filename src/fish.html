@@ -491,11 +491,22 @@
           <div class="row-item">
             <span class="row-label">Auto Select Top Bait</span>
             <div class="row-ctrl">
-              <div class="toggle" id="autoSelectBaitToggle" onclick="toggleSetting('autoSelectBait')"></div>
+              <div class="toggle" id="autoSelectBaitToggle" onclick="toggleExpandable('autoSelectBait','autoSelectBaitExpand')">
+              </div>
             </div>
           </div>
           <div class="warn-box hidden" id="autoSelectBaitWarning">
             Configure Top Bait Point first — <a onclick="navigateToLocations()">Locations → Bait</a>
+          </div>
+          <div class="expandable" id="autoSelectBaitExpand">
+            <div class="row-item">
+              <span class="row-label">Select every N loops</span>
+              <div class="row-ctrl">
+                <input type="number" class="inp" id="loopsPerTopBait" value="1" step="1" min="1"
+                  onchange="sendToPython('set_loops_per_top_bait', this.value)">
+                <span class="unit">loops</span>
+              </div>
+            </div>
           </div>
         </div>
 

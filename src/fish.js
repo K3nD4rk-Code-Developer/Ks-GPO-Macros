@@ -691,12 +691,13 @@ function loadAllSettings(state) {
     setExpandableSection('autoSellFishToggle', 'autoSellExpand', state.autoSellFish || false);
     setInputValue('sellRepeatCount', state.sellRepeatCount != null ? state.sellRepeatCount : 3);
     setInputValue('loopsPerSell', state.loopsPerSell != null ? state.loopsPerSell : 50);
+    setInputValue('loopsPerTopBait', state.loopsPerTopBait != null ? state.loopsPerTopBait : 1);
     updatePointStatus('sellLeftPoint', state.sellLeftPoint?.x, state.sellLeftPoint?.y);
     updatePointStatus('sellMiddlePoint', state.sellMiddlePoint?.x, state.sellMiddlePoint?.y);
     updatePointStatus('sellSelectTopPoint', state.sellSelectTopPoint?.x, state.sellSelectTopPoint?.y);
     updatePointStatus('sellAcceptPoint', state.sellAcceptPoint?.x, state.sellAcceptPoint?.y);
     updatePointStatus('sellClosePoint', state.sellClosePoint?.x, state.sellClosePoint?.y);
-
+    
     setInputValue('kp', state.kp);
     setInputValue('kd', state.kd);
     setInputValue('pdClamp', state.pdClamp);

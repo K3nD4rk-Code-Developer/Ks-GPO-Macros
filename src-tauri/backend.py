@@ -122,6 +122,7 @@ class ConfigurationManager:
                 'AutoSellFish': False,
             },
             'AutomationFrequencies': {
+                'LoopsPerTopBait': 1,
                 'LoopsPerPurchase': 100,
                 'LoopsPerStore': 50,
                 'LoopsPerCraft': 5,
@@ -344,6 +345,7 @@ class ConfigurationManager:
         
         if "AutomationFrequencies" in LoadedData:
             Freq = LoadedData["AutomationFrequencies"]
+            self.Settings['AutomationFrequencies']['LoopsPerTopBait'] = Freq.get("LoopsPerTopBait", 1)
             self.Settings['AutomationFrequencies']['LoopsPerPurchase'] = Freq.get("LoopsPerPurchase", 100)
             self.Settings['AutomationFrequencies']['LoopsPerStore'] = Freq.get("LoopsPerStore", 50)
             self.Settings['AutomationFrequencies']['LoopsPerCraft'] = Freq.get("LoopsPerCraft", 5)
@@ -516,6 +518,7 @@ class MacroStateManager:
         self.FruitStorageCounter = 0
         self.FishSinceLastCraft = 0
         self.BaitCraftCounter = 0
+        self.TopBaitCounter = 0
         self.SellCounter = 0
         
         self.RobloxWindowFocused = False
@@ -2269,7 +2272,22 @@ class AutomatedFishingSystem:
 
         if not self.State.IsRunning:
             return False
+        
+        if self.Config.Settings['AutomationFeatures']['AutoSelectTopBait']:
+            Points = self.Config.Settings['ClickPoints']
+            if not Points['Bait']:
+                return False
+            
+            LoopsPerTopBait = self.Config.Settings['AutomationFrequencies'].get('LoopsPerTopBait', 1)
+            if ForcePreCast or self.State.TopBaitCounter == 0 or self.State.TopBaitCounter >= LoopsPerTopBait:
+                self.ExecuteSelectTopBait()
+                self.State.TopBaitCounter = 1
+            else:
+                self.State.TopBaitCounter += 1
 
+        if not self.State.IsRunning:
+            return False
+        
         if self.Config.Settings['AutomationFeatures']['AutoCraftBait']:
             Points = self.Config.Settings['ClickPoints']
             if all([Points['CraftLeft'], Points['CraftMiddle'], Points['CraftButton'], Points['CloseMenu'], Points['AddRecipe'], Points['TopRecipe'], len(self.Config.Settings['BaitRecipes']) > 0]):
@@ -2277,6 +2295,9 @@ class AutomatedFishingSystem:
                     self.ExecuteCraftingCycle()
                     if not self.State.IsRunning:
                         return False
+        
+        if not self.State.IsRunning:
+            return False
         
         if self.Config.Settings['AutomationFeatures']['AutoBuyBait']:
             Points = self.Config.Settings['ClickPoints']
@@ -2301,6 +2322,9 @@ class AutomatedFishingSystem:
                 self.State.FruitStorageCounter = 1
             else:
                 self.State.FruitStorageCounter += 1
+        
+        if not self.State.IsRunning:
+            return False
         
         if self.Config.Settings['AutomationFeatures']['AutoSellFish']:
             Points = self.Config.Settings['ClickPoints']
@@ -2670,6 +2694,17 @@ class AutomatedFishingSystem:
         if self.Config.Settings['DevilFruitStorage']['WebhookUrl'] and LogOpts['LogGeneralUpdates']:
             self.Notifier.SendNotification(f"Auto sell cycle complete ({RepeatCount} sell(s)).")
     
+    def ExecuteSelectTopBait(self):
+        Points = self.Config.Settings['ClickPoints']
+        if not Points['Bait']:
+            return False
+        
+        self.State.UpdateStatus("Selecting Top Bait")
+        self.InputController.ClickPoint(Points['Bait'])
+        time.sleep(self.Config.Settings['TimingDelays']['Inventory']['AutoSelectBaitDelay'])
+        
+        return True
+    
     def ExecuteCastSequence(self):
         Points = self.Config.Settings['ClickPoints']
         
@@ -2686,14 +2721,6 @@ class AutomatedFishingSystem:
         self.State.UpdateStatus("Switching to fishing rod")
         keyboard.press_and_release(self.Config.Settings['InventoryHotkeys']['Rod'])
         time.sleep(self.Config.Settings['TimingDelays']['Inventory']['RodSelectDelay'])
-        
-        if not self.State.IsRunning:
-            return False
-        
-        if self.Config.Settings['AutomationFeatures']['AutoSelectTopBait'] and Points['Bait']:
-            self.State.UpdateStatus("Selecting top bait")
-            self.InputController.ClickPoint(Points['Bait'])
-            time.sleep(self.Config.Settings['TimingDelays']['Inventory']['AutoSelectBaitDelay'])
         
         if not self.State.IsRunning:
             return False
@@ -2786,6 +2813,7 @@ class AutomatedFishingSystem:
             "storeFruitShiftDelay": self.Config.Settings['TimingDelays']['DevilFruitStorage']['StoreFruitShiftDelay'],
             "storeFruitBackspaceDelay": self.Config.Settings['TimingDelays']['DevilFruitStorage']['StoreFruitBackspaceDelay'],
             "autoSelectBaitDelay": self.Config.Settings['TimingDelays']['Inventory']['AutoSelectBaitDelay'],
+            "loopsPerTopBait": self.Config.Settings['AutomationFrequencies']['LoopsPerTopBait'],
             "blackScreenThreshold": self.Config.Settings['FishingControl']['Detection']['BlackScreenThreshold'],
             "antiMacroSpamDelay": self.Config.Settings['TimingDelays']['AntiDetection']['AntiMacroSpamDelay'],
             "rodSelectDelay": self.Config.Settings['TimingDelays']['Inventory']['RodSelectDelay'],
@@ -3153,6 +3181,7 @@ def ProcessCommand():
             'set_bait_recipe_point': lambda: HandlePointSelection('BaitRecipePoint'),
             'set_add_recipe_point': lambda: HandlePointSelection('ClickPoints.AddRecipe'),
             'set_top_recipe_point': lambda: HandlePointSelection('ClickPoints.TopRecipe'),
+            'set_loops_per_top_bait': lambda: HandleIntValue('AutomationFrequencies.LoopsPerTopBait'),
             'set_craft_button_point': lambda: HandlePointSelection('ClickPoints.CraftButton'),
             'set_close_menu_point': lambda: HandlePointSelection('ClickPoints.CloseMenu'),
             'set_sell_left_point': lambda: HandlePointSelection('ClickPoints.SellLeft'),
@@ -3162,7 +3191,7 @@ def ProcessCommand():
             'set_sell_repeat_count': lambda: HandleIntValue('AutomationFrequencies.SellRepeatCount'),
             'set_loops_per_sell': lambda: HandleIntValue('AutomationFrequencies.LoopsPerSell'),
             'set_sell_select_top_point': lambda: HandlePointSelection('ClickPoints.SellSelectTop'),
-            
+
             'toggle_always_on_top': lambda: HandleBoolToggle('WindowSettings.AlwaysOnTop'),
             'toggle_debug_overlay': lambda: HandleBoolToggle('WindowSettings.ShowDebugOverlay'),
             'toggle_auto_buy_bait': lambda: HandleBoolToggle('AutomationFeatures.AutoBuyBait'),
@@ -3386,7 +3415,6 @@ def HandleExportSettings():
         
         if Path:
             shutil.copy(MacroSystem.Config.ConfigPath, Path)
-            messagebox.showinfo("Export Successful", f"Settings exported to:\n{Path}")
             return jsonify({"status": "success", "path": Path})
         
         return jsonify({"status": "cancelled"})
@@ -3415,7 +3443,6 @@ def HandleImportSettings():
             try:
                 shutil.copy(Path, MacroSystem.Config.ConfigPath)
                 MacroSystem.Config.LoadFromDisk()
-                messagebox.showinfo("Import Successful", f"Settings imported successfully!\n\nOld settings backed up to:\n{BackupPath}")
                 return jsonify({"status": "success"})
             except Exception as E:
                 shutil.copy(BackupPath, MacroSystem.Config.ConfigPath)
@@ -3503,11 +3530,17 @@ def HandleClearCache():
         MacroSystem.State.BaitCraftCounter = 0
         MacroSystem.State.TotalRecastTimeouts = 0
         MacroSystem.State.ConsecutiveRecastTimeouts = 0
+        MacroSystem.State.TopBaitCounter = 0
+        MacroSystem.State.SellCounter = 0
+
+        MacroSystem.State.TotalFishCaught = 0
+        MacroSystem.State.CumulativeUptime = 0
+        MacroSystem.State.SessionStartTime = time.time() if MacroSystem.State.IsRunning else None
+        MacroSystem.State.LastPeriodicStatsTime = time.time()
+        MacroSystem.State.FishAtLastStats = 0
         
-        messagebox.showinfo("Cache Cleared", "Runtime cache and counters have been reset.")
         return jsonify({"status": "success"})
     except Exception as E:
-        messagebox.showerror("Clear Failed", f"Failed to clear cache:\n{str(E)}")
         return jsonify({"status": "error", "message": str(E)}), 500
 
 

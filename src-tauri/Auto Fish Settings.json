@@ -37,8 +37,8 @@
             }
         },
         "BaitPoint": {
-            "x": 1277,
-            "y": 1064
+            "x": 1289,
+            "y": 1161
         },
         "DevilFruit": {
             "StoreFruitPoint": {
@@ -159,9 +159,10 @@
         "AutoStoreDevilFruit": false,
         "AutoSelectTopBait": false,
         "AutoCraftBait": false,
-        "AutoSellFish": true
+        "AutoSellFish": false
     },
     "AutomationFrequencies": {
+        "LoopsPerTopBait": 1,
         "LoopsPerPurchase": 100,
         "LoopsPerStore": 50,
         "LoopsPerCraft": 5,
@@ -235,8 +236,8 @@
         },
         "PreCast": {
             "SetPrecastEDelay": 0.7,
-            "PreCastClickDelay": 0.4,
-            "PreCastTypeDelay": 0.15,
+            "PreCastClickDelay": 0.3,
+            "PreCastTypeDelay": 0.1,
             "PreCastAntiDetectDelay": 0.05
         },
         "Inventory": {
