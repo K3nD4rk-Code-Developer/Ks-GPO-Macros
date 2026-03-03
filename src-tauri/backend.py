@@ -105,6 +105,7 @@ class ConfigurationManager:
                 'TopRecipe': None,
                 'SellLeft': None,
                 'SellMiddle': None,
+                'SellSelectTop': None,
                 'SellAccept': None,
                 'SellClose': None,
             },
@@ -321,6 +322,7 @@ class ConfigurationManager:
                 self.Settings['ClickPoints']['TopRecipe'] = Craft.get("TopRecipePoint", None)
                 self.Settings['ClickPoints']['SellLeft'] = Craft.get("SellLeftPoint", None)
                 self.Settings['ClickPoints']['SellMiddle'] = Craft.get("SellMiddlePoint", None)
+                self.Settings['ClickPoints']['SellSelectTop'] = Craft.get("SellSelectTopPoint", None)
                 self.Settings['ClickPoints']['SellAccept'] = Craft.get("SellAcceptPoint", None)
                 self.Settings['ClickPoints']['SellClose'] = Craft.get("SellClosePoint", None)
                 self.Settings['BaitRecipes'] = Craft.get("BaitRecipes", [])
@@ -454,6 +456,7 @@ class ConfigurationManager:
                         "TopRecipePoint": self.Settings['ClickPoints']['TopRecipe'],
                         "SellLeftPoint": self.Settings['ClickPoints']['SellLeft'],
                         "SellMiddlePoint": self.Settings['ClickPoints']['SellMiddle'],
+                        "SellSelectTopPoint": self.Settings['ClickPoints']['SellSelectTop'],
                         "SellAcceptPoint": self.Settings['ClickPoints']['SellAccept'],
                         "SellClosePoint": self.Settings['ClickPoints']['SellClose'],
                         "BaitRecipes": self.Settings['BaitRecipes'],
@@ -2608,6 +2611,7 @@ class AutomatedFishingSystem:
         Points = self.Config.Settings['ClickPoints']
         SellLeftPoint = Points['SellLeft']
         SellMiddlePoint = Points['SellMiddle']
+        SellSelectTopPoint = Points['SellSelectTop']
         SellAcceptPoint = Points['SellAccept']
         SellClosePoint = Points['SellClose']
         RepeatCount = self.Config.Settings['AutomationFrequencies']['SellRepeatCount']
@@ -2623,28 +2627,32 @@ class AutomatedFishingSystem:
         if not self.State.IsRunning:
             return
 
+        self.InputController.ClickPoint(SellLeftPoint)
+        if not self.State.IsRunning:
+            return
+
+        self.InputController.ClickPoint(SellMiddlePoint)
+        if not self.State.IsRunning:
+            return
+
+        self.InputController.ClickPoint(SellMiddlePoint)
+        if not self.State.IsRunning:
+            return
+
         for SellIteration in range(RepeatCount):
             if not self.State.IsRunning:
                 break
 
             self.State.UpdateStatus(f"Auto Sell: iteration {SellIteration + 1}/{RepeatCount}")
 
-            self.InputController.ClickPoint(SellLeftPoint)
-            if not self.State.IsRunning:
-                return
-
-            self.InputController.ClickPoint(SellMiddlePoint)
-            if not self.State.IsRunning:
-                return
-
-            self.InputController.ClickPoint(SellMiddlePoint)
-            if not self.State.IsRunning:
-                return
-
             time.sleep(self.Config.Settings['TimingDelays']['PreCast']['PreCastClickDelay'])
             if not self.State.IsRunning:
                 return
 
+            self.InputController.ClickPoint(SellSelectTopPoint)
+            if not self.State.IsRunning:
+                return
+            
             self.State.UpdateStatus(f"Auto Sell: accepting {SellIteration + 1}/{RepeatCount}")
             self.InputController.ClickPoint(SellAcceptPoint)
             if not self.State.IsRunning:
@@ -2790,6 +2798,7 @@ class AutomatedFishingSystem:
             "closeMenuPoint": self.Config.Settings['ClickPoints']['CloseMenu'],
             "sellLeftPoint": self.Config.Settings['ClickPoints']['SellLeft'],
             "sellMiddlePoint": self.Config.Settings['ClickPoints']['SellMiddle'],
+            "sellSelectTopPoint": self.Config.Settings['ClickPoints']['SellSelectTop'],
             "sellAcceptPoint": self.Config.Settings['ClickPoints']['SellAccept'],
             "sellClosePoint": self.Config.Settings['ClickPoints']['SellClose'],
             "autoSellFish": self.Config.Settings['AutomationFeatures']['AutoSellFish'],
@@ -3150,15 +3159,16 @@ def ProcessCommand():
             'set_sell_middle_point': lambda: HandlePointSelection('ClickPoints.SellMiddle'),
             'set_sell_accept_point': lambda: HandlePointSelection('ClickPoints.SellAccept'),
             'set_sell_close_point': lambda: HandlePointSelection('ClickPoints.SellClose'),
-            'toggle_auto_sell_fish': lambda: HandleBoolToggle('AutomationFeatures.AutoSellFish'),
             'set_sell_repeat_count': lambda: HandleIntValue('AutomationFrequencies.SellRepeatCount'),
             'set_loops_per_sell': lambda: HandleIntValue('AutomationFrequencies.LoopsPerSell'),
+            'set_sell_select_top_point': lambda: HandlePointSelection('ClickPoints.SellSelectTop'),
             
             'toggle_always_on_top': lambda: HandleBoolToggle('WindowSettings.AlwaysOnTop'),
             'toggle_debug_overlay': lambda: HandleBoolToggle('WindowSettings.ShowDebugOverlay'),
             'toggle_auto_buy_bait': lambda: HandleBoolToggle('AutomationFeatures.AutoBuyBait'),
             'toggle_auto_store_fruit': lambda: HandleBoolToggle('AutomationFeatures.AutoStoreFruit'),
             'toggle_auto_select_bait': lambda: HandleBoolToggle('AutomationFeatures.AutoSelectTopBait'),
+            'toggle_auto_sell_fish': lambda: HandleBoolToggle('AutomationFeatures.AutoSellFish'),
             'toggle_auto_craft_bait': lambda: HandleBoolToggle('AutomationFeatures.AutoCraftBait'),
             'toggle_store_to_backpack': lambda: HandleBoolToggle('DevilFruitStorage.StoreToBackpack'),
             'toggle_log_devil_fruit': lambda: HandleBoolToggle('LoggingOptions.LogDevilFruit'),

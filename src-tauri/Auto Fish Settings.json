@@ -79,6 +79,26 @@
                 "x": 1811,
                 "y": 401
             },
+            "SellLeftPoint": {
+                "x": 1049,
+                "y": 1300
+            },
+            "SellMiddlePoint": {
+                "x": 1274,
+                "y": 1307
+            },
+            "SellSelectTopPoint": {
+                "x": 1451,
+                "y": 869
+            },
+            "SellAcceptPoint": {
+                "x": 1467,
+                "y": 745
+            },
+            "SellClosePoint": {
+                "x": 1531,
+                "y": 398
+            },
             "BaitRecipes": [
                 {
                     "BaitRecipePoint": {
@@ -136,16 +156,19 @@
     },
     "AutomationFeatures": {
         "AutoBuyCommonBait": false,
-        "AutoStoreDevilFruit": true,
+        "AutoStoreDevilFruit": false,
         "AutoSelectTopBait": false,
-        "AutoCraftBait": false
+        "AutoCraftBait": false,
+        "AutoSellFish": true
     },
     "AutomationFrequencies": {
         "LoopsPerPurchase": 100,
         "LoopsPerStore": 50,
         "LoopsPerCraft": 5,
         "CraftsPerCycle": 40,
-        "FishCountPerCraft": 0
+        "FishCountPerCraft": 0,
+        "SellRepeatCount": 3,
+        "LoopsPerSell": 0
     },
     "DevilFruitStorage": {
         "StoreToBackpack": false,

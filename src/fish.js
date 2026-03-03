@@ -688,12 +688,12 @@ function loadAllSettings(state) {
     setToggleState('autoSelectBaitToggle', state.autoSelectTopBait);
     setToggleState('storeToBackpackToggle', state.storeToBackpack);
 
-    // --- AUTO SELL SETTINGS ---
-    setExpandableSection('autoSellToggle', 'autoSellExpand', state.autoSellFish || false);
+    setExpandableSection('autoSellFishToggle', 'autoSellExpand', state.autoSellFish || false);
     setInputValue('sellRepeatCount', state.sellRepeatCount != null ? state.sellRepeatCount : 3);
     setInputValue('loopsPerSell', state.loopsPerSell != null ? state.loopsPerSell : 50);
     updatePointStatus('sellLeftPoint', state.sellLeftPoint?.x, state.sellLeftPoint?.y);
     updatePointStatus('sellMiddlePoint', state.sellMiddlePoint?.x, state.sellMiddlePoint?.y);
+    updatePointStatus('sellSelectTopPoint', state.sellSelectTopPoint?.x, state.sellSelectTopPoint?.y);
     updatePointStatus('sellAcceptPoint', state.sellAcceptPoint?.x, state.sellAcceptPoint?.y);
     updatePointStatus('sellClosePoint', state.sellClosePoint?.x, state.sellClosePoint?.y);
 
@@ -826,14 +826,13 @@ async function pollPythonState() {
         if (state.device_name) setInputValue('deviceName', state.device_name);
         if (state.enableSpawnDetection !== undefined) setExpandableSection('enableSpawnDetectionToggle', 'spawnDetectionExpand', state.enableSpawnDetection);
 
-        // --- AUTO SELL POLL ---
         if (state.autoSellFish !== undefined) setExpandableSection('autoSellToggle', 'autoSellExpand', state.autoSellFish);
         if (state.sellRepeatCount !== undefined) setInputValue('sellRepeatCount', state.sellRepeatCount);
-        if (state.loopsPerSell !== undefined) setInputValue('loopsPerSell', state.loopsPerSell);
         updatePointStatus('sellLeftPoint', state.sellLeftPoint?.x, state.sellLeftPoint?.y);
         updatePointStatus('sellMiddlePoint', state.sellMiddlePoint?.x, state.sellMiddlePoint?.y);
         updatePointStatus('sellAcceptPoint', state.sellAcceptPoint?.x, state.sellAcceptPoint?.y);
         updatePointStatus('sellClosePoint', state.sellClosePoint?.x, state.sellClosePoint?.y);
+        updatePointStatus('sellSelectTopPoint', state.sellSelectTopPoint?.x, state.sellSelectTopPoint?.y);
 
         updatePointStatus('waterPoint', state.waterPoint?.x, state.waterPoint?.y);
         updatePointStatus('leftPoint', state.leftPoint?.x, state.leftPoint?.y);
