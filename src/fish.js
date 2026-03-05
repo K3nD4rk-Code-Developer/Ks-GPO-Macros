@@ -204,16 +204,6 @@ function checkRequirements(name) {
     if (name === 'autoSelectBait') {
         if (document.getElementById('baitPointStatus')?.classList.contains('unset')) missing = true;
     }
-    if (name === 'enableSpawnDetection') {
-        const warn = document.getElementById('enableSpawnDetectionWarning');
-        const toggle = document.getElementById('enableSpawnDetectionToggle');
-        if (toggle && toggle.classList.contains('active')) {
-            warn?.classList.remove('hidden');
-        } else {
-            warn?.classList.add('hidden');
-        }
-        return;
-    }
     if (name === 'autoSellFish') {
         ['sellLeftPointStatus', 'sellMiddlePointStatus', 'sellAcceptPointStatus', 'sellClosePointStatus'].forEach(id => {
             if (document.getElementById(id)?.classList.contains('unset')) missing = true;
@@ -676,16 +666,17 @@ function loadAllSettings(state) {
     window.lastValidRodSlot = state.rodHotkey || '1';
     window.lastValidSecondarySlot = state.anythingElseHotkey || '2';
     renderDevilFruitSlotSelector(dfSlots);
-
+    
     setToggleState('alwaysOnTopToggle', state.alwaysOnTop);
     setToggleState('debugOverlayToggle', state.showDebugOverlay);
     setToggleState('megalodonSoundToggle', state.megalodonSoundEnabled);
-
+    
     setExpandableSection('enableSpawnDetectionToggle', 'spawnDetectionExpand', state.enableSpawnDetection || false);
     setExpandableSection('autoBuyBaitToggle', 'autoBuyExpand', state.autoBuyCommonBait);
     setExpandableSection('autoCraftBaitToggle', 'autoCraftExpand', state.autoCraftBait);
     setExpandableSection('autoStoreFruitToggle', 'autoStoreExpand', state.autoStoreDevilFruit);
-    setToggleState('autoSelectBaitToggle', state.autoSelectTopBait);
+    setExpandableSection('autoUsePotionBrewToggle', 'autoPotionBrewExpand', state.autoUsePotionBrew || false);
+    setExpandableSection('autoSelectBaitToggle', 'autoSelectBaitExpand', state.autoSelectTopBait);
     setToggleState('storeToBackpackToggle', state.storeToBackpack);
 
     setExpandableSection('autoSellFishToggle', 'autoSellExpand', state.autoSellFish || false);
@@ -735,6 +726,11 @@ function loadAllSettings(state) {
     setInputValue('discordUserId', state.discordUserId || '');
     setInputValue('soundSensitivity', state.soundSensitivity || 0.1);
     setInputValue('spawnScanInterval', state.spawnScanInterval || 5.0);
+
+    setInputValue('potionBrewInterval', state.potionBrewIntervalMinutes != null ? state.potionBrewIntervalMinutes : 30);
+    setInputValue('potionBrewSlot', state.potionBrewSlot || '4');
+    setInputValue('brewEquipDelay', state.brewEquipDelay != null ? state.brewEquipDelay : 0.3);
+    setInputValue('brewUseDelay', state.brewUseDelay != null ? state.brewUseDelay : 4.5);
 
     setExpandableSection('logDevilFruitToggle', 'logDevilFruitExpand', state.logDevilFruit || false);
     setToggleState('pingDevilFruitToggle', state.pingDevilFruit || false);
@@ -849,6 +845,10 @@ async function pollPythonState() {
         updatePointStatus('addRecipePoint', state.addRecipePoint?.x, state.addRecipePoint?.y);
         updatePointStatus('topRecipePoint', state.topRecipePoint?.x, state.topRecipePoint?.y);
         updatePointStatus('devilFruitLocationPoint', state.devilFruitLocationPoint?.x, state.devilFruitLocationPoint?.y);
+
+        if (state.autoUsePotionBrew !== undefined) setExpandableSection('autoUsePotionBrewToggle', 'autoPotionBrewExpand', state.autoUsePotionBrew);
+        if (state.potionBrewIntervalMinutes !== undefined) setInputValue('potionBrewInterval', state.potionBrewIntervalMinutes);
+        if (state.potionBrewSlot !== undefined) setInputValue('potionBrewSlot', state.potionBrewSlot);
 
         if (state.discordUserId !== undefined) setInputValue('discordUserId', state.discordUserId);
         setInputValue('periodicStatsInterval', state.periodicStatsInterval || 5);

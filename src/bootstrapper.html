@@ -7,109 +7,116 @@
     <title>K's Macros — Launcher</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link
-        href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&display=swap"
         rel="stylesheet">
-    <link rel="stylesheet" href="boot.css">
+    <link rel="stylesheet" href="bootstrapper.css">
 </head>
 
 <body>
 
+    <div class="flash-overlay" id="flashOverlay"></div>
     <div class="drag-region"></div>
 
     <div class="shell">
-        <div class="corner corner-tl"></div>
-        <div class="corner corner-tr"></div>
-        <div class="corner corner-bl"></div>
-        <div class="corner corner-br"></div>
 
         <div class="header">
-            <div class="logo-mark">
-                <svg viewBox="0 0 52 52" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <g class="logo-ring">
-                        <circle cx="26" cy="26" r="24" stroke="rgba(0,212,255,0.2)" stroke-width="1" />
-                        <circle cx="26" cy="2" r="2.5" fill="#00d4ff" opacity="0.9" />
-                        <circle cx="50" cy="26" r="1.5" fill="#00d4ff" opacity="0.5" />
-                        <circle cx="26" cy="50" r="2" fill="#00d4ff" opacity="0.7" />
-                    </g>
-                </svg>
-                <img class="logo-img" src="assets/content.png" alt="K's Macros logo" />
+            <div class="brand-mark"></div>
+            <div class="brand-info">
+                <span class="brand-name">K's Macros</span>
+                <span class="brand-sub">Launcher</span>
             </div>
-            <div class="brand-name">K's Macros</div>
-            <div class="brand-sub">Bootstrapper</div>
+            <span class="ver-badge" id="footerVer">v0.0.0</span>
         </div>
 
-        <div class="update-badge" id="updateBadge">
-            <div class="badge-icon">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                    stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="13 17 18 12 13 7" />
-                    <polyline points="6 17 11 12 6 7" />
-                </svg>
+        <div class="update-notice" id="updateBadge">
+            <div class="update-dot"></div>
+            <div class="update-text">
+                <div class="update-title">Update available — <span id="newVer">v0.0.0</span></div>
+                <div class="update-desc">You are on <span id="curVer">—</span></div>
             </div>
-            <div class="badge-text">
-                <div class="badge-title">Update Available — <span id="newVer">v0.0.0</span></div>
-                <div class="badge-desc">You are on <span id="curVer"></span> · Download to get the latest</div>
+        </div>
+
+        <div class="sysinfo">
+            <div class="sysinfo-card">
+                <div class="sysinfo-label">Memory</div>
+                <div class="sysinfo-value" id="sysRam">—</div>
+                <div class="sysinfo-sub" id="sysRamSub">loading…</div>
             </div>
+            <div class="sysinfo-card">
+                <div class="sysinfo-label">Launches</div>
+                <div class="sysinfo-value" id="sysLaunches">—</div>
+                <div class="sysinfo-sub">total</div>
+            </div>
+            <div class="sysinfo-card">
+                <div class="sysinfo-label">Status</div>
+                <div class="sysinfo-value" id="sysStatus">—</div>
+                <div class="sysinfo-sub" id="sysStatusSub">environment</div>
+            </div>
+        </div>
+
+        <div class="steps" id="stepsContainer">
+
+            <div class="step active" id="step-update">
+                <div class="step-icon" id="icon-update">
+                    <div class="spinner"></div>
+                </div>
+                <div class="step-body">
+                    <div class="step-top">
+                        <div class="step-label">Checking for updates</div>
+                        <div class="step-ts" id="ts-update">—</div>
+                    </div>
+                    <div class="step-detail" id="detail-update">Contacting GitHub…</div>
+                </div>
+            </div>
+
+            <div class="step skipped" id="step-kill">
+                <div class="step-icon" id="icon-kill">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6" />
+                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                    </svg>
+                </div>
+                <div class="step-body">
+                    <div class="step-top">
+                        <div class="step-label">Cleaning up old processes</div>
+                        <div class="step-ts" id="ts-kill">—</div>
+                    </div>
+                    <div class="step-detail" id="detail-kill">Waiting…</div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="log-wrap">
+            <div class="log-header">
+                <span class="log-title">Console</span>
+                <div class="log-dot" id="logDot"></div>
+            </div>
+            <div class="log-body" id="logBody"></div>
         </div>
 
         <div class="progress-wrap">
             <div class="progress-bar" id="progressBar"></div>
         </div>
 
-        <div class="steps" id="stepsContainer">
-            <div class="step" id="step-update" data-idx="0">
-                <div class="step-icon" id="icon-update">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8" />
-                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                </div>
-                <div class="step-body">
-                    <div class="step-label">Checking for updates</div>
-                    <div class="step-detail" id="detail-update">Contacting GitHub…</div>
-                </div>
-            </div>
-
-            <div class="step skipped" id="step-kill" data-idx="1">
-                <div class="step-icon" id="icon-kill">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                        stroke-linecap="round" stroke-linejoin="round">
-                        <polyline points="3 6 5 6 21 6" />
-                        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
-                        <path d="M10 11v6" />
-                        <path d="M14 11v6" />
-                        <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
-                    </svg>
-                </div>
-                <div class="step-body">
-                    <div class="step-label">Cleaning up old processes</div>
-                    <div class="step-detail" id="detail-kill">Waiting…</div>
-                </div>
-            </div>
+        <div class="action-row" id="updateRow">
+            <button class="btn btn-warn" onclick="downloadUpdate()">Download Update</button>
+            <button class="btn" onclick="dismissUpdate()">Skip</button>
         </div>
 
-        <div class="launch-area">
-            <div class="update-row" id="updateRow">
-                <button class="btn btn-warn" onclick="downloadUpdate()">Download Update</button>
-                <button class="btn btn-ghost" onclick="dismissUpdate()">Skip</button>
-            </div>
-            <button class="btn btn-launch" id="btnLaunch" disabled onclick="launchApp()">
-                Preparing…
-            </button>
-        </div>
+        <button class="btn btn-launch" id="btnLaunch" disabled onclick="launchApp()">Preparing…</button>
 
         <div class="footer">
-            <div class="ver-tag" id="footerVer"></div>
-            <div class="status-dot-row">
+            <div class="footer-ver" id="footerVerBottom"></div>
+            <div class="status-row">
                 <div class="sdot pulse" id="statusDot"></div>
                 <span id="statusLabel">Initializing…</span>
             </div>
         </div>
-    </div>
 
-    <div class="launch-ripple" id="launchRipple">
-        <div class="ripple-ring" id="rippleRing"></div>
     </div>
 
     <script src="bootstrapper.js"></script>

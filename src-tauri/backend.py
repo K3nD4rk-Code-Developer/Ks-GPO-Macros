@@ -112,11 +112,13 @@ class ConfigurationManager:
             'InventoryHotkeys': {
                 'Rod': '1',
                 'Alternate': '2',
-                'DevilFruits': ['3']
+                'DevilFruits': ['3'],
+                'PotionBrewSlot': '4'
             },
             'AutomationFeatures': {
                 'AutoBuyBait': False,
                 'AutoCraftBait': False,
+                'AutoUsePotionBrew': False,
                 'AutoStoreFruit': False,
                 'AutoSelectTopBait': False,
                 'AutoSellFish': False,
@@ -130,6 +132,7 @@ class ConfigurationManager:
                 'FishCountPerCraft': 50,
                 'SellRepeatCount': 3,
                 'LoopsPerSell': 50,
+                'PotionBrewIntervalMinutes': 30,
             },
             'DevilFruitStorage': {
                 'StoreToBackpack': False,
@@ -227,7 +230,11 @@ class ConfigurationManager:
                     'CraftTopRecipeDelay': 0.2,
                     'CraftButtonClickDelay': 0.025,
                     'CraftCloseMenuDelay': 0.2
-                }
+                },
+                'PotionBrew': {
+                    'BrewEquipDelay': 0.3,
+                    'BrewUseDelay': 4.5,
+                },
             },
             'SpawnDetection': {
                 'EnableSpawnDetection': False,
@@ -334,6 +341,7 @@ class ConfigurationManager:
             self.Settings['InventoryHotkeys']['Rod'] = Inv.get("RodHotkey", '1')
             self.Settings['InventoryHotkeys']['Alternate'] = Inv.get("AnythingElseHotkey", '2')
             self.Settings['InventoryHotkeys']['DevilFruits'] = Inv.get("DevilFruitHotkeys", ['3'])
+            self.Settings['InventoryHotkeys']['PotionBrewSlot'] = Inv.get("PotionBrewSlot", '4')
         
         if "AutomationFeatures" in LoadedData:
             Auto = LoadedData["AutomationFeatures"]
@@ -342,6 +350,7 @@ class ConfigurationManager:
             self.Settings['AutomationFeatures']['AutoStoreFruit'] = Auto.get("AutoStoreDevilFruit", False)
             self.Settings['AutomationFeatures']['AutoSelectTopBait'] = Auto.get("AutoSelectTopBait", False)
             self.Settings['AutomationFeatures']['AutoSellFish'] = Auto.get("AutoSellFish", False)
+            self.Settings['AutomationFeatures']['AutoUsePotionBrew'] = Auto.get("AutoUsePotionBrew", False)
         
         if "AutomationFrequencies" in LoadedData:
             Freq = LoadedData["AutomationFrequencies"]
@@ -353,7 +362,8 @@ class ConfigurationManager:
             self.Settings['AutomationFrequencies']['FishCountPerCraft'] = Freq.get("FishCountPerCraft", 50)
             self.Settings['AutomationFrequencies']['SellRepeatCount'] = Freq.get("SellRepeatCount", 3)
             self.Settings['AutomationFrequencies']['LoopsPerSell'] = Freq.get("LoopsPerSell", 50)
-        
+            self.Settings['AutomationFrequencies']['PotionBrewIntervalMinutes'] = Freq.get("PotionBrewIntervalMinutes", 30)
+
         if "DevilFruitStorage" in LoadedData:
             Df = LoadedData["DevilFruitStorage"]
             self.Settings['DevilFruitStorage']['StoreToBackpack'] = Df.get("StoreToBackpack", False)
@@ -423,7 +433,7 @@ class ConfigurationManager:
         
         if "TimingDelays" in LoadedData:
             Timing = LoadedData["TimingDelays"]
-            for Category in ['RobloxWindow', 'PreCast', 'Inventory', 'DevilFruitStorage', 'AntiDetection', 'Crafting']:
+            for Category in ['RobloxWindow', 'PreCast', 'Inventory', 'DevilFruitStorage', 'AntiDetection', 'Crafting', 'PotionBrew']:
                 if Category in Timing:
                     self.Settings['TimingDelays'][Category].update(Timing[Category])
         
@@ -468,12 +478,14 @@ class ConfigurationManager:
                 "InventoryHotkeys": {
                     "RodHotkey": self.Settings['InventoryHotkeys']['Rod'],
                     "AnythingElseHotkey": self.Settings['InventoryHotkeys']['Alternate'],
+                    "PotionBrewSlot": self.Settings['InventoryHotkeys']['PotionBrewSlot'],
                     "DevilFruitHotkeys": self.Settings['InventoryHotkeys']['DevilFruits']
                 },
                 "AutomationFeatures": {
                     "AutoBuyCommonBait": self.Settings['AutomationFeatures']['AutoBuyBait'],
                     "AutoStoreDevilFruit": self.Settings['AutomationFeatures']['AutoStoreFruit'],
                     "AutoSelectTopBait": self.Settings['AutomationFeatures']['AutoSelectTopBait'],
+                    "AutoUsePotionBrew": self.Settings['AutomationFeatures']['AutoUsePotionBrew'],
                     "AutoCraftBait": self.Settings['AutomationFeatures']['AutoCraftBait'],
                     "AutoSellFish": self.Settings['AutomationFeatures']['AutoSellFish'],
                 },
@@ -508,7 +520,8 @@ class MacroStateManager:
         self.CumulativeUptime = 0
         self.SessionStartTime = None
         self.LastFishCaptureTime = None
-        
+        self.LastPotionBrewTime = None
+
         self.TotalRecastTimeouts = 0
         self.ConsecutiveRecastTimeouts = 0
         self.LastPeriodicStatsTime = None
@@ -2083,6 +2096,35 @@ class AutomatedFishingSystem:
         self.State.LastPeriodicStatsTime = time.time()
         self.State.FishAtLastStats = self.State.TotalFishCaught
     
+    def ExecuteCastSequence(self):
+        Points = self.Config.Settings['ClickPoints']
+        
+        if not Points['Water']:
+            return False
+        
+        self.EquipRod()
+                
+        if not self.State.IsRunning:
+            return False
+        
+        self.State.UpdateStatus("Casting fishing line")
+        ctypes.windll.user32.SetCursorPos(Points['Water']['x'], Points['Water']['y'])
+        time.sleep(self.Config.Settings['TimingDelays']['AntiDetection']['CursorAntiDetectDelay'])
+        ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
+        
+        if not self.State.IsRunning:
+            return False
+        
+        pyautogui.mouseDown()
+        time.sleep(self.Config.Settings['FishingControl']['Timing']['CastHoldDuration'])
+        
+        if not self.State.IsRunning:
+            pyautogui.mouseUp()
+            return False
+        
+        pyautogui.mouseUp()
+        return True
+    
     def ExecuteMacroLoop(self):
         LastActivity = time.time()
         ErrorCount = 0
@@ -2339,6 +2381,18 @@ class AutomatedFishingSystem:
                     self.State.UpdateStatus(f"Skipping sell ({self.State.SellCounter}/{LoopsPerSell})")
                     self.State.SellCounter += 1
 
+        if not self.State.IsRunning:
+            return False
+        
+        if self.Config.Settings["AutomationFeatures"]["AutoUsePotionBrew"]:
+            IntervalSeconds = self.Config.Settings['AutomationFrequencies']['PotionBrewIntervalMinutes'] * 60
+            Now = time.time()
+
+            if ForcePreCast or self.State.LastPotionBrewTime is None or (Now - self.State.LastPotionBrewTime) >= IntervalSeconds:
+                self.ExecutePotionBrew()
+                if not self.State.IsRunning:
+                    return False
+
         self.State.UpdateStatus("Pre-cast complete")
         return True
     
@@ -2366,14 +2420,7 @@ class AutomatedFishingSystem:
             if not self.State.IsRunning:
                 return
         
-        keyboard.press_and_release(self.Config.Settings['InventoryHotkeys']['Alternate'])
-        time.sleep(self.Config.Settings['TimingDelays']['Inventory']['RodSelectDelay'])
-
-        keyboard.press_and_release(self.Config.Settings['InventoryHotkeys']['Rod'])
-        time.sleep(self.Config.Settings['TimingDelays']['Inventory']['RodSelectDelay'])
-
-        keyboard.press_and_release(self.Config.Settings['InventoryHotkeys']['Rod'])
-        time.sleep(self.Config.Settings['TimingDelays']['Inventory']['RodSelectDelay'])
+        self.UnequipAll()
         
         self.State.UpdateStatus("Opening craft menu")
         keyboard.press_and_release('t')
@@ -2473,6 +2520,8 @@ class AutomatedFishingSystem:
             return
         
         Points = self.Config.Settings['ClickPoints']
+
+        self.UnequipAll()
         
         self.State.UpdateStatus("Clicking shop left button")
         self.InputController.ClickPoint(Points['ShopLeft'])
@@ -2524,10 +2573,13 @@ class AutomatedFishingSystem:
             if not self.State.IsRunning:
                 return
             
-            if Points['StoreFruit']:
-                self.State.UpdateStatus("Checking fruit status")
-                InitGreen = ColorDetector.DetectGreenish(Points['StoreFruit'])
-                    
+            self.State.UpdateStatus("Checking Fruit Status")
+
+            InitGreen = False
+            if ColorDetector.DetectGreenish(Points['StoreFruit']):
+                InitGreen = True
+
+            if Points['StoreFruit']:                    
                 self.InputController.ClickPoint(Points['StoreFruit'])
                 if not self.State.IsRunning:
                     return
@@ -2535,38 +2587,52 @@ class AutomatedFishingSystem:
                 FruitLoc = Points['DevilFruitLocation']
                 ctypes.windll.user32.SetCursorPos(FruitLoc['x'], FruitLoc['y'])
                 time.sleep(0.1)
+
+                self.HumanizeMovement()
+
                 if not self.State.IsRunning:
                     return
 
-                win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+                pyautogui.mouseDown()
                 time.sleep(0.1)
                 if not self.State.IsRunning:
-                    win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+                    pyautogui.mouseUp()
                     return
 
                 StartY = FruitLoc['y']
                 TargetY = StartY - 150
-                Steps = 100
-                Duration = 2.0
 
-                for I in range(Steps + 1):
-                    Progress = I / Steps
-                    CurrentY = int(StartY + (Progress * -150))
-                    win32api.SetCursorPos(FruitLoc['x'], CurrentY)
-                    time.sleep(Duration / Steps)
-                    
-                    if not self.State.IsRunning:
-                        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
-                        return
+                ctypes.windll.user32.SetCursorPos(FruitLoc['x'], TargetY)
+                self.HumanizeMovement()
 
-                time.sleep(0.1)
-
-                win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+                pyautogui.mouseUp()
                 time.sleep(0.15)
                 
                 keyboard.press_and_release('`')
                 time.sleep(self.Config.Settings['TimingDelays']['DevilFruitStorage']['StoreFruitHotkeyDelay'])
-                
+
+                if self.Config.Settings['DevilFruitStorage']['WebhookUrl']:
+                    if InitGreen and not ColorDetector.DetectGreenish(Points['StoreFruit']):
+                        DetectedFruit = None
+                        if self.OcrManager.Enabled:
+                            RawDetection = self.FruitDetector.DetectNewItem()
+                            if RawDetection:
+                                ClosestMatch = self.FruitDetector.GetClosestFruit(RawDetection, Cutoff=0.6)
+                                if ClosestMatch:
+                                    DetectedFruit = ClosestMatch
+
+                        if DetectedFruit:
+                            self.State.UpdateStatus("Fruit stored successfully")
+                            self.State.IncrementDevilFruitCount()
+                            self.Notifier.SendNotification(f"Devil Fruit {DetectedFruit} stored successfully!")
+                        else:
+                            self.State.UpdateStatus("Fruit stored successfully")
+                            self.State.IncrementDevilFruitCount()
+                            self.Notifier.SendNotification("Devil Fruit stored successfully!")
+                    else:
+                        self.State.UpdateStatus("Fruit storage failed")
+                        self.Notifier.SendNotification("Devil Fruit could not be stored.")
+
         elif Points['StoreFruit']:
             for Slot in self.Config.Settings['InventoryHotkeys']['DevilFruits']:
                 keyboard.press_and_release(self.Config.Settings['InventoryHotkeys']['Alternate'])
@@ -2583,7 +2649,7 @@ class AutomatedFishingSystem:
                 if not self.State.IsRunning:
                     return
 
-                self.State.UpdateStatus("Checking fruit status")
+                self.State.UpdateStatus("Checking Fruit Status")
                 InitGreen = False
                 if ColorDetector.DetectGreenish(Points['StoreFruit']):
                     InitGreen = True
@@ -2641,10 +2707,10 @@ class AutomatedFishingSystem:
         RepeatCount = self.Config.Settings['AutomationFrequencies']['SellRepeatCount']
 
         if not (SellLeftPoint and SellMiddlePoint and SellAcceptPoint):
-            self.State.UpdateStatus("Auto Sell: missing points, skipping")
+            self.State.UpdateStatus("Missing points, skipping")
             return
 
-        self.State.UpdateStatus("Auto Sell: opening fish shop")
+        self.State.UpdateStatus("Opening Fish Shop")
 
         keyboard.press_and_release('t')
         time.sleep(self.Config.Settings['TimingDelays']['PreCast']['SetPrecastEDelay'])
@@ -2667,7 +2733,7 @@ class AutomatedFishingSystem:
             if not self.State.IsRunning:
                 break
 
-            self.State.UpdateStatus(f"Auto Sell: iteration {SellIteration + 1}/{RepeatCount}")
+            self.State.UpdateStatus(f"Iteration {SellIteration + 1}/{RepeatCount}")
 
             time.sleep(self.Config.Settings['TimingDelays']['PreCast']['PreCastClickDelay'])
             if not self.State.IsRunning:
@@ -2677,7 +2743,7 @@ class AutomatedFishingSystem:
             if not self.State.IsRunning:
                 return
             
-            self.State.UpdateStatus(f"Auto Sell: accepting {SellIteration + 1}/{RepeatCount}")
+            self.State.UpdateStatus(f"Accepting {SellIteration + 1}/{RepeatCount}")
             self.InputController.ClickPoint(SellAcceptPoint)
             if not self.State.IsRunning:
                 return
@@ -2685,10 +2751,10 @@ class AutomatedFishingSystem:
             time.sleep(self.Config.Settings['TimingDelays']['PreCast']['PreCastClickDelay'])
 
         if SellClosePoint:
-            self.State.UpdateStatus("Auto Sell: closing shop")
+            self.State.UpdateStatus("Closing Shop")
             self.InputController.ClickPoint(SellClosePoint)
 
-        self.State.UpdateStatus("Auto Sell: cycle complete")
+        self.State.UpdateStatus("Cycle Complete")
 
         LogOpts = self.Config.Settings['LoggingOptions']
         if self.Config.Settings['DevilFruitStorage']['WebhookUrl'] and LogOpts['LogGeneralUpdates']:
@@ -2699,49 +2765,180 @@ class AutomatedFishingSystem:
         if not Points['Bait']:
             return False
         
+        self.EquipRod()
+
         self.State.UpdateStatus("Selecting Top Bait")
         self.InputController.ClickPoint(Points['Bait'])
         time.sleep(self.Config.Settings['TimingDelays']['Inventory']['AutoSelectBaitDelay'])
         
         return True
-    
-    def ExecuteCastSequence(self):
+
+    def ExecutePotionBrew(self):
+        self.State.UpdateStatus("Starting Potion Brew Cycle")
+        Delays = self.Config.Settings['TimingDelays']['PotionBrew']
         Points = self.Config.Settings['ClickPoints']
-        
-        if not Points['Water']:
+
+        ItemPos = self.FindItemOnScreen()
+
+        if ItemPos is None:
+            keyboard.press_and_release('`')
+            time.sleep(0.1)
+
+            if not self.State.IsRunning:
+                return False
+
+            ItemPos = self.FindItemOnScreen(InventoryScan=True)
+
+            if ItemPos is None:
+                self.State.UpdateStatus("Item not found")
+                keyboard.press_and_release('`')
+                return False
+
+            Cx, Cy = ItemPos
+            ctypes.windll.user32.SetCursorPos(Cx, Cy)
+            ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
+            time.sleep(0.05)
+            pyautogui.click()
+            time.sleep(0.05)
+            pyautogui.click()
+            time.sleep(0.2)
+            keyboard.press_and_release('`')
+
+        if not self.State.IsRunning:
             return False
-        
-        self.State.UpdateStatus("Switching to alternate slot")
-        keyboard.press_and_release(self.Config.Settings['InventoryHotkeys']['Alternate'])
-        time.sleep(self.Config.Settings['TimingDelays']['Inventory']['RodSelectDelay'])
-        
+
+        keyboard.press_and_release(self.Config.Settings['InventoryHotkeys']['PotionBrewSlot'])
+
+        if not self.State.IsRunning:
+            return False
+
+        time.sleep(Delays['BrewEquipDelay'])
+        if not self.State.IsRunning:
+            return False
+
+        ctypes.windll.user32.SetCursorPos(Points['Water']['x'], Points['Water']['y'])
+        time.sleep(self.Config.Settings['TimingDelays']['AntiDetection']['CursorAntiDetectDelay'])
+        if not self.State.IsRunning:
+            return False
+
+        ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
+        pyautogui.click()
+
+        if not self.State.IsRunning:
+            return False
+
+        self.State.LastPotionBrewTime = time.time()
+        self.State.UpdateStatus("Potion brew pouring, waiting to finish")
+        time.sleep(Delays['BrewUseDelay'])
+        self.State.UpdateStatus("Potion brew used successfully")
+
+    def EquipRod(self):
         if not self.State.IsRunning:
             return False
         
-        self.State.UpdateStatus("Switching to fishing rod")
+        self.State.UpdateStatus("Switching to Alternate Slot")
+        keyboard.press_and_release(self.Config.Settings['InventoryHotkeys']['Alternate'])
+        time.sleep(self.Config.Settings['TimingDelays']['Inventory']['RodSelectDelay'])
+
+        if not self.State.IsRunning:
+            return False
+        
+        self.State.UpdateStatus("Switching to Fishing Rod")
+        keyboard.press_and_release(self.Config.Settings['InventoryHotkeys']['Rod'])
+        time.sleep(self.Config.Settings['TimingDelays']['Inventory']['RodSelectDelay'])
+        
+        return True
+    
+    def UnequipAll(self):
+        if not self.State.IsRunning:
+            return False
+        
+        self.State.UpdateStatus("Un-Equipping all items")
+        keyboard.press_and_release(self.Config.Settings['InventoryHotkeys']['Alternate'])
+        time.sleep(self.Config.Settings['TimingDelays']['Inventory']['RodSelectDelay'])
+
+        if not self.State.IsRunning:
+            return False
+        
         keyboard.press_and_release(self.Config.Settings['InventoryHotkeys']['Rod'])
         time.sleep(self.Config.Settings['TimingDelays']['Inventory']['RodSelectDelay'])
         
         if not self.State.IsRunning:
             return False
         
-        self.State.UpdateStatus("Casting fishing line")
-        ctypes.windll.user32.SetCursorPos(Points['Water']['x'], Points['Water']['y'])
-        time.sleep(self.Config.Settings['TimingDelays']['AntiDetection']['CursorAntiDetectDelay'])
-        ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
-        
-        if not self.State.IsRunning:
-            return False
-        
-        pyautogui.mouseDown()
-        time.sleep(self.Config.Settings['FishingControl']['Timing']['CastHoldDuration'])
-        
-        if not self.State.IsRunning:
-            pyautogui.mouseUp()
-            return False
-        
-        pyautogui.mouseUp()
+        keyboard.press_and_release(self.Config.Settings['InventoryHotkeys']['Rod'])
+        time.sleep(self.Config.Settings['TimingDelays']['Inventory']['RodSelectDelay'])
+
         return True
+    
+    def HumanizeMovement(self):
+        for _ in range(5):
+            ctypes.windll.user32.mouse_event(0x0001, 0, 1, 0, 0)
+            time.sleep(0.05)
+            if not self.State.IsRunning:
+                return
+        
+        for _ in range(5):
+            ctypes.windll.user32.mouse_event(0x0001, 0, -1, 0, 0)
+            time.sleep(0.05)
+            if not self.State.IsRunning:
+                return
+    
+    def FindItemOnScreen(self, InventoryScan=False):
+        ICONS_FOLDER = r".\pictures"
+
+        icon_files = [
+            f for f in os.listdir(ICONS_FOLDER)
+            if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp'))
+        ]
+
+        if not icon_files:
+            return None
+
+        with mss.mss() as Sct:
+            Monitor = Sct.monitors[0]
+            Raw = np.array(Sct.grab(Monitor))
+            Screen = cv2.cvtColor(Raw, cv2.COLOR_BGRA2BGR)
+            ScreenH, ScreenW = Screen.shape[:2]
+
+        Gray = cv2.cvtColor(Screen, cv2.COLOR_BGR2GRAY)
+
+        for icon_file in icon_files:
+            ICON_PATH = os.path.join(ICONS_FOLDER, icon_file)
+
+            Img = cv2.imread(ICON_PATH, cv2.IMREAD_UNCHANGED)
+            if Img is None:
+                continue
+            if len(Img.shape) == 3 and Img.shape[2] == 4:
+                Alpha = Img[:, :, 3:4] / 255.0
+                Img = (Img[:, :, :3].astype(float) * Alpha).astype(np.uint8)
+            else:
+                Img = Img[:, :, :3]
+
+            Template = Img
+            GrayTpl = cv2.cvtColor(Template, cv2.COLOR_BGR2GRAY)
+            Th, Tw = GrayTpl.shape[:2]
+
+            if Tw > ScreenW or Th > ScreenH:
+                continue
+
+            Result = cv2.matchTemplate(Gray, GrayTpl, cv2.TM_CCOEFF_NORMED)
+            _, MaxVal, _, MaxLoc = cv2.minMaxLoc(Result)
+            print(f"Matching {icon_file}: {MaxVal:.4f} at {MaxLoc}")
+            if MaxVal < 0.85:
+                continue
+
+            X, Y = MaxLoc
+            if InventoryScan:
+                if Y >= ScreenH * 3 // 4:
+                    continue
+            else:
+                if Y < ScreenH * 3 // 4:
+                    continue
+
+            return (X + Tw // 2, Y + Th // 2)
+
+        return None
     
     def GetStateForAPI(self, clientId=None):
         CurrentTime = time.time()
@@ -2782,6 +2979,11 @@ class AutomatedFishingSystem:
             "topRecipePoint": self.Config.Settings['ClickPoints']['TopRecipe'],
             "addRecipePoint": self.Config.Settings['ClickPoints']['AddRecipe'],
             "craftConfirmPoint": self.Config.Settings['ClickPoints']['CraftConfirm'],
+            "autoUsePotionBrew": self.Config.Settings['AutomationFeatures']['AutoUsePotionBrew'],
+            "potionBrewIntervalMinutes": self.Config.Settings['AutomationFrequencies']['PotionBrewIntervalMinutes'],
+            "potionBrewSlot": self.Config.Settings['InventoryHotkeys']['PotionBrewSlot'],
+            "brewEquipDelay": self.Config.Settings['TimingDelays']['PotionBrew']['BrewEquipDelay'],
+            "brewUseDelay": self.Config.Settings['TimingDelays']['PotionBrew']['BrewUseDelay'],
             "hotkeys": self.Config.Settings['Hotkeys'],
             "rodHotkey": self.Config.Settings['InventoryHotkeys']['Rod'],
             "anythingElseHotkey": self.Config.Settings['InventoryHotkeys']['Alternate'],
@@ -2884,7 +3086,6 @@ class AutomatedFishingSystem:
             "is_admin": self.IsAdmin,
         }
     
-
 FlaskApp = Flask(__name__)
 CORS(FlaskApp)
 
@@ -3191,6 +3392,10 @@ def ProcessCommand():
             'set_sell_repeat_count': lambda: HandleIntValue('AutomationFrequencies.SellRepeatCount'),
             'set_loops_per_sell': lambda: HandleIntValue('AutomationFrequencies.LoopsPerSell'),
             'set_sell_select_top_point': lambda: HandlePointSelection('ClickPoints.SellSelectTop'),
+            'set_potion_brew_interval': lambda: HandleIntValue('AutomationFrequencies.PotionBrewIntervalMinutes'),
+            'set_potion_brew_slot': lambda: HandleStringValue('InventoryHotkeys.PotionBrewSlot'),
+            'set_brew_equip_delay': lambda: HandleFloatValue('TimingDelays.PotionBrew.BrewEquipDelay'),
+            'set_brew_use_delay': lambda: HandleFloatValue('TimingDelays.PotionBrew.BrewUseDelay'),
 
             'toggle_always_on_top': lambda: HandleBoolToggle('WindowSettings.AlwaysOnTop'),
             'toggle_debug_overlay': lambda: HandleBoolToggle('WindowSettings.ShowDebugOverlay'),
@@ -3199,6 +3404,7 @@ def ProcessCommand():
             'toggle_auto_select_bait': lambda: HandleBoolToggle('AutomationFeatures.AutoSelectTopBait'),
             'toggle_auto_sell_fish': lambda: HandleBoolToggle('AutomationFeatures.AutoSellFish'),
             'toggle_auto_craft_bait': lambda: HandleBoolToggle('AutomationFeatures.AutoCraftBait'),
+            'toggle_auto_use_potion_brew': lambda: HandleBoolToggle('AutomationFeatures.AutoUsePotionBrew'),
             'toggle_store_to_backpack': lambda: HandleBoolToggle('DevilFruitStorage.StoreToBackpack'),
             'toggle_log_devil_fruit': lambda: HandleBoolToggle('LoggingOptions.LogDevilFruit'),
             'toggle_log_recast_timeouts': lambda: HandleBoolToggle('LoggingOptions.LogRecastTimeouts'),

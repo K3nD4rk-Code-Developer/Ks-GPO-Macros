@@ -83,6 +83,7 @@
     "resources": [
       "Python314",
       "backend.py",
+      "pictures/*",
       "sounds/*"
     ],
     "windows": {

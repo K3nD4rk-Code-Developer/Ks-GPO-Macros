@@ -248,6 +248,23 @@
             </div>
           </div>
           <div class="row-item">
+            <span class="row-label">Brew Inventory Slot</span>
+            <div class="row-ctrl">
+              <select class="sel" id="potionBrewSlot" onchange="sendToPython('set_potion_brew_slot', this.value)">
+                <option>1</option>
+                <option>2</option>
+                <option>3</option>
+                <option selected>4</option>
+                <option>5</option>
+                <option>6</option>
+                <option>7</option>
+                <option>8</option>
+                <option>9</option>
+                <option>0</option>
+              </select>
+            </div>
+          </div>
+          <div class="row-item">
             <span class="row-label">Devil Fruit Slots</span>
             <div class="row-ctrl">
               <div id="devilFruitSlotSelector" class="slot-row"></div>
@@ -570,8 +587,7 @@
             <div class="row-item">
               <span class="row-label">Store to Backpack</span>
               <div class="row-ctrl">
-                <div class="toggle disabled" id="storeToBackpackToggle"></div>
-                <span class="coming-soon">Coming Soon</span>
+                <div class="toggle" id="storeToBackpackToggle" onclick="toggleSetting('storeToBackpack')"></div>
               </div>
             </div>
             <div class="row-item"><span class="row-label">Store every N loops</span>
@@ -613,6 +629,27 @@
           </div>
         </div>
         
+        <div class="section-title">Auto Use Potion Brew</div>
+        <div class="panel">
+          <div class="row-item">
+            <span class="row-label">Enable Auto Use Potions</span>
+            <div class="row-ctrl">
+              <div class="toggle" id="autoUsePotionBrewToggle"
+                onclick="toggleExpandable('autoUsePotionBrew','autoPotionBrewExpand')"></div>
+            </div>
+          </div>
+          <div class="expandable" id="autoPotionBrewExpand">
+            <div class="row-item">
+              <span class="row-label">Use every N minutes</span>
+              <div class="row-ctrl">
+                <input type="number" class="inp" id="potionBrewInterval" value="30" step="1" min="1"
+                  onchange="sendToPython('set_potion_brew_interval', this.value)">
+                <span class="unit">min</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
         <div class="section-title">Devil Fruit Spawn Detection</div>
         <div class="panel">
           <div class="row-item">
@@ -622,20 +659,16 @@
                 onclick="toggleExpandable('enableSpawnDetection','spawnDetectionExpand')"></div>
             </div>
           </div>
-          <div class="warn-box hidden" id="enableSpawnDetectionWarning">
-            Configure OCR Detection Area first — <a onclick="navigateToLocations()">Locations → OCR</a>
-          </div>
+
           <div class="expandable" id="spawnDetectionExpand">
             <div class="row-item"><span class="row-label">Scan interval</span>
               <div class="row-ctrl"><input type="number" class="inp" id="spawnScanInterval" value="5.0" step="0.5"
                   min="0.5" max="10" onchange="sendToPython('set_spawn_scan_interval',this.value)"><span
-                  class="unit">sec</span></div>
+                  class="unit">sec</span>
+                </div>
             </div>
           </div>
         </div>
-
-
-
       </div>
 
       <div class="view" id="tuning">
@@ -821,6 +854,18 @@
           <div class="row-item"><span class="row-label">Close Menu Delay</span>
             <div class="row-ctrl"><input type="number" class="inp" id="craftCloseDelay" value="0.5" step="0.05"
                 onchange="sendToPython('set_craft_close_delay',this.value)"><span class="unit">sec</span></div>
+          </div>
+        </div>
+
+        <div class="section-title">Potion Brew</div>
+        <div class="panel">
+          <div class="row-item"><span class="row-label">Equip Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="brewEquipDelay" value="0.3" step="0.05"
+                onchange="sendToPython('set_brew_equip_delay', this.value)"><span class="unit">sec</span></div>
+          </div>
+          <div class="row-item"><span class="row-label">Use Delay</span>
+            <div class="row-ctrl"><input type="number" class="inp" id="brewUseDelay" value="4.5" step="0.05"
+                onchange="sendToPython('set_brew_use_delay', this.value)"><span class="unit">sec</span></div>
           </div>
         </div>
       </div>

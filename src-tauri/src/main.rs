@@ -6,6 +6,7 @@ use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::Mutex;
 
+use sysinfo::System;
 use tauri::{AppHandle, Emitter, Manager, PhysicalPosition};
 
 struct PythonProcess(Mutex<Option<Child>>);
@@ -563,6 +564,15 @@ fn send_to_python(app: AppHandle, action: String, payload: String) -> Result<Str
 }
 
 #[tauri::command]
+fn get_system_info() -> serde_json::Value {
+    let mut sys = System::new();
+    sys.refresh_memory();
+    let available_bytes = sys.available_memory();
+    let available_gb = available_bytes as f64 / 1_073_741_824.0;
+    serde_json::json!({ "ram_available_gb": (available_gb * 10.0).round() / 10.0 })
+}
+
+#[tauri::command]
 fn kill_conflicting_processes(app: AppHandle) -> serde_json::Value {
     let mut killed: u32 = 0;
     let own_pid = std::process::id().to_string();
@@ -905,6 +915,7 @@ fn main() {
             keyauth_verify,
             get_saved_key,
             open_browser,
+            get_system_info,
         ])
         .run(tauri::generate_context!())
         .expect("Error running Tauri application");

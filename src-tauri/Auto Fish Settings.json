@@ -46,8 +46,8 @@
                 "y": 1147
             },
             "DevilFruitLocationPoint": {
-                "x": 914,
-                "y": 1379
+                "x": 908,
+                "y": 1369
             }
         },
         "Crafting": {
@@ -143,6 +143,7 @@
     "InventoryHotkeys": {
         "RodHotkey": "0",
         "AnythingElseHotkey": "1",
+        "PotionBrewSlot": "2",
         "DevilFruitHotkeys": [
             "3",
             "4",
@@ -150,26 +151,27 @@
             "7",
             "8",
             "5",
-            "9",
-            "2"
+            "9"
         ]
     },
     "AutomationFeatures": {
         "AutoBuyCommonBait": false,
-        "AutoStoreDevilFruit": false,
+        "AutoStoreDevilFruit": true,
         "AutoSelectTopBait": false,
+        "AutoUsePotionBrew": false,
         "AutoCraftBait": false,
         "AutoSellFish": false
     },
     "AutomationFrequencies": {
         "LoopsPerTopBait": 1,
         "LoopsPerPurchase": 100,
-        "LoopsPerStore": 50,
+        "LoopsPerStore": 0,
         "LoopsPerCraft": 5,
         "CraftsPerCycle": 40,
         "FishCountPerCraft": 0,
         "SellRepeatCount": 3,
-        "LoopsPerSell": 0
+        "LoopsPerSell": 0,
+        "PotionBrewIntervalMinutes": 0
     },
     "DevilFruitStorage": {
         "StoreToBackpack": false,
@@ -263,10 +265,15 @@
             "CraftTopRecipeDelay": 0.2,
             "CraftButtonClickDelay": 0.025,
             "CraftCloseMenuDelay": 0.2
+        },
+        "PotionBrew": {
+            "BrewEquipDelay": 0.3,
+            "BrewUseDelay": 4.5,
+            "BrewReturnToRodDelay": 0.3
         }
     },
     "SpawnDetection": {
-        "EnableSpawnDetection": false,
+        "EnableSpawnDetection": true,
         "ScanInterval": 2.0,
         "LogSpawns": true,
         "PingSpawns": true

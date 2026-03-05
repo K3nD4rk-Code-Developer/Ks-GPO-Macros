@@ -7,7 +7,8 @@
     "hub",
     "juzo",
     "bootstrapper",
-    "stats"
+    "stats",
+    "launcher"
   ],
   "permissions": [
     "core:default",

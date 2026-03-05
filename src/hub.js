@@ -15,9 +15,9 @@ const MACROS = [
         tag: 'FISHING',
         free: true,
         visible: true,
-        color: '#00d4ff',
-        icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16.5a2 2 0 1 1-4 0c0-1.1 2-4 2-4s2 2.9 2 4z"/><path d="M4 18h2M6 14c0 0 2-2 4-2s4 2 4 2"/><line x1="6" y1="18" x2="6" y2="10"/><line x1="6" y1="10" x2="18" y2="4"/></svg>`,
-        modalIcon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16.5a2 2 0 1 1-4 0c0-1.1 2-4 2-4s2 2.9 2 4z"/><path d="M4 18h2M6 14c0 0 2-2 4-2s4 2 4 2"/><line x1="6" y1="18" x2="6" y2="10"/><line x1="6" y1="10" x2="18" y2="4"/></svg>`,
+        color: '#4f8ef7',
+        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16.5a2 2 0 1 1-4 0c0-1.1 2-4 2-4s2 2.9 2 4z"/><path d="M4 18h2M6 14c0 0 2-2 4-2s4 2 4 2"/><line x1="6" y1="18" x2="6" y2="10"/><line x1="6" y1="10" x2="18" y2="4"/></svg>`,
+        modalIcon: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 16.5a2 2 0 1 1-4 0c0-1.1 2-4 2-4s2 2.9 2 4z"/><path d="M4 18h2M6 14c0 0 2-2 4-2s4 2 4 2"/><line x1="6" y1="18" x2="6" y2="10"/><line x1="6" y1="10" x2="18" y2="4"/></svg>`,
     },
     {
         id: 'juzo',
@@ -28,8 +28,8 @@ const MACROS = [
         free: false,
         visible: true,
         color: '#a855f7',
-        icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
-        modalIcon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
+        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
+        modalIcon: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>`,
     },
     {
         id: 'mihawk',
@@ -39,9 +39,9 @@ const MACROS = [
         tag: 'MIHAWK',
         free: false,
         visible: true,
-        color: '#f0c040',
-        icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><polyline points="8 6 18 6 18 16"/></svg>`,
-        modalIcon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><polyline points="8 6 18 6 18 16"/></svg>`,
+        color: '#e0b854',
+        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><polyline points="8 6 18 6 18 16"/></svg>`,
+        modalIcon: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><polyline points="8 6 18 6 18 16"/></svg>`,
     },
     {
         id: 'roger',
@@ -51,15 +51,14 @@ const MACROS = [
         tag: 'ROGER',
         free: false,
         visible: true,
-        color: '#ef4444',
-        icon: `<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>`,
-        modalIcon: `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>`,
+        color: '#e05555',
+        icon: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>`,
+        modalIcon: `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>`,
     },
 ];
 
 let activeMacro = null;
 let verifying = false;
-let backendReady = false;
 
 function hexToRgb(hex) {
     const r = parseInt(hex.slice(1, 3), 16);
@@ -74,66 +73,78 @@ function buildGrid() {
 
     const visible = MACROS.filter(m => m.visible);
 
-    visible.forEach(m => {
+    visible.forEach((m, i) => {
         const rgb = hexToRgb(m.color);
-        const card = document.createElement('div');
-        card.className = 'macro-card';
-        card.dataset.macro = m.id;
-        if (m.comingSoon) {
-            card.classList.add('coming-soon');
-        } else {
-            card.onclick = () => handleCardClick(card, m.id, m.name);
-        }
-        card.innerHTML = `
-            <div class="card-thumb">
-                <div class="card-thumb-bg" style="background:linear-gradient(135deg,#0a0c10 0%,rgba(${rgb},0.08) 100%)"></div>
-                <div class="card-thumb-overlay"></div>
-                <div class="card-thumb-placeholder" style="color:${m.color};opacity:0.3">${m.icon}</div>
-                <div class="card-label-chip" style="background:rgba(${rgb},0.15);border-color:rgba(${rgb},0.3);color:${m.color}">${m.comingSoon ? 'COMING SOON' : m.tag + (m.free ? ' <span style=\"font-size:9px;opacity:0.7\">FREE</span>' : '')}</div>
-                ${m.comingSoon ? '<div class="card-soon-overlay"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Coming Soon</span></div>' : ''}
-            </div>
-            <div class="card-body">
-                <div class="card-title">${m.name}</div>
-                <div class="card-desc">${m.comingSoon ? 'This macro is currently in development. Stay tuned.' : m.desc}</div>
-            </div>
-            <div class="card-footer">
-                <span class="card-status-dot" style="background:${m.comingSoon ? 'var(--muted)' : m.color};box-shadow:${m.comingSoon ? 'none' : '0 0 5px ' + m.color}"></span>
-                <span class="card-footer-hint">${m.comingSoon ? 'In development' : 'Click to launch'}</span>
-                ${m.comingSoon ? '' : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>'}
-            </div>`;
-        grid.appendChild(card);
-    });
+        const row = document.createElement('div');
+        row.className = 'macro-row' + (m.comingSoon ? ' coming-soon' : '');
+        row.dataset.macro = m.id;
+        row.style.setProperty('--row-color', m.color);
+        row.style.setProperty('--row-color-dim', `rgba(${rgb},0.35)`);
+        row.style.setProperty('--row-color-bg', `rgba(${rgb},0.1)`);
+        row.style.animationDelay = `${i * 0.04}s`;
 
-    grid.style.gridTemplateColumns = `repeat(${Math.min(visible.length, 4)}, 1fr)`;
+        if (!m.comingSoon) {
+            row.onclick = () => handleCardClick(row, m.id, m.name);
+        }
+
+        const lockIcon = `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`;
+
+        row.innerHTML = `
+            <div class="macro-pip"></div>
+            <div class="macro-icon">${m.comingSoon ? lockIcon : m.icon}</div>
+            <div class="macro-info">
+                <div class="macro-name">
+                    ${m.name}
+                    <span class="macro-tag ${m.comingSoon ? 'tag-unavailable' : ''}">${m.comingSoon ? 'UNAVAILABLE' : m.tag}${m.free && !m.comingSoon ? ' <span style="font-size:8px;opacity:0.65">FREE</span>' : ''}</span>
+                </div>
+                <div class="macro-desc">${m.comingSoon ? 'Not yet available — currently in development' : m.desc}</div>
+            </div>
+            <div class="macro-right" id="right-${m.id}">
+                ${m.comingSoon
+                ? `<span class="macro-soon-label">in development</span>`
+                : `<svg class="macro-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`
+            }
+            </div>`;
+
+        grid.appendChild(row);
+    });
 }
 
 function setToast(text, visible) {
     const toast = document.getElementById('backendToast');
     const toastText = document.getElementById('backendToastText');
     toastText.textContent = text;
-    if (visible) {
-        toast.classList.add('show');
+    toast.classList.toggle('show', visible);
+}
+
+function setRowLoading(id, loading) {
+    const row = document.querySelector(`[data-macro="${id}"]`);
+    const right = document.getElementById(`right-${id}`);
+    if (!row || !right) return;
+    row.classList.toggle('card-loading', loading);
+    if (loading) {
+        right.innerHTML = `<div class="macro-spinner"></div>`;
     } else {
-        toast.classList.remove('show');
+        right.innerHTML = `<svg class="macro-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`;
     }
 }
 
-async function handleCardClick(cardEl, macro_id, displayName) {
-    if (cardEl.classList.contains('card-loading')) return;
+async function handleCardClick(rowEl, macro_id, displayName) {
+    if (rowEl.classList.contains('card-loading')) return;
 
     const macro = MACROS.find(m => m.id === macro_id);
 
     if (!macro?.free) {
-        cardEl.classList.add('card-loading');
+        setRowLoading(macro_id, true);
         setToast(`Loading ${displayName}…`, true);
         await new Promise(r => setTimeout(r, 700));
         setToast('', false);
-        cardEl.classList.remove('card-loading');
+        setRowLoading(macro_id, false);
         openKeyModal(macro_id, displayName);
         return;
     }
 
-    cardEl.classList.add('card-loading');
+    setRowLoading(macro_id, true);
     setToast('Starting backend…', true);
 
     try {
@@ -146,7 +157,7 @@ async function handleCardClick(cardEl, macro_id, displayName) {
         setToast(`Error: ${e?.toString().replace('Error: ', '') || 'Failed to start'}`, true);
         setTimeout(() => setToast('', false), 3000);
     } finally {
-        cardEl.classList.remove('card-loading');
+        setRowLoading(macro_id, false);
     }
 }
 
@@ -180,6 +191,8 @@ function applyModalColors(macro_id) {
     iconEl.style.borderColor = `rgba(${rgb},0.25)`;
     iconEl.style.color = macro.color;
     iconEl.innerHTML = macro.modalIcon ?? '';
+    document.getElementById('modalStrip').style.background = macro.color;
+    document.getElementById('btnVerify').style.background = macro.color;
 }
 
 async function autoLogin(macro_id, displayName, key) {
@@ -191,7 +204,6 @@ async function autoLogin(macro_id, displayName, key) {
     document.getElementById('keyInputWrap').className = 'key-input-wrap';
     const inputEl = document.getElementById('keyInput');
     inputEl.value = key;
-    inputEl.classList.add('masked');
     document.getElementById('keyClear').style.display = 'none';
     setFeedback('Verifying saved key…', '');
     setVerifyLoading(true);
@@ -252,7 +264,6 @@ function closeKeyModal() {
 function clearKey() {
     const input = document.getElementById('keyInput');
     input.value = '';
-    input.classList.remove('masked');
     input.focus();
     document.getElementById('keyClear').style.display = 'none';
     document.getElementById('keyInputWrap').className = 'key-input-wrap';
@@ -264,7 +275,6 @@ function handleKeyDown(e) {
     if (e.key === 'Escape') closeKeyModal();
     setTimeout(() => {
         const input = document.getElementById('keyInput');
-        input.classList.remove('masked');
         document.getElementById('keyClear').style.display = input.value.length > 0 ? 'flex' : 'none';
     }, 0);
 }
@@ -278,11 +288,9 @@ function setFeedback(msg, type) {
 function setVerifyLoading(loading) {
     verifying = loading;
     const btn = document.getElementById('btnVerify');
-    const label = document.getElementById('verifyLabel');
-    const spinner = document.getElementById('verifySpinner');
     btn.disabled = loading;
-    label.style.display = loading ? 'none' : 'inline';
-    spinner.style.display = loading ? 'block' : 'none';
+    document.getElementById('verifyLabel').style.display = loading ? 'none' : 'inline';
+    document.getElementById('verifySpinner').style.display = loading ? 'block' : 'none';
 }
 
 async function verifyKey() {
