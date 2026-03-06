@@ -2384,11 +2384,16 @@ class AutomatedFishingSystem:
         if not self.State.IsRunning:
             return False
         
+        print("Checking potion brew conditions... step 1")
         if self.Config.Settings["AutomationFeatures"]["AutoUsePotionBrew"]:
+            print("Checking potion brew conditions... step 2")
             IntervalSeconds = self.Config.Settings['AutomationFrequencies']['PotionBrewIntervalMinutes'] * 60
             Now = time.time()
 
+            print("Checking potion time: ", ForcePreCast, self.State.LastPotionBrewTime, Now - self.State.LastPotionBrewTime if self.State.LastPotionBrewTime else None, IntervalSeconds)
+
             if ForcePreCast or self.State.LastPotionBrewTime is None or (Now - self.State.LastPotionBrewTime) >= IntervalSeconds:
+                print("Executing potion brew")
                 self.ExecutePotionBrew()
                 if not self.State.IsRunning:
                     return False
