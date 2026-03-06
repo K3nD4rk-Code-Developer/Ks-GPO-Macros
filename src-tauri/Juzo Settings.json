@@ -58,14 +58,40 @@
             "range": "any",
             "skills": [
                 {
+                    "cooldown": 3000,
+                    "enabled": true,
+                    "guardBreak": false,
+                    "hold": false,
+                    "holdDuration": 600,
+                    "key": "",
+                    "lastUsed": 0,
                     "name": "Skill 1",
+                    "open": true,
+                    "priority": 1,
+                    "range": "any"
+                },
+                {
+                    "name": "Skill 2",
                     "key": "",
                     "cooldown": 3000,
                     "range": "any",
                     "guardBreak": false,
                     "hold": false,
                     "holdDuration": 600,
-                    "priority": 1,
+                    "priority": 2,
+                    "enabled": true,
+                    "open": true,
+                    "lastUsed": 0
+                },
+                {
+                    "name": "Skill 3",
+                    "key": "",
+                    "cooldown": 3000,
+                    "range": "any",
+                    "guardBreak": false,
+                    "hold": false,
+                    "holdDuration": 600,
+                    "priority": 3,
                     "enabled": true,
                     "open": true,
                     "lastUsed": 0
