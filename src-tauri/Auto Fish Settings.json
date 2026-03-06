@@ -45,10 +45,40 @@
                 "x": 1291,
                 "y": 1147
             },
-            "DevilFruitLocationPoint": {
-                "x": 908,
-                "y": 1369
-            }
+            "BackpackLocations": [
+                {
+                    "x": 1025,
+                    "y": 1366
+                },
+                {
+                    "x": 1124,
+                    "y": 1368
+                },
+                {
+                    "x": 1329,
+                    "y": 1363
+                },
+                {
+                    "x": 1437,
+                    "y": 1364
+                },
+                {
+                    "x": 1537,
+                    "y": 1359
+                },
+                {
+                    "x": 1230,
+                    "y": 1372
+                },
+                {
+                    "x": 1639,
+                    "y": 1360
+                },
+                {
+                    "x": 913,
+                    "y": 1362
+                }
+            ]
         },
         "Crafting": {
             "CraftLeftPoint": {
@@ -151,12 +181,13 @@
             "7",
             "8",
             "5",
-            "9"
+            "9",
+            "2"
         ]
     },
     "AutomationFeatures": {
         "AutoBuyCommonBait": false,
-        "AutoStoreDevilFruit": true,
+        "AutoStoreDevilFruit": false,
         "AutoSelectTopBait": false,
         "AutoUsePotionBrew": false,
         "AutoCraftBait": false,
@@ -174,7 +205,7 @@
         "PotionBrewIntervalMinutes": 0
     },
     "DevilFruitStorage": {
-        "StoreToBackpack": false,
+        "StoreToBackpack": true,
         "WebhookUrl": "https://discord.com/api/webhooks/1474191896082645118/ZneBKz7hDRqzxRKILM4nAuu6uYcrFfVxEXMJRVulQw3KXeAV9H2pDVFMcNPA6dw31IFm"
     },
     "LoggingOptions": {
@@ -273,7 +304,7 @@
         }
     },
     "SpawnDetection": {
-        "EnableSpawnDetection": true,
+        "EnableSpawnDetection": false,
         "ScanInterval": 2.0,
         "LogSpawns": true,
         "PingSpawns": true

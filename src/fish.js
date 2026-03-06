@@ -256,6 +256,43 @@ function closeDisclaimer() {
     document.getElementById('disclaimerModal').classList.add('hidden');
 }
 
+function renderBackpackLocationRows(slots, locations) {
+    const container = document.getElementById('backpackLocationsContainer');
+    const hint = document.getElementById('backpackLocationsHint');
+    if (!container) return;
+
+    const storeToBackpackEnabled = document.getElementById('storeToBackpackToggle')?.classList.contains('active');
+
+    container.innerHTML = '';
+
+    if (!storeToBackpackEnabled) {
+        if (hint) hint.style.display = 'none';
+        return;
+    }
+
+    if (hint) hint.style.display = '';
+
+    if (!slots || !slots.length) return;
+    slots.forEach((slot, i) => {
+        const loc = locations && locations[i];
+        const row = document.createElement('div');
+        row.className = 'row-item sub';
+        row.innerHTML = `
+          <span class="row-label">Slot ${slot} Backpack Location</span>
+          <div class="row-ctrl">
+            <span class="point-badge ${loc ? 'set' : 'unset'}" id="backpackLoc${i}Status">
+              ${loc ? `${loc.x}, ${loc.y}` : 'Not Set'}
+            </span>
+            <button class="btn-sm" onclick="setBackpackLocationPoint(${i})">Set</button>
+          </div>`;
+        container.appendChild(row);
+    });
+}
+
+async function setBackpackLocationPoint(slotIndex) {
+    await sendToPython('set_backpack_location_point', JSON.stringify({ slotIndex }));
+}
+
 async function checkForUpdates() {
     try {
         const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`);
@@ -407,6 +444,7 @@ function toggleDevilFruitSlot(slot) {
     window.currentDevilFruitSlots = slots;
     renderDevilFruitSlotSelector(slots);
     sendToPython('set_devil_fruit_hotkeys', slots.join(','));
+    renderBackpackLocationRows(slots, window.currentBackpackLocations || []);
 }
 
 function validateAndSetRodSlot(value) {
@@ -440,6 +478,11 @@ function toggleSetting(settingName) {
     toggle.classList.toggle('active');
     const isActive = toggle.classList.contains('active');
     sendToPython(`toggle_${settingName.replace(/([A-Z])/g, '_$1').toLowerCase()}`, isActive.toString());
+
+    if (setting === 'storeToBackpack') {
+        renderBackpackLocationRows(window.currentDevilFruitHotkeys || [], window.currentBackpackLocations || []);
+    }
+
     setTimeout(() => { activeElement = null; skipNextUpdate.delete(`${settingName}Toggle`); }, 1000);
 }
 
@@ -764,6 +807,10 @@ function loadAllSettings(state) {
     updatePointStatus('devilFruitLocationPoint', state.devilFruitLocationPoint?.x, state.devilFruitLocationPoint?.y);
 
     if (state.baitRecipes !== undefined) renderRecipes(state.baitRecipes);
+    window.currentBackpackLocations = state.backpackLocations || [];
+    if (state.devilFruitHotkeys && state.backpackLocations !== undefined) {
+        renderBackpackLocationRows(state.devilFruitHotkeys, state.backpackLocations);
+    }
 }
 
 async function loadInitialSettings() {
@@ -846,6 +893,11 @@ async function pollPythonState() {
         updatePointStatus('topRecipePoint', state.topRecipePoint?.x, state.topRecipePoint?.y);
         updatePointStatus('devilFruitLocationPoint', state.devilFruitLocationPoint?.x, state.devilFruitLocationPoint?.y);
 
+        window.currentBackpackLocations = state.backpackLocations || [];
+        if (state.devilFruitHotkeys && state.backpackLocations !== undefined) {
+            renderBackpackLocationRows(state.devilFruitHotkeys, state.backpackLocations);
+        }
+
         if (state.autoUsePotionBrew !== undefined) setExpandableSection('autoUsePotionBrewToggle', 'autoPotionBrewExpand', state.autoUsePotionBrew);
         if (state.potionBrewIntervalMinutes !== undefined) setInputValue('potionBrewInterval', state.potionBrewIntervalMinutes);
         if (state.potionBrewSlot !== undefined) setInputValue('potionBrewSlot', state.potionBrewSlot);
@@ -869,6 +921,7 @@ async function pollPythonState() {
         checkRequirements('autoSelectBait');
         checkRequirements('autoSellFish');
         checkRequirements('enableSpawnDetection');
+        console.log('hotkeys:', state.devilFruitHotkeys, 'locations:', state.backpackLocations);
     } catch (e) { }
 }
 

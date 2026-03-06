@@ -95,7 +95,7 @@ class ConfigurationManager:
                 'ShopRight': None,
                 'Bait': None,
                 'StoreFruit': None,
-                'DevilFruitLocation': None,
+                'BackpackLocations': [],
                 'CraftLeft': None,
                 'CraftMiddle': None,
                 'CraftButton': None,
@@ -317,7 +317,7 @@ class ConfigurationManager:
             if "DevilFruit" in ClickPoints:
                 Fruit = ClickPoints["DevilFruit"]
                 self.Settings['ClickPoints']['StoreFruit'] = Fruit.get("StoreFruitPoint", None)
-                self.Settings['ClickPoints']['DevilFruitLocation'] = Fruit.get("DevilFruitLocationPoint", None)
+                self.Settings['ClickPoints']['BackpackLocations'] = Fruit.get("BackpackLocations", [])
             
             if "Crafting" in ClickPoints:
                 Craft = ClickPoints["Crafting"]
@@ -456,7 +456,7 @@ class ConfigurationManager:
                     "BaitPoint": self.Settings['ClickPoints']['Bait'],
                     "DevilFruit": {
                         "StoreFruitPoint": self.Settings['ClickPoints']['StoreFruit'],
-                        "DevilFruitLocationPoint": self.Settings['ClickPoints']['DevilFruitLocation']
+                        "BackpackLocations": self.Settings['ClickPoints']['BackpackLocations'],
                     },
                     "Crafting": {
                         "CraftLeftPoint": self.Settings['ClickPoints']['CraftLeft'],
@@ -2559,82 +2559,78 @@ class AutomatedFishingSystem:
         self.State.UpdateStatus("Storing Devil Fruit")
         
         Points = self.Config.Settings['ClickPoints']
+        DevilFruitSlots = self.Config.Settings['InventoryHotkeys']['DevilFruits']
         
-        if self.Config.Settings['DevilFruitStorage']['StoreToBackpack'] and Points['DevilFruitLocation']:
-            self.State.UpdateStatus("Opening inventory")
+        if self.Config.Settings['DevilFruitStorage']['StoreToBackpack']:
+            BackpackLocations = Points.get('BackpackLocations', [])
             keyboard.press_and_release('`')
-            time.sleep(self.Config.Settings['TimingDelays']['DevilFruitStorage']['StoreFruitHotkeyDelay'])
-            if not self.State.IsRunning:
-                return
             
-            self.State.UpdateStatus("Clicking fruit location")
-            self.InputController.ClickPoint(Points['DevilFruitLocation'])
-            time.sleep(self.Config.Settings['TimingDelays']['DevilFruitStorage']['StoreFruitClickDelay'])
-            if not self.State.IsRunning:
-                return
-            
-            self.State.UpdateStatus("Checking Fruit Status")
-
-            InitGreen = False
-            if ColorDetector.DetectGreenish(Points['StoreFruit']):
-                InitGreen = True
-
-            if Points['StoreFruit']:                    
-                self.InputController.ClickPoint(Points['StoreFruit'])
+            for SlotIdx, Slot in enumerate(DevilFruitSlots):
                 if not self.State.IsRunning:
                     return
-
-                FruitLoc = Points['DevilFruitLocation']
-                ctypes.windll.user32.SetCursorPos(FruitLoc['x'], FruitLoc['y'])
-                time.sleep(0.1)
-
-                self.HumanizeMovement()
-
-                if not self.State.IsRunning:
-                    return
-
-                pyautogui.mouseDown()
-                time.sleep(0.1)
-                if not self.State.IsRunning:
-                    pyautogui.mouseUp()
-                    return
-
-                StartY = FruitLoc['y']
-                TargetY = StartY - 150
-
-                ctypes.windll.user32.SetCursorPos(FruitLoc['x'], TargetY)
-                self.HumanizeMovement()
-
-                pyautogui.mouseUp()
-                time.sleep(0.15)
                 
-                keyboard.press_and_release('`')
+                BackpackLoc = BackpackLocations[SlotIdx] if SlotIdx < len(BackpackLocations) else None
+                TargetLocation = BackpackLoc
+                
+                self.State.UpdateStatus(f"Opening inventory for slot {Slot} ({SlotIdx+1}/{len(DevilFruitSlots)})")
+                
                 time.sleep(self.Config.Settings['TimingDelays']['DevilFruitStorage']['StoreFruitHotkeyDelay'])
+                if not self.State.IsRunning:
+                    return
+                
+                self.State.UpdateStatus(f"Clicking fruit location for slot {Slot}")
+                self.InputController.ClickPoint(TargetLocation)
+                time.sleep(self.Config.Settings['TimingDelays']['DevilFruitStorage']['StoreFruitClickDelay'])
+                if not self.State.IsRunning:
+                    return
+                
+                self.State.UpdateStatus(f"Checking Fruit Status for slot {Slot}")
+                InitGreen = ColorDetector.DetectGreenish(Points['StoreFruit']) if Points['StoreFruit'] else False
 
-                if self.Config.Settings['DevilFruitStorage']['WebhookUrl']:
-                    if InitGreen and not ColorDetector.DetectGreenish(Points['StoreFruit']):
-                        DetectedFruit = None
-                        if self.OcrManager.Enabled:
-                            RawDetection = self.FruitDetector.DetectNewItem()
-                            if RawDetection:
-                                ClosestMatch = self.FruitDetector.GetClosestFruit(RawDetection, Cutoff=0.6)
-                                if ClosestMatch:
-                                    DetectedFruit = ClosestMatch
+                if Points['StoreFruit']:
+                    self.InputController.ClickPoint(Points['StoreFruit'])
+                    if not self.State.IsRunning:
+                        return
 
-                        if DetectedFruit:
-                            self.State.UpdateStatus("Fruit stored successfully")
+                    ctypes.windll.user32.SetCursorPos(TargetLocation['x'], TargetLocation['y'])
+                    time.sleep(0.1)
+                    self.HumanizeMovement()
+                    if not self.State.IsRunning:
+                        return
+
+                    pyautogui.mouseDown()
+                    time.sleep(0.1)
+                    if not self.State.IsRunning:
+                        pyautogui.mouseUp()
+                        return
+
+                    ctypes.windll.user32.SetCursorPos(TargetLocation['x'], TargetLocation['y'] - 150)
+                    self.HumanizeMovement()
+                    pyautogui.mouseUp()
+
+                    time.sleep(self.Config.Settings['TimingDelays']['DevilFruitStorage']['StoreFruitClickDelay'] + 0.5)
+
+                    if self.Config.Settings['DevilFruitStorage']['WebhookUrl']:
+                        if InitGreen and not ColorDetector.DetectGreenish(Points['StoreFruit']):
+                            DetectedFruit = None
+                            if self.OcrManager.Enabled:
+                                RawDetection = self.FruitDetector.DetectNewItem()
+                                if RawDetection:
+                                    ClosestMatch = self.FruitDetector.GetClosestFruit(RawDetection, Cutoff=0.6)
+                                    if ClosestMatch:
+                                        DetectedFruit = ClosestMatch
+                            FruitName = DetectedFruit or "Unknown"
+                            self.State.UpdateStatus(f"Fruit stored (slot {Slot})")
                             self.State.IncrementDevilFruitCount()
-                            self.Notifier.SendNotification(f"Devil Fruit {DetectedFruit} stored successfully!")
+                            self.Notifier.SendNotification(f"Devil Fruit {FruitName} stored successfully! (Slot {Slot})")
                         else:
-                            self.State.UpdateStatus("Fruit stored successfully")
-                            self.State.IncrementDevilFruitCount()
-                            self.Notifier.SendNotification("Devil Fruit stored successfully!")
-                    else:
-                        self.State.UpdateStatus("Fruit storage failed")
-                        self.Notifier.SendNotification("Devil Fruit could not be stored.")
+                            self.State.UpdateStatus(f"Fruit storage failed (slot {Slot})")
+                            self.Notifier.SendNotification(f"Devil Fruit could not be stored. (Slot {Slot})")
+                            
+            keyboard.press_and_release('`')
 
         elif Points['StoreFruit']:
-            for Slot in self.Config.Settings['InventoryHotkeys']['DevilFruits']:
+            for Slot in DevilFruitSlots:
                 keyboard.press_and_release(self.Config.Settings['InventoryHotkeys']['Alternate'])
                 time.sleep(self.Config.Settings['TimingDelays']['Inventory']['RodSelectDelay'])
 
@@ -2962,7 +2958,6 @@ class AutomatedFishingSystem:
             "clientId": self.State.ClientId,
             "activeSessions": ActiveSessions,
             "storeToBackpack": self.Config.Settings['DevilFruitStorage']['StoreToBackpack'],
-            "devilFruitLocationPoint": self.Config.Settings['ClickPoints']['DevilFruitLocation'],
             "loopsPerStore": self.Config.Settings['AutomationFrequencies']['LoopsPerStore'],
             "isRunning": self.State.IsRunning,
             "fishCaught": self.State.TotalFishCaught,
@@ -2981,6 +2976,7 @@ class AutomatedFishingSystem:
             "craftConfirmPoint": self.Config.Settings['ClickPoints']['CraftConfirm'],
             "autoUsePotionBrew": self.Config.Settings['AutomationFeatures']['AutoUsePotionBrew'],
             "potionBrewIntervalMinutes": self.Config.Settings['AutomationFrequencies']['PotionBrewIntervalMinutes'],
+            "backpackLocations": self.Config.Settings['ClickPoints']['BackpackLocations'],
             "potionBrewSlot": self.Config.Settings['InventoryHotkeys']['PotionBrewSlot'],
             "brewEquipDelay": self.Config.Settings['TimingDelays']['PotionBrew']['BrewEquipDelay'],
             "brewUseDelay": self.Config.Settings['TimingDelays']['PotionBrew']['BrewUseDelay'],
@@ -3371,7 +3367,6 @@ def ProcessCommand():
         
         ActionMap = {
             'set_water_point': lambda: HandlePointSelection('ClickPoints.Water'),
-            'set_devil_fruit_location_point': lambda: HandlePointSelection('ClickPoints.DevilFruitLocation'),
             'set_left_point': lambda: HandlePointSelection('ClickPoints.ShopLeft'),
             'set_middle_point': lambda: HandlePointSelection('ClickPoints.ShopCenter'),
             'set_right_point': lambda: HandlePointSelection('ClickPoints.ShopRight'),
@@ -3484,6 +3479,7 @@ def ProcessCommand():
             'set_craft_close_delay': lambda: HandleFloatValue('TimingDelays.Crafting.CraftCloseMenuDelay'),
             'set_spawn_scan_interval': lambda: HandleFloatValue('SpawnDetection.ScanInterval'),
             
+            'set_backpack_location_point': lambda: HandleBackpackLocationPoint(Payload),
             'test_webhook': lambda: HandleTestWebhook(),
             'open_ocr_area_selector': lambda: HandleOCRAreaSelector(),
             'open_area_selector': lambda: HandleAreaSelector(),
@@ -3601,6 +3597,24 @@ def HandleDevilFruitSlots(Payload):
     except Exception as E:
         return jsonify({"status": "error", "message": f"Invalid slots: {str(E)}"}), 400
 
+def HandleBackpackLocationPoint(Payload):
+    if Payload is None:
+        return jsonify({"status": "error", "message": "Missing payload"}), 400
+    try:
+        Data = json.loads(Payload)
+        SlotIndex = int(Data.get('slotIndex', 0))
+        Locs = MacroSystem.Config.Settings['ClickPoints']['BackpackLocations']
+        while len(Locs) <= SlotIndex:
+            Locs.append(None)
+        
+        def OnPointSet(Name, Point):
+            Locs[SlotIndex] = Point
+            MacroSystem.Config.SaveToDisk()
+        
+        MacroSystem.PointSelector.StartSelection(f"BackpackLocation{SlotIndex}", OnPointSet)
+        return jsonify({"status": "waiting_for_click"})
+    except Exception as E:
+        return jsonify({"status": "error", "message": str(E)}), 500
 
 def HandleExportSettings():
     try:

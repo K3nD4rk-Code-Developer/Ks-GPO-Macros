@@ -477,12 +477,6 @@
             <div class="row-ctrl"><span class="point-badge unset" id="storeFruitPointStatus">Not Set</span><button
                 class="btn-sm" onclick="sendToPython('set_store_fruit_point','')">Set</button></div>
           </div>
-          <div class="row-item"><span class="row-label">Backpack Location</span>
-            <div class="row-ctrl"><span class="point-badge unset" id="devilFruitLocationPointStatus">Not
-                Set</span><button class="btn-sm"
-                onclick="sendToPython('set_devil_fruit_location_point','')">Set</button></div>
-          </div>
-          <div class="row-hint">Backpack storage is a work in progress.</div>
         </div>
 
         <div class="section-title">OCR Configuration</div>
@@ -589,6 +583,10 @@
               <div class="row-ctrl">
                 <div class="toggle" id="storeToBackpackToggle" onclick="toggleSetting('storeToBackpack')"></div>
               </div>
+            </div>
+            <div id="backpackLocationsContainer"></div>
+            <div class="row-hint" id="backpackLocationsHint">
+              Set a location for each devil fruit slot — leave unset to use the default Backpack Location above.
             </div>
             <div class="row-item"><span class="row-label">Store every N loops</span>
               <div class="row-ctrl"><input type="number" class="inp" id="loopsPerStore" value="1" step="1" min="1"
