@@ -30,3 +30,5 @@ src/juzo.css
 src/juzo.js
 /src-tauri/model
 src-tauri/juzo.py
+/src-tauri/saved-hashes
+/src-tauri/hashes
