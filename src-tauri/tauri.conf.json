@@ -82,7 +82,7 @@
     ],
     "resources": [
       "Python314",
-      "backend.py",
+      "backend.pyc",
       "pictures/*",
       "sounds/*"
     ],

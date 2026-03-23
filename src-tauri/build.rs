@@ -152,6 +152,49 @@ fn CopyDirectoryRecursive(
     Ok(())
 }
 
+fn CompileBackendPyc(PythonExe: &PathBuf, BackendPy: &PathBuf) {
+    if !BackendPy.exists() {
+        println!("cargo:warning=backend.py not found at {:?} — skipping pyc compile", BackendPy);
+        return;
+    }
+
+    println!("cargo:warning=Compiling backend.py → .pyc ...");
+
+    let BackendPyStr  = BackendPy.to_string_lossy();
+    let BackendPycStr = BackendPy.with_extension("pyc").to_string_lossy().into_owned();
+
+    let Script = format!(
+        "import py_compile; py_compile.compile(r'{}', cfile=r'{}', optimize=2, doraise=True)",
+        BackendPyStr, BackendPycStr
+    );
+
+    let Output = std::process::Command::new(PythonExe)
+        .args(["-c", &Script])
+        .output();
+
+    match Output {
+        Ok(Out) => {
+            if Out.status.success() {
+                println!("cargo:warning=backend.pyc written to {:?}", BackendPycStr);
+
+                if let Err(E) = fs::remove_file(BackendPy) {
+                    println!("cargo:warning=Could not remove backend.py: {}", E);
+                } else {
+                    println!("cargo:warning=backend.py removed from output (only .pyc ships)");
+                }
+            } else {
+                let Stderr = String::from_utf8_lossy(&Out.stderr);
+                println!("cargo:warning=py_compile failed: {}", Stderr);
+                println!("cargo:warning=backend.py will ship uncompiled");
+            }
+        }
+        Err(E) => {
+            println!("cargo:warning=Could not launch Python to compile backend.py: {}", E);
+            println!("cargo:warning=backend.py will ship uncompiled");
+        }
+    }
+}
+
 fn HashRequirements(Path: &PathBuf) -> String {
     let Contents = fs::read_to_string(Path).unwrap_or_default();
     let mut Hash: u64 = 0xcbf29ce484222325;
@@ -246,6 +289,14 @@ fn main() {
         } else {
             println!("cargo:warning=requirements.txt unchanged — skipping Python copy.");
         }
+
+        let ProjectRoot = SrcTauriPath.parent().unwrap();
+        let BackendPy   = ProjectRoot.join("backend.py");
+        let PythonExe   = PythonDestinationPath.join("python.exe");
+
+        println!("cargo:rerun-if-changed=../backend.py");
+
+        CompileBackendPyc(&PythonExe, &BackendPy);
 
     } else {
         if !PythonDestinationPath.exists() {

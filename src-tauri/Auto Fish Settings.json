@@ -19,8 +19,8 @@
     },
     "ClickPoints": {
         "WaterPoint": {
-            "x": 1566,
-            "y": 200
+            "x": 1337,
+            "y": 488
         },
         "Shop": {
             "LeftPoint": {
@@ -186,8 +186,8 @@
         ]
     },
     "AutomationFeatures": {
-        "AutoBuyCommonBait": false,
-        "AutoStoreDevilFruit": false,
+        "AutoBuyCommonBait": true,
+        "AutoStoreDevilFruit": true,
         "AutoSelectTopBait": false,
         "AutoUsePotionBrew": false,
         "AutoCraftBait": false,
@@ -196,7 +196,7 @@
     "AutomationFrequencies": {
         "LoopsPerTopBait": 1,
         "LoopsPerPurchase": 100,
-        "LoopsPerStore": 0,
+        "LoopsPerStore": 50,
         "LoopsPerCraft": 5,
         "CraftsPerCycle": 40,
         "FishCountPerCraft": 0,
@@ -205,7 +205,7 @@
         "PotionBrewIntervalMinutes": 0
     },
     "DevilFruitStorage": {
-        "StoreToBackpack": true,
+        "StoreToBackpack": false,
         "WebhookUrl": "https://discord.com/api/webhooks/1474191896082645118/ZneBKz7hDRqzxRKILM4nAuu6uYcrFfVxEXMJRVulQw3KXeAV9H2pDVFMcNPA6dw31IFm"
     },
     "LoggingOptions": {

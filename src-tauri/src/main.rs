@@ -111,11 +111,7 @@ fn kill_existing_backend() {
             }
         }
     }
-    #[cfg(not(target_os = "windows"))]
-    {
-        let _ = Command::new("pkill").args(&["-f", "backend.py"]).output();
-        let _ = Command::new("pkill").args(&["-f", "juzo.py"]).output();
-    }
+
     std::thread::sleep(std::time::Duration::from_millis(500));
     log("User-scoped backend kill complete");
 }
@@ -154,18 +150,7 @@ fn kill_all_backend_processes(launcher_pid: u32) {
             }
         }
     }
-    #[cfg(not(target_os = "windows"))]
-    {
-        let _ = Command::new("pkill")
-            .args(&["-u", &std::env::var("USER").unwrap_or_default(), "-f", "backend.py"])
-            .output();
-        let _ = Command::new("pkill")
-            .args(&["-u", &std::env::var("USER").unwrap_or_default(), "-f", "juzo.py"])
-            .output();
-        let _ = Command::new("pkill")
-            .args(&["-f", &format!("--pid {}", launcher_pid)])
-            .output();
-    }
+
     std::thread::sleep(std::time::Duration::from_millis(800));
     log("Nuclear kill complete");
 }
@@ -173,7 +158,7 @@ fn kill_all_backend_processes(launcher_pid: u32) {
 fn backend_script_for(macro_name: &str) -> &'static str {
     match macro_name {
         "juzo" => "juzo.py",
-        _      => "backend.py",
+        _      => "backend.pyc",
     }
 }
 
@@ -721,7 +706,7 @@ fn start_backend(app: AppHandle) -> Result<serde_json::Value, String> {
     {
         let python_cmd = if cfg!(target_os = "windows") { "python" } else { "python3" };
         let child = Command::new(python_cmd)
-            .arg("backend.py")
+            .arg("backend.pyc")
             .arg("--pid")
             .arg(launcher_pid.to_string())
             .spawn()

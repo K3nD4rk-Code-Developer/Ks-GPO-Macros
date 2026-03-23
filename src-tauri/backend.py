@@ -1869,50 +1869,9 @@ class AutomatedFishingSystem:
         self.SpawnDetectionRunning = False
         self.LastSpawnCheck = time.time()
         
-        self.ApplyCompatibilityFixes()
         self.RegisterHotkeys()
 
         threading.Thread(target=self.SpawnDetectionLoop, daemon=True).start()
-
-    def ApplyCompatibilityFixes(self):
-        try:            
-            LocalAppData = os.environ.get('LOCALAPPDATA', '')
-            ProgramFiles = os.environ.get('PROGRAMFILES', 'C:\\Program Files')
-            ProgramFilesX86 = os.environ.get('PROGRAMFILES(X86)', 'C:\\Program Files (x86)')
-            
-            SearchPaths = [
-                os.path.join(LocalAppData, 'Roblox', 'Versions'),
-                os.path.join(LocalAppData, 'Bloxstrap', 'Versions'),
-                os.path.join(LocalAppData, 'Fishstrap', 'Versions'),
-            ]
-            
-            FoundPaths = []
-            for BasePath in SearchPaths:
-                if os.path.exists(BasePath):
-                    for VersionFolder in os.listdir(BasePath):
-                        Candidate = os.path.join(BasePath, VersionFolder, 'RobloxPlayerBeta.exe')
-                        if os.path.exists(Candidate):
-                            FoundPaths.append(Candidate)
-            
-            if not FoundPaths:
-                print("No Roblox executable found (standard/Bloxstrap/Fishstrap) - skipping.")
-                return
-            
-            RegPath = r"Software\Microsoft\Windows NT\CurrentVersion\AppCompatFlags\Layers"
-            Flags = "~ DISABLEDXMAXIMIZEDWINDOWEDMODE DISABLEUSELEGACYDISPLAYICC"
-            
-            try:
-                Key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, RegPath, 0, winreg.KEY_SET_VALUE)
-            except FileNotFoundError:
-                Key = winreg.CreateKey(winreg.HKEY_CURRENT_USER, RegPath)
-            
-            with Key:
-                for ExePath in FoundPaths:
-                    winreg.SetValueEx(Key, ExePath, 0, winreg.REG_SZ, Flags)
-                    print(f"Compatibility flags applied: {ExePath}")
-            
-        except Exception as E:
-            print(f"Could not apply Roblox compatibility flags: {E}")
     
     def SpawnDetectionLoop(self):
         while True:
